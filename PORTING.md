@@ -162,6 +162,32 @@ PKHeX.Avalonia/Packaging/publish-linux.sh publish/linux-x64 --framework-dependen
 The script copies `icon.png` and `Packaging/pkhex.desktop` next to the binary and prints the two commands that install the
 desktop entry for the current user. Both publish modes were launched on Linux Mint and opened the main window.
 
+### Handing a build to someone else
+
+The self-contained folder is the whole product: it needs no .NET runtime on the target machine.
+
+```bash
+PKHeX.Avalonia/Packaging/publish-linux.sh publish/linux-x64 --self-contained
+tar -czf pkhex-linux-x64.tar.gz -C publish linux-x64
+```
+
+The receiving user extracts it anywhere and runs `./PKHeX.Avalonia`. Per-user data (settings, backups, plugins) lives
+under the XDG data directory, not next to the binary, so several builds can coexist:
+
+| What | Default location |
+| --- | --- |
+| settings (`cfg.json`) | `~/.config/PKHeX/` |
+| backups, databases, cries | `~/.local/share/PKHeX/` |
+| plugins | `~/.local/share/PKHeX/plugins/` |
+
+Plugins are DLLs dropped into that plugin folder; they are loaded at startup and add their own Tools menu entries.
+No plugin ships with this repository, and the program has no feature that depends on one — remove the DLL and the
+corresponding menu entry simply disappears (verified by moving a plugin out of the folder and reopening the program).
+
+A plugin is a plain `net10.0` library implementing `PKHeX.Core.IPlugin`, so the same DLL loads under the Windows and
+macOS builds of this program. It does **not** load in upstream WinForms PKHeX: that host hands its plugins WinForms
+controls, while this one hands them the Avalonia Tools menu and its own editor types.
+
 ## Completed components
 
 * Drawing layer on SkiaSharp (`PKHeX.Drawing`, `PKHeX.Drawing.PokeSprite`, `PKHeX.Drawing.Misc`, `net10.0` flavor):
@@ -174,19 +200,19 @@ desktop entry for the current user. Both publish modes were launched on Linux Mi
 
 ## Partially ported components
 
-* Main window: all `Main` behaviors that do not require unported windows are ported (open/save/export, showdown export,
-  language, undo/redo, legality report, QR, drag & drop in/out, backup prompt, update check, close confirmation).
-  Menu entries for unported features are present but disabled (`Menu_ShowdownImportPKM`, `Menu_DumpBoxes`, `Menu_DumpBox`,
-  `Menu_Report`, `Menu_Database`, `Menu_MGDatabase`, `Menu_EncDatabase`, `Menu_BatchEditor`, `Menu_Folder`, `Menu_Settings`).
+* Main window: every `Main` behavior is ported (open/save/export, showdown export, language, undo/redo, legality
+  report, QR, drag & drop in/out, backup prompt, update check, close confirmation) plus the Troubleshooting menu.
+  No menu entry is disabled for lack of a ported window any more.
 * Save editor: Box and Party tabs with slot context menu (View / Set / Delete / Legality), Ctrl/Shift/Alt click shortcuts,
   hover text, undo/redo, box navigation (buttons, combo box, mouse wheel), load boxes from folder, PC/box binary import,
   group import, slot drag & drop between slots and from/to other applications, box manipulation menu (right click the Box tab;
   Ctrl+click sorts by species, Alt+click clears, Shift extends to every box), box popout viewer and all-boxes storage viewer
   (double click / Shift+double click the Box tab). SAV tab: tool buttons (Save Box Data++, Verify Checksums, Verify All PKMs, Export Backup, PGL JPEG, Korean
   conversion), Battle Revolution save-slot selector, double-click to re-detect a save, and the full sub-editor button panel
-  with the WinForms visibility rules (sorted by translated text). Ported sub-editors: Items, Trainer Info (Gen 1–5 and
-  Colosseum/XD via `SAV_SimpleTrainer`), Box Layout. All other sub-editor buttons are visible but disabled with a tooltip.
-  Not ported: hover preview window/glow/cry, daycare/misc slots ("Other" tab), box search.
+  with the WinForms visibility rules (sorted by translated text); every button has a handler (see the status table for
+  the editor list). Other tab (daycare group and extra slots), box search popout and the slot hover preview are ported.
+  Slot glow on hover (`HoverSlotGlowEdges`) is the one hover behavior still missing: the cursor changes and the preview
+  card appears, but the sprite is not outlined.
 * Entity editor (`Controls/PKMEditor/*`): full port of `PKMEditor` (Main / Met / Stats / Moves / Cosmetic / OT-Misc tabs,
   per-format load/save for PK1–PK9/PB7/PA8/PB8/PA9, legality-driven move highlighting, shiny/PID/EC tools, ball browser,
   status condition browser, experience bar, form arguments, contest stats, size/CP, shiny leaf, catch rate, markings)
@@ -197,7 +223,7 @@ desktop entry for the current user. Both publish modes were launched on Linux Mi
 ## Unported components
 
 The developer/translation update utilities (`DevUtil`), which are a build-time tool for regenerating the WinForms
-translation files and have no place in the Linux application.
+translation files and have no place in the Linux application. See "Remaining work" below for the full picture.
 
 Plugins are loaded (see the status table); the plugins themselves live outside this repository.
 
@@ -267,6 +293,45 @@ the box list footer lives (detection is footer gated), with a few entities place
 paths are runtime-verified against the repository owner's save, including the real C-Gear skin it contains.
 
 The remaining effort is packaging/CI and the developer-only translation utilities.
+
+## Remaining work
+
+Nothing in `PKHeX.WinForms` is left unported except the item below; what remains is verification breadth and
+packaging, not missing screens.
+
+**Intentionally not ported**
+
+* `DevUtil` — a build-time utility that regenerates the WinForms translation files by walking WinForms designers.
+  It has no meaning in the Avalonia frontend and no user-facing function.
+
+**Not exercised at runtime (build verified only)**
+
+* Black/White (non-B2/W2) code paths in the Generation 5 DLC editor: `CGearBackgroundBW`, the BW musical size, and
+  the shift-format palette conversion. No BW save is available; the B2/W2 paths are runtime verified.
+* Gen 4 PGT/PCD Wonder Card album layout (no Gen 4 save with mystery gift data).
+* File dialogs (open/save/folder). The desktop portal dialog cannot be driven by the automation used for every other
+  check; every caller shares the same two helpers in `Services/FileDialogs.cs`.
+* QR image to clipboard, file drag & drop onto the main window, the Open dialog, and the zip-update save path.
+* Wayland. Avalonia's platform detection is left at its default, but only the X11 session on Linux Mint was used.
+* Windows: `dotnet publish -r win-x64 --self-contained` produces a working `PKHeX.Avalonia.exe` (248 MB), but it was
+  never launched — no Windows machine here. Note that `AppPaths` falls back to `%USERPROFILE%\.config\PKHeX` and
+  `%USERPROFILE%\.local\share\PKHeX` there, since the XDG variables are unset; dropping a `cfg.json` next to the
+  executable switches to the portable (WinForms-style) layout instead.
+* macOS. The frontend takes no Linux-only dependency and uses `Path.Combine` and the XDG helper everywhere, but the
+  platform was neither built nor launched.
+
+**Not run**
+
+* CI (`.github/workflows/linux.yml`). It builds Debug and Release, runs the Core tests and uploads a linux-x64
+  publish, but has never executed on GitHub from this fork.
+
+**Upstream limits, not port gaps**
+
+* Gen 8/9 Wonder Card album: upstream's `SAV_Wondercard` throws for those generations too. The button is disabled
+  with a tooltip that says the editor does not support the game.
+* Pokédex skin (Generation 5): upstream's `LoadPokedexSkin` is an empty method, so the tab offers raw import/export.
+* `BattleVideo4.DeflateFromPK4` drops the species and held item that `InflateToPK4` reads back. Core was not changed.
+* `BattlePass.GetPartySlotAtIndex` trips a Core `Debug.Assert`; see Known blockers.
 
 ## Deliberate deviations
 
