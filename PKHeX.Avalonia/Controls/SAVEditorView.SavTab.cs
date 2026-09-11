@@ -20,6 +20,7 @@ using PKHeX.Avalonia.Views.SaveEditors.Gen6;
 using PKHeX.Avalonia.Views.SaveEditors.Gen7;
 using PKHeX.Avalonia.Views.SaveEditors.Gen8;
 using PKHeX.Avalonia.Views.SaveEditors.Gen9;
+using PKHeX.Avalonia.Views.SaveEditors.Gen9.Donuts;
 using PKHeX.Avalonia.Views.SaveEditors.DexEditor;
 using PKHeX.Avalonia.Views.SaveEditors.Gen5;
 using PKHeX.Core;
@@ -119,7 +120,7 @@ public sealed partial class SAVEditorView
             AddToolButton(FLP_SAVtools, b);
 
         // Sub-editors not yet ported: keep the button (for parity/visibility rules) but disable it.
-        Button[] ported = [B_OpenTrainerInfo, B_OpenItemPouch, B_OpenBoxLayout, B_OpenWondercards, B_MailBox, B_OpenBerryField, B_OpenLinkInfo, B_OpenSuperTraining, B_OpenMedalsEditor, B_OpenUnityTowerEditor, B_OpenGlobalLink, B_OpenChatterEditor, B_OpenPokedex, B_OpenEventFlags, B_OpenMiscEditor, B_OpenRTCEditor, B_Roamer, B_OUTPasserby, B_OpenHoneyTreeEditor, B_OpenApricorn, B_OpenOPowers, B_OpenPokeblocks, B_OpenHallofFame, B_OpenGeonetEditor, B_OpenPokepuffs, B_OpenPokeBeans, B_CellsStickers, B_OpenSealStickers, B_Poffins, B_OpenUGSEditor, B_Blocks, B_Raids, B_RaidsDLC1, B_RaidsDLC2, B_RaidsSevenStar, B_OpenSecretBase, B_OpenPokeathlon, B_OpenJoinAvenueEditor, B_OpenGear, B_OpenBattlePass, B_OpenFriendSafari];
+        Button[] ported = [B_OpenTrainerInfo, B_OpenItemPouch, B_OpenBoxLayout, B_OpenWondercards, B_MailBox, B_OpenBerryField, B_OpenLinkInfo, B_OpenSuperTraining, B_OpenMedalsEditor, B_OpenUnityTowerEditor, B_OpenGlobalLink, B_OpenChatterEditor, B_OpenPokedex, B_OpenEventFlags, B_OpenMiscEditor, B_OpenRTCEditor, B_Roamer, B_OUTPasserby, B_OpenHoneyTreeEditor, B_OpenApricorn, B_OpenOPowers, B_OpenPokeblocks, B_OpenHallofFame, B_OpenGeonetEditor, B_OpenPokepuffs, B_OpenPokeBeans, B_CellsStickers, B_OpenSealStickers, B_Poffins, B_OpenUGSEditor, B_Blocks, B_Raids, B_RaidsDLC1, B_RaidsDLC2, B_RaidsSevenStar, B_OpenSecretBase, B_OpenPokeathlon, B_OpenJoinAvenueEditor, B_OpenGear, B_OpenBattlePass, B_OpenFriendSafari, B_Donuts, B_DLC, B_OpenFashion];
         foreach (var b in tools.Except(ported))
         {
             b.IsEnabled = false;
@@ -175,6 +176,9 @@ public sealed partial class SAVEditorView
         B_OpenGear.Click += async (_, _) => await OpenDialog(() => new Gear4BRWindow((SAV4BR)SAV));
         B_OpenFriendSafari.Click += async (_, _) => await ClickFriendSafari();
         B_OpenBattlePass.Click += async (_, _) => await OpenDialog(() => new BattlePass4BRWindow(this, (SAV4BR)SAV));
+        B_Donuts.Click += async (_, _) => await OpenDialog(() => new Donut9aWindow((SAV9ZA)SAV));
+        B_DLC.Click += async (_, _) => await ClickDLC();
+        B_OpenFashion.Click += async (_, _) => await OpenDialog(() => new Fashion9Window(SAV));
         B_OpenGeonetEditor.Click += async (_, _) => await OpenDialog(() => new Geonet4Window((SAV4)SAV));
         B_OpenPokepuffs.Click += async (_, _) => await OpenDialog(() => new PokepuffWindow((ISaveBlock6Main)SAV));
         B_OpenPokeBeans.Click += async (_, _) => await OpenDialog(() => new PokebeanWindow((SAV7)SAV));
@@ -212,6 +216,13 @@ public sealed partial class SAVEditorView
     /// <summary>
     /// Opens a sub-editor, surfacing construction/runtime errors instead of losing them on a fire-and-forget task.
     /// </summary>
+    /// <summary>Opens the DLC editor for the loaded save (port of <c>B_DLC_Click</c>).</summary>
+    private async Task ClickDLC()
+    {
+        if (SAV is SAV4 s4)
+            await OpenDialog(() => new DLC4Window(s4));
+    }
+
     private async Task OpenDialog(Func<Window> create)
     {
         if (Owner is null)
@@ -264,6 +275,9 @@ public sealed partial class SAVEditorView
         if (!B_OpenEventFlags.IsEnabled)
             ToolTip.SetTip(B_OpenEventFlags, NotPortedTip);
         B_DLC.IsVisible = sav is SAV5 or SAV4HGSS or SAV4Pt;
+        B_DLC.IsEnabled = sav is SAV4HGSS or SAV4Pt; // the Gen 5 C-Gear/Pass editor is not ported
+        if (!B_DLC.IsEnabled)
+            ToolTip.SetTip(B_DLC, NotPortedTip);
         B_OpenPokeBeans.IsVisible = B_CellsStickers.IsVisible = B_FestivalPlaza.IsVisible = sav is SAV7;
 
         B_OtherSlots.IsVisible = sav is SAV1StadiumJ or SAV1Stadium or SAV2Stadium;

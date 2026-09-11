@@ -23,7 +23,8 @@ Development branch: `feature/linuxport`. Primary target: Linux Mint (x11/Wayland
 | Legality UI (report dialog, slot indicators, copy to clipboard) | **RUNTIME VERIFIED** (slot indicators, report text); report dialog/clipboard **NOT YET TESTED** |
 | Mystery Gift UI | **RUNTIME VERIFIED** — Mystery Gift Database (947 gifts listed for a Gen 5 save, filters, view/save gift/save PKM) and the Wonder Card album editor (Gen 5 and Gen 6 layouts opened against real block data; the Gen 4 PGT/PCD layout is **BUILD VERIFIED** only, see Known blockers) |
 | Entity sub-editors (Ribbons, Memories, Medals, Tech Records, Move Shop, Plus Records, Trash bytes) | **RUNTIME VERIFIED** — all seven ported; ribbons round-tripped, memories rendered per generation, TR/Plus/Move Shop flag grids with legality colouring, Ctrl+click trash byte editor writes back to the name box |
-| Save sub-editors (SAV tab) | **PARTIAL** — SAV tab with all WinForms buttons/visibility rules, Verify Checksums, Verify All PKMs, box binary export, backup export, PGL JPEG, Korean conversion, Battle Revolution slot selector; editors ported: Items, Trainer Info (every generation), Box Layout, Block Data, Wonder Cards (Gen 4–7), Mail Box (Gen 2–5), Unity Tower, Pokémon Global Link, Chatter, Pokédex (Gen 1–5, 6 X/Y and OR/AS, 7 S/M and US/UM, Let's Go with its capture-record editor, SW/SH, BD/SP, Legends: Arceus, S/V with its DLC variant, Legends: Z-A), Underground (Gen 4 and BD/SP), Secret Base (Gen 3 and OR/AS), Event Flags (Gen 1 reset, Gen 2, Gen 3–7, Let's Go, BD/SP, Legends: Z-A), Friend Safari unlock, Misc Edits (Gen 2, 3, 4, 5 and 8b), Medals (Gen 5), Roamer (Gen 3 and X/Y), Clock/RTC (Gen 2 prompt, Gen 3 editor), Roamer (Gen 3), Honey Tree, Apricorns, Geonet (Gen 4), O-Powers, Pokéblocks, Poké Puffs, Berry Field, Pokémon Link, Super Training (Gen 6), Poké Beans, Cells/Stickers, Seal Stickers, Poffins, Pokéathlon (HG/SS), Join Avenue (B2/W2), Hall of Fame (Gen 1, 3, 6 and 7), Raids (Gen 8/9 incl. DLC and 7-Star), Battle Passes and Gear (Battle Revolution), Passerby export. Every generation now has a usable save for runtime testing. The remaining sub-editor buttons are shown but disabled with a tooltip |
+| Save sub-editors (SAV tab) | **PARTIAL** — SAV tab with all WinForms buttons/visibility rules, Verify Checksums, Verify All PKMs, box binary export, backup export, PGL JPEG, Korean conversion, Battle Revolution slot selector; editors ported: Items, Trainer Info (every generation), Box Layout, Block Data, Wonder Cards (Gen 4–7), Mail Box (Gen 2–5), Unity Tower, Pokémon Global Link, Chatter, Pokédex (Gen 1–5, 6 X/Y and OR/AS, 7 S/M and US/UM, Let's Go with its capture-record editor, SW/SH, BD/SP, Legends: Arceus, S/V with its DLC variant, Legends: Z-A), Underground (Gen 4 and BD/SP), Secret Base (Gen 3 and OR/AS), Event Flags (Gen 1 reset, Gen 2, Gen 3–7, Let's Go, BD/SP, Legends: Z-A), Friend Safari unlock, Misc Edits (Gen 2, 3, 4, 5 and 8b), Medals (Gen 5), Roamer (Gen 3 and X/Y), Clock/RTC (Gen 2 prompt, Gen 3 editor), Roamer (Gen 3), Honey Tree, Apricorns, Geonet (Gen 4), O-Powers, Pokéblocks, Poké Puffs, Berry Field, Pokémon Link, Super Training (Gen 6), Poké Beans, Cells/Stickers, Seal Stickers, Poffins, Pokéathlon (HG/SS), Join Avenue (B2/W2), Hall of Fame (Gen 1, 3, 6 and 7), Raids (Gen 8/9 incl. DLC and 7-Star), Battle Passes and Gear (Battle Revolution), Battle Videos (Generation 4 DLC button), Fashion/hair unlocks (S/V and
+Legends: Z-A), Donut pocket with its flavour radar chart and bulk generator (Legends: Z-A Mega Dimension), Passerby export. Every generation now has a usable save for runtime testing. The remaining sub-editor buttons are shown but disabled with a tooltip |
 | Tools (databases, batch editor, report grid, folder list, box dump) | **RUNTIME VERIFIED** — PKM Database (load/filter/search/view), Encounter Database (filters, criteria grid, search), Mystery Gift Database, Batch Editor (20/20 entities edited, saved and re-read from the exported file), Box Data Report (sortable grid, clipboard/CSV export), Folder List, Dump Boxes / Dump Box. KChart is not ported |
 | Settings editor | **RUNTIME VERIFIED** — reflection based property grid (checkbox/enum/number/text/colour, nested objects), page list, blank-save version picker, reset; an edit was persisted to `cfg.json` |
 | Clipboard (Showdown export, legality report, QR image) | **RUNTIME VERIFIED** (Showdown set export shows the copied text); QR image **NOT YET TESTED** |
@@ -191,10 +192,9 @@ desktop entry for the current user. Both publish modes were launched on Linux Mi
 
 `KChart`, `SAV_GroupViewer`, `SaveHandlerTroubleshooter`, `EntitySearchSetup`, and the remaining per-game
 `Subforms/Save Editors/*`:
-`SAV_DLC4`/`5`, `SAV_BattlePass`, `SAV_Gear`,
+`SAV_DLC5` (Generation 5 C-Gear skins / Pokédex skins),
 `SAV_FestivalPlaza`,
-`SAV_Fashion9`, `SAV_Donut9a`,
-`PokePreview` (hover preview), `SplashScreen`, sounds (`SystemSounds`),
+`PokePreview` (hover preview), `SummaryPreviewer`, `SplashScreen`, sounds (`SystemSounds`),
 developer/translation update utilities (`DevUtil`).
 
 Plugins are loaded (see the status table); the plugins themselves live outside this repository.
@@ -239,8 +239,23 @@ as Sun/Moon. Let's Go keeps its footer inside the first `0xB8800` bytes, so the 
 detection also wants the block number `0x13` at `0xB8800 - 0x200 + 0xB0`, and the dex magic goes at the file-relative
 block offset `0x2A00` (the `0xB8600` base only locates the footer table, not the blocks).
 
-The remaining effort is the long tail of per-game save sub-editors (secret bases, Pokéathlon, Battle Pass, Gear,
-Join Avenue, Festival Plaza, fashion/donut editors and the BD/SP and Z-A flag editors), the hover preview window,
+**A Legends: Z-A save at the Mega Dimension revision is not available.** The donut pocket block (`0xBE007476`) only
+exists from save revision 1, and the real Z-A save supplied by the repository owner is the base revision, so the
+Donuts button is hidden there. The scratchpad tool therefore synthesises the fixture: it decrypts the real save's
+block list, retypes the revision block to 1, inserts a zeroed object block for the donut pocket, and pads the file to
+the shipped 2.0.0 length (`0x309FA6`) with one unused object block, because save detection is size gated. The result
+loads through the normal detection path and the donut editor is **RUNTIME VERIFIED** against it.
+
+**No supplied Generation 4 save contains a Battle Video.** All four slots of the real HG/SS save are uninitialised, so
+the scratchpad tool writes one: it deflates entities out of the save's own boxes into the video's first two teams,
+fills the trainer names, refreshes the checksums, drops the block at `0x27000` and points the general block's key
+table at it. The Battle Video editor is **RUNTIME VERIFIED** against that fixture.
+
+**`BattleVideo4.DeflateFromPK4` drops the species and held item.** `InflateToPK4` reads them back from `video[6..0xA]`,
+but the deflate direction never writes that pair, so a round-trip loses the species. This is upstream Core behaviour
+and was not changed; the fixture generator writes those four bytes itself.
+
+The remaining effort is Festival Plaza, the Generation 5 DLC (C-Gear/Pokédex skin) editor, the hover preview window,
 and the remaining tools.
 
 ## Deliberate deviations
