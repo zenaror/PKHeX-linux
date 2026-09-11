@@ -23,9 +23,13 @@ Development branch: `feature/linuxport`. Primary target: Linux Mint (x11/Wayland
 | Legality UI (report dialog, slot indicators, copy to clipboard) | **RUNTIME VERIFIED** (slot indicators, report text); report dialog/clipboard **NOT YET TESTED** |
 | Mystery Gift UI | **RUNTIME VERIFIED** — Mystery Gift Database (947 gifts listed for a Gen 5 save, filters, view/save gift/save PKM) and the Wonder Card album editor (Gen 5 and Gen 6 layouts opened against real block data; the Gen 4 PGT/PCD layout is **BUILD VERIFIED** only, see Known blockers) |
 | Entity sub-editors (Ribbons, Memories, Medals, Tech Records, Move Shop, Plus Records, Trash bytes) | **RUNTIME VERIFIED** — all seven ported; ribbons round-tripped, memories rendered per generation, TR/Plus/Move Shop flag grids with legality colouring, Ctrl+click trash byte editor writes back to the name box |
-| Save sub-editors (SAV tab) | **PARTIAL** — SAV tab with all WinForms buttons/visibility rules, Verify Checksums, Verify All PKMs, box binary export, backup export, PGL JPEG, Korean conversion, Battle Revolution slot selector; editors ported: Items, Trainer Info (every generation), Box Layout, Block Data, Wonder Cards (Gen 4–7), Mail Box (Gen 2–5), Unity Tower, Pokémon Global Link, Chatter, Pokédex (Gen 1–5, 6 X/Y and OR/AS, 7 S/M and US/UM, Let's Go with its capture-record editor, SW/SH, BD/SP, Legends: Arceus, S/V with its DLC variant, Legends: Z-A), Underground (Gen 4 and BD/SP), Secret Base (Gen 3 and OR/AS), Event Flags (Gen 1 reset, Gen 2, Gen 3–7, Let's Go, BD/SP, Legends: Z-A), Friend Safari unlock, Misc Edits (Gen 2, 3, 4, 5 and 8b), Medals (Gen 5), Roamer (Gen 3 and X/Y), Clock/RTC (Gen 2 prompt, Gen 3 editor), Roamer (Gen 3), Honey Tree, Apricorns, Geonet (Gen 4), O-Powers, Pokéblocks, Poké Puffs, Berry Field, Pokémon Link, Super Training (Gen 6), Poké Beans, Cells/Stickers, Seal Stickers, Poffins, Pokéathlon (HG/SS), Join Avenue (B2/W2), Hall of Fame (Gen 1, 3, 6 and 7), Raids (Gen 8/9 incl. DLC and 7-Star), Battle Passes and Gear (Battle Revolution), Battle Videos (Generation 4 DLC button), Fashion/hair unlocks (S/V and
-Legends: Z-A), Donut pocket with its flavour radar chart and bulk generator (Legends: Z-A Mega Dimension), Passerby export. Every generation now has a usable save for runtime testing. The remaining sub-editor buttons are shown but disabled with a tooltip |
-| Tools (databases, batch editor, report grid, folder list, box dump) | **RUNTIME VERIFIED** — PKM Database (load/filter/search/view), Encounter Database (filters, criteria grid, search), Mystery Gift Database, Batch Editor (20/20 entities edited, saved and re-read from the exported file), Box Data Report (sortable grid, clipboard/CSV export), Folder List, Dump Boxes / Dump Box. KChart is not ported |
+| Save sub-editors (SAV tab) | **PARTIAL** — SAV tab with all WinForms buttons/visibility rules, Verify Checksums, Verify All PKMs, box binary export, backup export, PGL JPEG, Korean conversion, Battle Revolution slot selector; editors ported: Items, Trainer Info (every generation), Box Layout, Block Data, Wonder Cards (Gen 4–7), Mail Box (Gen 2–5), Unity Tower, Pokémon Global Link, Chatter, Pokédex (Gen 1–5, 6 X/Y and OR/AS, 7 S/M and US/UM, Let's Go with its capture-record editor, SW/SH, BD/SP, Legends: Arceus, S/V with its DLC variant, Legends: Z-A), Underground (Gen 4 and BD/SP), Secret Base (Gen 3 and OR/AS), Event Flags (Gen 1 reset, Gen 2, Gen 3–7, Let's Go, BD/SP, Legends: Z-A), Friend Safari unlock, Misc Edits (Gen 2, 3, 4, 5 and 8b), Medals (Gen 5), Roamer (Gen 3 and X/Y), Clock/RTC (Gen 2 prompt, Gen 3 editor), Roamer (Gen 3), Honey Tree, Apricorns, Geonet (Gen 4), O-Powers, Pokéblocks, Poké Puffs, Berry Field, Pokémon Link, Super Training (Gen 6), Poké Beans, Cells/Stickers, Seal Stickers, Poffins, Pokéathlon (HG/SS), Join Avenue (B2/W2), Hall of Fame (Gen 1, 3, 6 and 7), Raids (Gen 8/9 incl. DLC and 7-Star), Battle Passes and Gear (Battle Revolution), Battle Videos (Generation 4 DLC button), Generation 5 DLC I/O (C-Gear
+skin with PNG import/export, Pokédex skin, Battle Videos, Musicals, Memory Link, PWT, Pokéstar Studios), Festival
+Plaza (Generation 7, including the US/UM Battle Agency tab), Fashion/hair unlocks (S/V and Legends: Z-A), Donut pocket
+with its flavour radar chart and bulk generator (Legends: Z-A Mega Dimension), registered-team viewer for Stadium
+saves, Passerby export. Every generation now has a usable save for runtime testing. The remaining sub-editor buttons are shown but disabled with a tooltip |
+| Tools (databases, batch editor, report grid, folder list, box dump) | **RUNTIME VERIFIED** — PKM Database (load/filter/search/view), Encounter Database (filters, criteria grid, search), Mystery Gift Database, Batch Editor (20/20 entities edited, saved and re-read from the exported file), Box Data Report (sortable grid, clipboard/CSV export), Folder List, Dump Boxes / Dump Box, KChart (Shift on the PKM Database menu item), and the Troubleshooting menu (force-load a save through a chosen handler, open a file from clipboard hex, plugin list) |
+| Slot hover preview | **RUNTIME VERIFIED** — the rich hover card (ball/name/gender header, Showdown paste, moves with type icons and illegal moves in the warning colour, first legality hint, encounter summary) and the plain-text fallback. Cries are played through a command-line audio player when one is installed |
 | Settings editor | **RUNTIME VERIFIED** — reflection based property grid (checkbox/enum/number/text/colour, nested objects), page list, blank-save version picker, reset; an edit was persisted to `cfg.json` |
 | Clipboard (Showdown export, legality report, QR image) | **RUNTIME VERIFIED** (Showdown set export shows the copied text); QR image **NOT YET TESTED** |
 | File dialogs (open/save/folder via Avalonia storage provider) | **BUILD VERIFIED** — not exercised (automation cannot drive the portal dialog) |
@@ -190,12 +194,7 @@ desktop entry for the current user. Both publish modes were launched on Linux Mi
 
 ## Unported components
 
-`KChart`, `SAV_GroupViewer`, `SaveHandlerTroubleshooter`, `EntitySearchSetup`, and the remaining per-game
-`Subforms/Save Editors/*`:
-`SAV_DLC5` (Generation 5 C-Gear skins / Pokédex skins),
-`SAV_FestivalPlaza`,
-`PokePreview` (hover preview), `SummaryPreviewer`, `SplashScreen`, sounds (`SystemSounds`),
-developer/translation update utilities (`DevUtil`).
+`EntitySearchSetup` and the developer/translation update utilities (`DevUtil`).
 
 Plugins are loaded (see the status table); the plugins themselves live outside this repository.
 
@@ -255,10 +254,31 @@ table at it. The Battle Video editor is **RUNTIME VERIFIED** against that fixtur
 but the deflate direction never writes that pair, so a round-trip loses the species. This is upstream Core behaviour
 and was not changed; the fixture generator writes those four bytes itself.
 
-The remaining effort is Festival Plaza, the Generation 5 DLC (C-Gear/Pokédex skin) editor, the hover preview window,
-and the remaining tools.
+**No Stadium save is available.** `BlankSaveFile.Get` does not support any Stadium version, so the registered-team
+viewer is tested against a fixture: `new SAV2Stadium(japanese: false)` plus the `P3v0` list-footer magic written where
+the box list footer lives (detection is footer gated), with a few entities placed into a team. The viewer is
+**RUNTIME VERIFIED** against that fixture.
+
+**No Black/White (non-B2/W2) save is available**, so the Generation 5 DLC editor's BW-specific code paths
+(`CGearBackgroundBW`, the BW musical size, the shift-format palette conversion) are build-verified only; the B2/W2
+paths are runtime-verified against the repository owner's save, including the real C-Gear skin it contains.
+
+The remaining effort is packaging/CI and the developer-only translation utilities.
 
 ## Deliberate deviations
+
+**The hover preview is a tooltip, not a window.** The WinForms `PokePreview` is a custom-painted, non-activating,
+top-most form positioned with `SetWindowPos` and shown with `ShowWindowAsync`. Avalonia's tooltip already shows
+without taking focus and is placed next to the pointer, so the same card is built as tooltip content instead. Fluent
+caps tooltips at 320px, which clipped the paste and the encounter lines, so `App.axaml` raises the cap to 640.
+
+**Cries are played through an external command-line player.** `System.Media.SoundPlayer` is Windows-only and the base
+framework has no cross-platform audio API. Rather than take an audio dependency for one optional cue, the wave file is
+handed to the first of `paplay`, `aplay`, `pw-play` or `ffplay` found on `PATH`. If none is installed nothing is
+played and every other hover behaviour is unaffected.
+
+**The Pokédex skin is import/export only.** The WinForms editor's `LoadPokedexSkin` is an empty method upstream (the
+tile layout is not decoded), so the Avalonia tab offers the same raw import/export and says so.
 
 **Work rows use a fixed-width label column.** The WinForms editors lay the name, picker and value out in a table
 that sizes its columns to the widest row. Each Avalonia row is built independently, so the labels are given a fixed

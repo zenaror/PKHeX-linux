@@ -33,6 +33,12 @@
           <MenuItem x:Name="Menu_BatchEditor" Header="_Batch Editor" HotKey="Ctrl+M" InputGesture="Ctrl+M" Click="MainMenuBatchEditor" />
         </MenuItem>
         <MenuItem x:Name="Menu_Folder" Header="Open _Folder" HotKey="Ctrl+F" InputGesture="Ctrl+F" Click="MainMenuFolder" />
+        <Separator />
+        <MenuItem x:Name="Menu_Troubleshooting" Header="Troubleshooting">
+          <MenuItem x:Name="Menu_ForceLoadSAV" Header="Force Load Save File" HotKey="Ctrl+Alt+L" InputGesture="Ctrl+Alt+L" Click="MainMenuForceLoadSAV" />
+          <MenuItem x:Name="Menu_HexImporter" Header="Open File from Clipboard Hex" HotKey="Ctrl+Alt+I" InputGesture="Ctrl+Alt+I" Click="MainMenuHexImporter" />
+          <MenuItem x:Name="Menu_PluginInfo" Header="Plugin Info" HotKey="Ctrl+Alt+U" InputGesture="Ctrl+Alt+U" Click="MainMenuPluginInfo" />
+        </MenuItem>
       </MenuItem>
       <MenuItem x:Name="Menu_Options" Header="_Options">
         <MenuItem x:Name="Menu_Language" Header="_Language" />

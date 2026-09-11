@@ -57,6 +57,9 @@ public sealed partial class MainWindow : Window
     public static string DatabasePath => Settings.LocalResources.GetDatabasePath();
     public static string MGDatabasePath => Settings.LocalResources.GetMGDatabasePath();
     public static string BackupPath => Settings.LocalResources.GetBackupPath();
+
+    /// <summary>Folder the hover cries are loaded from.</summary>
+    public static string CryPath => Settings.LocalResources.GetCryPath();
     private static string TrainerPath => Settings.LocalResources.GetTrainerPath();
     private static string PluginPath => Settings.LocalResources.GetPluginPath();
 
@@ -198,6 +201,9 @@ public sealed partial class MainWindow : Window
         AddHandler(KeyDownEvent, (_, e) => ModifierKeys = e.KeyModifiers, RoutingStrategies.Tunnel);
         AddHandler(KeyUpEvent, (_, e) => ModifierKeys = GetModifiersAfterKeyUp(e), RoutingStrategies.Tunnel);
         AddHandler(PointerPressedEvent, (_, e) => ModifierKeys = e.KeyModifiers, RoutingStrategies.Tunnel);
+        // Menu items live in their own popup window, so the window-level handlers above never see the modifier that
+        // was held while clicking one. Capture it on the item itself (WinForms reads Control.ModifierKeys directly).
+        Menu_Database.AddHandler(PointerPressedEvent, (_, e) => ModifierKeys = e.KeyModifiers, RoutingStrategies.Tunnel);
 
         // Drag & Drop of files onto the window
         DragDrop.SetAllowDrop(this, true);
@@ -385,6 +391,12 @@ public sealed partial class MainWindow : Window
 
     private async Task MainMenuDatabaseAsync()
     {
+        if (ModifierKeys == KeyModifiers.Shift) // WinForms: Shift opens the personal-table chart instead.
+        {
+            new KChartWindow(C_SAV.SAV).Show(this);
+            return;
+        }
+
         if (!Directory.Exists(DatabasePath))
         {
             await AppDialogs.Alert(this, MsgDatabase, string.Format(MsgDatabaseAdvice, DatabasePath));
@@ -477,6 +489,85 @@ public sealed partial class MainWindow : Window
         var form = new FolderListWindow(s => _ = OpenSAV(s.Clone(), s.Metadata.FilePath!));
         form.Show(this);
     }
+
+    #region Troubleshooting menu
+
+    /// <summary>Opens the save handler troubleshooter (port of <c>Troubleshooting.OpenSaveHandlerTroubleshooter</c>).</summary>
+    private async void MainMenuForceLoadSAV(object? sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var form = new SaveHandlerTroubleshooterWindow(this);
+            await form.ShowDialog(this);
+        }
+        catch (Exception ex) { await AppDialogs.Error(this, ex.Message, ex); }
+    }
+
+    /// <summary>Loads a file pasted into the clipboard as a hex string (port of <c>OpenFileFromClipboardHex</c>).</summary>
+    private async void MainMenuHexImporter(object? sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var hex = (await ClipboardService.GetText(this) ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(hex))
+            {
+                await AppDialogs.Alert(this, MessageStrings.MsgTroubleshootingClipboardEmpty);
+                return;
+            }
+
+            byte[] data;
+            try
+            {
+                data = Convert.FromHexString(hex.Replace(" ", string.Empty));
+            }
+            catch (FormatException)
+            {
+                await AppDialogs.Alert(this, MessageStrings.MsgTroubleshootingClipboardInvalidHex);
+                return;
+            }
+            await OpenFile(data, string.Empty, string.Empty);
+        }
+        catch (Exception ex) { await AppDialogs.Error(this, ex.Message, ex); }
+    }
+
+    /// <summary>Lists the loaded plugins (port of <c>DisplayPluginList</c>).</summary>
+    private async void MainMenuPluginInfo(object? sender, RoutedEventArgs e)
+    {
+        var text = new System.Text.StringBuilder();
+        text.AppendFormat(MessageStrings.MsgTroubleshootingPluginListHeader, Plugins.Count).AppendLine();
+        if (Plugins.Count == 0)
+        {
+            text.AppendLine(MessageStrings.MsgTroubleshootingPluginListEmpty);
+            await AppDialogs.Alert(this, text.ToString());
+            return;
+        }
+
+        List<(IPlugin Plugin, string Group)> loaded = [];
+        foreach (var plugin in Plugins)
+        {
+            var fullName = plugin.GetType().Assembly.FullName;
+            if (fullName is not null)
+            {
+                var culture = fullName.IndexOf("Culture", StringComparison.Ordinal);
+                if (culture != -1)
+                    fullName = fullName[..(culture - 2)];
+                if (fullName.EndsWith(".0", StringComparison.Ordinal))
+                    fullName = fullName[..^2];
+            }
+            loaded.Add(new(plugin, fullName ?? "Unknown"));
+        }
+
+        foreach (var group in loaded.GroupBy(z => z.Group).OrderBy(z => z.Key, StringComparer.Ordinal))
+        {
+            text.AppendLine(group.Key);
+            foreach (var plugin in group.OrderBy(z => z.Plugin.Name, StringComparer.Ordinal))
+                text.AppendLine($"- {plugin.Plugin.Name}");
+        }
+
+        await AppDialogs.Alert(this, text.ToString());
+    }
+
+    #endregion
 
     private void ReloadProgramSettings(PKHeXSettings settings, bool skipCore = false)
     {
