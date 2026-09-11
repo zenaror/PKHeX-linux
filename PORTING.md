@@ -23,7 +23,7 @@ Development branch: `feature/linuxport`. Primary target: Linux Mint (x11/Wayland
 | Legality UI (report dialog, slot indicators, copy to clipboard) | **RUNTIME VERIFIED** (slot indicators, report text); report dialog/clipboard **NOT YET TESTED** |
 | Mystery Gift UI | **RUNTIME VERIFIED** — Mystery Gift Database (947 gifts listed for a Gen 5 save, filters, view/save gift/save PKM) and the Wonder Card album editor (Gen 5 and Gen 6 layouts opened against real block data; the Gen 4 PGT/PCD layout is **BUILD VERIFIED** only, see Known blockers) |
 | Entity sub-editors (Ribbons, Memories, Medals, Tech Records, Move Shop, Plus Records, Trash bytes) | **RUNTIME VERIFIED** — all seven ported; ribbons round-tripped, memories rendered per generation, TR/Plus/Move Shop flag grids with legality colouring, Ctrl+click trash byte editor writes back to the name box |
-| Save sub-editors (SAV tab) | **PARTIAL** — SAV tab with all WinForms buttons/visibility rules, Verify Checksums, Verify All PKMs, box binary export, backup export, PGL JPEG, Korean conversion, Battle Revolution slot selector; editors ported: Items, Trainer Info (every generation), Box Layout, Block Data, Wonder Cards (Gen 4–7), Mail Box (Gen 2–5), Unity Tower, Pokémon Global Link, Chatter, Pokédex (Gen 1–5, 6 X/Y and OR/AS, 7 S/M and US/UM, Let's Go with its capture-record editor, SW/SH, BD/SP, Legends: Arceus, S/V with its DLC variant, Legends: Z-A), Underground (Gen 4 and BD/SP), Secret Base (Gen 3 and OR/AS), Event Flags (Gen 1 reset, Gen 2, Gen 3–7, Legends: Z-A flag/work blocks), Misc Edits (Gen 2, 3, 4, 5 and 8b), Medals (Gen 5), Roamer (Gen 3 and X/Y), Clock/RTC (Gen 2 prompt, Gen 3 editor), Roamer (Gen 3), Honey Tree, Apricorns, Geonet (Gen 4), O-Powers, Pokéblocks, Poké Puffs, Berry Field, Pokémon Link, Super Training (Gen 6), Poké Beans, Cells/Stickers, Seal Stickers, Poffins, Pokéathlon (HG/SS), Join Avenue (B2/W2), Hall of Fame (Gen 1, 3, 6 and 7), Raids (Gen 8/9 incl. DLC and 7-Star), Battle Passes and Gear (Battle Revolution), Passerby export. Every generation now has a usable save for runtime testing. The remaining sub-editor buttons are shown but disabled with a tooltip |
+| Save sub-editors (SAV tab) | **PARTIAL** — SAV tab with all WinForms buttons/visibility rules, Verify Checksums, Verify All PKMs, box binary export, backup export, PGL JPEG, Korean conversion, Battle Revolution slot selector; editors ported: Items, Trainer Info (every generation), Box Layout, Block Data, Wonder Cards (Gen 4–7), Mail Box (Gen 2–5), Unity Tower, Pokémon Global Link, Chatter, Pokédex (Gen 1–5, 6 X/Y and OR/AS, 7 S/M and US/UM, Let's Go with its capture-record editor, SW/SH, BD/SP, Legends: Arceus, S/V with its DLC variant, Legends: Z-A), Underground (Gen 4 and BD/SP), Secret Base (Gen 3 and OR/AS), Event Flags (Gen 1 reset, Gen 2, Gen 3–7, Let's Go, BD/SP, Legends: Z-A), Friend Safari unlock, Misc Edits (Gen 2, 3, 4, 5 and 8b), Medals (Gen 5), Roamer (Gen 3 and X/Y), Clock/RTC (Gen 2 prompt, Gen 3 editor), Roamer (Gen 3), Honey Tree, Apricorns, Geonet (Gen 4), O-Powers, Pokéblocks, Poké Puffs, Berry Field, Pokémon Link, Super Training (Gen 6), Poké Beans, Cells/Stickers, Seal Stickers, Poffins, Pokéathlon (HG/SS), Join Avenue (B2/W2), Hall of Fame (Gen 1, 3, 6 and 7), Raids (Gen 8/9 incl. DLC and 7-Star), Battle Passes and Gear (Battle Revolution), Passerby export. Every generation now has a usable save for runtime testing. The remaining sub-editor buttons are shown but disabled with a tooltip |
 | Tools (databases, batch editor, report grid, folder list, box dump) | **RUNTIME VERIFIED** — PKM Database (load/filter/search/view), Encounter Database (filters, criteria grid, search), Mystery Gift Database, Batch Editor (20/20 entities edited, saved and re-read from the exported file), Box Data Report (sortable grid, clipboard/CSV export), Folder List, Dump Boxes / Dump Box. KChart is not ported |
 | Settings editor | **RUNTIME VERIFIED** — reflection based property grid (checkbox/enum/number/text/colour, nested objects), page list, blank-save version picker, reset; an edit was persisted to `cfg.json` |
 | Clipboard (Showdown export, legality report, QR image) | **RUNTIME VERIFIED** (Showdown set export shows the copied text); QR image **NOT YET TESTED** |
@@ -191,10 +191,9 @@ desktop entry for the current user. Both publish modes were launched on Linux Mi
 
 `KChart`, `SAV_GroupViewer`, `SaveHandlerTroubleshooter`, `EntitySearchSetup`, and the remaining per-game
 `Subforms/Save Editors/*`:
-`SAV_EventWork`/`SAV_FlagWork8b`,
 `SAV_DLC4`/`5`, `SAV_BattlePass`, `SAV_Gear`,
 `SAV_FestivalPlaza`,
-`SAV_Fashion9`, `SAV_Donut9a`, `SAV_FriendSafari`,
+`SAV_Fashion9`, `SAV_Donut9a`,
 `PokePreview` (hover preview), `SplashScreen`, sounds (`SystemSounds`),
 developer/translation update utilities (`DevUtil`).
 
@@ -245,6 +244,10 @@ Join Avenue, Festival Plaza, fashion/donut editors and the BD/SP and Z-A flag ed
 and the remaining tools.
 
 ## Deliberate deviations
+
+**Work rows use a fixed-width label column.** The WinForms editors lay the name, picker and value out in a table
+that sizes its columns to the widest row. Each Avalonia row is built independently, so the labels are given a fixed
+width with ellipsis and a tooltip instead; without it the pickers stagger from row to row.
 
 **Checkbox grid cells toggle on a single click.** Avalonia's `DataGridCheckBoxColumn` renders a non-interactive
 glyph until the cell enters edit mode, so flipping one takes a double click followed by a keypress; the WinForms
@@ -340,6 +343,11 @@ instead, but that is a deliberate deviation and has not been made.
     the fashion property grid with its enum pickers.
   * Pokédex, shared editor: X/Y (native/foreign origin flags), OR/AS (DexNav seen and obtained counters, no origin flag)
     and Sun/Moon (entry list with the per-form entries, form picker, nine language flags).
+  * The remaining flag/work editors. BD/SP on a Brilliant Diamond fixture: the Flags, System and Work pages with
+    their category sub-tabs, named entries from the label file and per-page search, and the raw-index bar at the
+    bottom; setting a flag, saving and reopening reads it back. Let's Go on a patched Let's Go fixture: the event
+    flags grouped into Vanish/Event/System with their descriptions (the roaming legendaries, the gift starters) and
+    the event constants with their predefined pickers. The Friend Safari button prompts and unlocks every slot.
   * Battle Revolution, on a real Pokémon Battle Revolution save: the Gear editor lists every piece with its
     character style, category and unlock flag (badge rows labelled as shared across all styles), and "Reset Gear to
     Default" clears everything but the starting cap. The Battle Pass editor lists all the passes with their type and
