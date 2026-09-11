@@ -460,8 +460,28 @@ public sealed partial class SAVEditorView : UserControl, ISaveHost, ISaveFilePro
     /// <summary>An entity (or file) was dropped on a slot.</summary>
     public void SlotDrop(SlotView view, DragEventArgs e) => _ = SlotDropCore(view, e);
 
-    public void SlotPointerEntered(ISlotViewer<SlotView> viewer, SlotView view) => view.Cursor = new Cursor(StandardCursorType.Hand);
-    public void SlotPointerExited(ISlotViewer<SlotView> viewer, SlotView view) => view.Cursor = Cursor.Default;
+    private readonly Hover.SummaryPreviewer HoverPreview = new();
+
+    public void SlotPointerEntered(ISlotViewer<SlotView> viewer, SlotView view)
+    {
+        view.Cursor = new Cursor(StandardCursorType.Hand);
+        try
+        {
+            var info = viewer.GetSlotData(view);
+            HoverPreview.Show(view, info.Read(viewer.SAV), info.Type);
+        }
+        catch (Exception ex)
+        {
+            // A hover must never take the editor down; the slot keeps whatever tooltip it already had.
+            System.Diagnostics.Debug.WriteLine($"Hover preview failed: {ex.Message}");
+        }
+    }
+
+    public void SlotPointerExited(ISlotViewer<SlotView> viewer, SlotView view)
+    {
+        view.Cursor = Cursor.Default;
+        HoverPreview.Clear();
+    }
 
     private async Task OmniClick(SlotViewInfo<SlotView> info, KeyModifiers z)
     {

@@ -36,7 +36,22 @@ public sealed class App : Application
 #if !DEBUG
             Dispatcher.UIThread.UnhandledException += UIThreadException;
 #endif
+            SplashWindow? splash = null;
+            if (!settings.Startup.SkipSplashScreen)
+            {
+                splash = new SplashWindow();
+                splash.Show();
+            }
+
             var main = new MainWindow();
+            if (splash is not null)
+            {
+                main.Opened += (_, _) =>
+                {
+                    splash.Close();
+                    main.Activate();
+                };
+            }
             desktop.MainWindow = main;
             desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
         }

@@ -5,5 +5,12 @@
   <Application.Styles>
     <FluentTheme />
     <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+    <!--
+      Fluent caps tooltips at 320px, which clips the Showdown paste and the encounter summary in the slot hover
+      preview (WinForms tooltips are not capped). Widen the cap; the app's plain tooltips are far shorter than this.
+    -->
+    <Style Selector="ToolTip">
+      <Setter Property="MaxWidth" Value="640" />
+    </Style>
   </Application.Styles>
 </Application>
