@@ -119,7 +119,7 @@ public sealed partial class SAVEditorView
             AddToolButton(FLP_SAVtools, b);
 
         // Sub-editors not yet ported: keep the button (for parity/visibility rules) but disable it.
-        Button[] ported = [B_OpenTrainerInfo, B_OpenItemPouch, B_OpenBoxLayout, B_OpenWondercards, B_MailBox, B_OpenBerryField, B_OpenLinkInfo, B_OpenSuperTraining, B_OpenMedalsEditor, B_OpenUnityTowerEditor, B_OpenGlobalLink, B_OpenChatterEditor, B_OpenPokedex, B_OpenEventFlags, B_OpenMiscEditor, B_OpenRTCEditor, B_Roamer, B_OUTPasserby, B_OpenHoneyTreeEditor, B_OpenApricorn, B_OpenOPowers, B_OpenPokeblocks, B_OpenHallofFame, B_OpenGeonetEditor, B_OpenPokepuffs, B_OpenPokeBeans, B_CellsStickers, B_OpenSealStickers, B_Poffins, B_OpenUGSEditor, B_Blocks, B_Raids, B_RaidsDLC1, B_RaidsDLC2, B_RaidsSevenStar];
+        Button[] ported = [B_OpenTrainerInfo, B_OpenItemPouch, B_OpenBoxLayout, B_OpenWondercards, B_MailBox, B_OpenBerryField, B_OpenLinkInfo, B_OpenSuperTraining, B_OpenMedalsEditor, B_OpenUnityTowerEditor, B_OpenGlobalLink, B_OpenChatterEditor, B_OpenPokedex, B_OpenEventFlags, B_OpenMiscEditor, B_OpenRTCEditor, B_Roamer, B_OUTPasserby, B_OpenHoneyTreeEditor, B_OpenApricorn, B_OpenOPowers, B_OpenPokeblocks, B_OpenHallofFame, B_OpenGeonetEditor, B_OpenPokepuffs, B_OpenPokeBeans, B_CellsStickers, B_OpenSealStickers, B_Poffins, B_OpenUGSEditor, B_Blocks, B_Raids, B_RaidsDLC1, B_RaidsDLC2, B_RaidsSevenStar, B_OpenSecretBase];
         foreach (var b in tools.Except(ported))
         {
             b.IsEnabled = false;
@@ -169,6 +169,7 @@ public sealed partial class SAVEditorView
         B_OpenOPowers.Click += async (_, _) => await OpenDialog(() => new OPowerWindow((ISaveBlock6Main)SAV));
         B_OpenPokeblocks.Click += async (_, _) => await OpenDialog(() => new PokeBlockORASWindow((SAV6AO)SAV));
         B_OpenHallofFame.Click += async (_, _) => await ClickHallOfFame();
+        B_OpenSecretBase.Click += async (_, _) => await ClickSecretBase();
         B_OpenGeonetEditor.Click += async (_, _) => await OpenDialog(() => new Geonet4Window((SAV4)SAV));
         B_OpenPokepuffs.Click += async (_, _) => await OpenDialog(() => new PokepuffWindow((ISaveBlock6Main)SAV));
         B_OpenPokeBeans.Click += async (_, _) => await OpenDialog(() => new PokebeanWindow((SAV7)SAV));
@@ -234,6 +235,7 @@ public sealed partial class SAVEditorView
         B_ConvertKorean.IsVisible = sav is SAV4;
         B_OpenPokeblocks.IsVisible = sav is SAV6AO;
         B_OpenSecretBase.IsVisible = sav is SAV6AO or SAV3 { LargeBlock: ISaveBlock3LargeHoenn };
+        B_OpenSecretBase.IsEnabled = sav is SAV6AO or SAV3 { LargeBlock: ISaveBlock3LargeHoenn };
         B_OpenPokepuffs.IsVisible = sav is ISaveBlock6Main;
         B_JPEG.IsVisible = B_OpenLinkInfo.IsVisible = B_OpenSuperTraining.IsVisible = B_OUTPasserby.IsVisible = sav is ISaveBlock6Main;
         B_OpenBoxLayout.IsVisible = sav is IBoxDetailName;
@@ -242,7 +244,7 @@ public sealed partial class SAVEditorView
         if (!B_OpenWondercards.IsEnabled)
             ToolTip.SetTip(B_OpenWondercards, NotPortedTip);
         B_OpenHallofFame.IsVisible = sav is ISaveBlock6Main or SAV7 or SAV3 { IsMisconfiguredSize: false } or SAV1;
-        B_OpenHallofFame.IsEnabled = sav is SAV7 or SAV1 or SAV6; // the Gen 3 hall of fame editor is not ported
+        B_OpenHallofFame.IsEnabled = sav is SAV7 or SAV1 or SAV6 or SAV3 { IsMisconfiguredSize: false };
         if (!B_OpenHallofFame.IsEnabled)
             ToolTip.SetTip(B_OpenHallofFame, NotPortedTip);
         B_OpenOPowers.IsVisible = sav is ISaveBlock6Main;
@@ -270,9 +272,7 @@ public sealed partial class SAVEditorView
 
         B_OpenHoneyTreeEditor.IsVisible = sav is SAV4Sinnoh;
         B_OpenUGSEditor.IsVisible = sav is SAV4Sinnoh or SAV8BS;
-        B_OpenUGSEditor.IsEnabled = sav is SAV8BS; // the Gen 4 underground editor is not ported
-        if (!B_OpenUGSEditor.IsEnabled)
-            ToolTip.SetTip(B_OpenUGSEditor, NotPortedTip);
+        B_OpenUGSEditor.IsEnabled = sav is SAV8BS or SAV4Sinnoh;
         B_OpenGeonetEditor.IsVisible = sav is SAV4;
         B_OpenGlobalLink.IsVisible = B_OpenUnityTowerEditor.IsVisible = sav is SAV5;
         B_OpenJoinAvenueEditor.IsVisible = B_OpenMedalsEditor.IsVisible = sav is SAV5B2W2;
@@ -598,6 +598,8 @@ public sealed partial class SAVEditorView
     {
         if (SAV is SAV8BS bs)
             await OpenDialog(() => new Underground8bWindow(bs));
+        else if (SAV is SAV4Sinnoh s4)
+            await OpenDialog(() => new Underground4Window(s4));
         else
             await AppDialogs.Alert(Owner, NotPortedTip);
     }
@@ -679,6 +681,17 @@ public sealed partial class SAVEditorView
 
     /// <summary>Hall of Fame editor (port of <c>B_HallofFame_Click</c>).</summary>
     /// <remarks>Only the Gen 7 editor is ported; Gen 1/3/6 use their own forms.</remarks>
+    /// <summary>Secret Base editor (port of <c>B_OpenSecretBase_Click</c>).</summary>
+    private async Task ClickSecretBase()
+    {
+        if (SAV is SAV3 { LargeBlock: ISaveBlock3LargeHoenn } s3)
+            await OpenDialog(() => new SecretBase3Window(s3));
+        else if (SAV is SAV6AO s6ao)
+            await OpenDialog(() => new SecretBase6Window(s6ao));
+        else
+            await AppDialogs.Alert(Owner, NotPortedTip);
+    }
+
     private async Task ClickHallOfFame()
     {
         switch (SAV)
@@ -691,6 +704,9 @@ public sealed partial class SAVEditorView
                 return;
             case SAV6 s6:
                 await OpenDialog(() => new HallOfFame6Window(s6));
+                return;
+            case SAV3 s3:
+                await OpenDialog(() => new HallOfFame3Window(s3));
                 return;
             default:
                 await AppDialogs.Alert(Owner, NotPortedTip);
