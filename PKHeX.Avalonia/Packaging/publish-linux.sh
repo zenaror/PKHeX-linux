@@ -19,10 +19,10 @@ dotnet publish "$ROOT/PKHeX.Avalonia/PKHeX.Avalonia.csproj" \
 
 install -Dm644 "$ROOT/icon.png" "$OUT/pkhex.png"
 install -Dm644 "$ROOT/PKHeX.Avalonia/Packaging/pkhex.desktop" "$OUT/pkhex.desktop"
+install -Dm755 "$ROOT/PKHeX.Avalonia/Packaging/install.sh" "$OUT/install.sh"
 
 echo "Published to: $OUT"
 echo "Run with:     $OUT/PKHeX.Avalonia"
 echo
-echo "To install the desktop entry for the current user:"
-echo "  install -Dm644 $OUT/pkhex.png  ~/.local/share/icons/hicolor/128x128/apps/pkhex.png"
-echo "  sed \"s|^Exec=.*|Exec=$OUT/PKHeX.Avalonia %f|\" $OUT/pkhex.desktop > ~/.local/share/applications/pkhex.desktop"
+echo "To add the icon and the menu entry for the current user:"
+echo "  $OUT/install.sh"

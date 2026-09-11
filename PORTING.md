@@ -159,8 +159,15 @@ PKHeX.Avalonia/Packaging/publish-linux.sh publish/linux-x64 --self-contained
 PKHeX.Avalonia/Packaging/publish-linux.sh publish/linux-x64 --framework-dependent
 ```
 
-The script copies `icon.png` and `Packaging/pkhex.desktop` next to the binary and prints the two commands that install the
-desktop entry for the current user. Both publish modes were launched on Linux Mint and opened the main window.
+The script copies `icon.png`, `Packaging/pkhex.desktop` and `Packaging/install.sh` next to the binary. Both publish
+modes were launched on Linux Mint and opened the main window.
+
+`install.sh`, run from inside the published folder, registers the program with the desktop for the current user: it
+installs the icon into the hicolor theme, writes the menu entry pointing at that copy of the binary, and sets the
+GVFS `metadata::custom-icon` on the executable so the file manager shows the icon on it as well. `install.sh --remove`
+undoes it. Nothing needs root and nothing is copied out of the folder, so the program can stay wherever it was
+extracted. An ELF binary cannot carry an icon of its own — this is the only way to get one on Linux; the Windows
+executable does embed `icon.ico` through `ApplicationIcon` (verified: the published PE has `RT_ICON`/`RT_GROUP_ICON`).
 
 ### Handing a build to someone else
 
