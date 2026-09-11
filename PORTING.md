@@ -23,7 +23,7 @@ Development branch: `feature/linuxport`. Primary target: Linux Mint (x11/Wayland
 | Legality UI (report dialog, slot indicators, copy to clipboard) | **RUNTIME VERIFIED** (slot indicators, report text); report dialog/clipboard **NOT YET TESTED** |
 | Mystery Gift UI | **RUNTIME VERIFIED** — Mystery Gift Database (947 gifts listed for a Gen 5 save, filters, view/save gift/save PKM) and the Wonder Card album editor (Gen 5 and Gen 6 layouts opened against real block data; the Gen 4 PGT/PCD layout is **BUILD VERIFIED** only, see Known blockers) |
 | Entity sub-editors (Ribbons, Memories, Medals, Tech Records, Move Shop, Plus Records, Trash bytes) | **RUNTIME VERIFIED** — all seven ported; ribbons round-tripped, memories rendered per generation, TR/Plus/Move Shop flag grids with legality colouring, Ctrl+click trash byte editor writes back to the name box |
-| Save sub-editors (SAV tab) | **PARTIAL** — SAV tab with all WinForms buttons/visibility rules, Verify Checksums, Verify All PKMs, box binary export, backup export, PGL JPEG, Korean conversion, Battle Revolution slot selector; editors ported: Items, Trainer Info (every generation), Box Layout, Block Data, Wonder Cards (Gen 4–7), Mail Box (Gen 2–5), Unity Tower, Pokémon Global Link, Chatter, Pokédex (Gen 1–5, 6 X/Y and OR/AS, 7 S/M and US/UM, Let's Go with its capture-record editor, SW/SH, BD/SP, Legends: Arceus, S/V with its DLC variant, Legends: Z-A), Underground (Gen 4 and BD/SP), Secret Base (Gen 3 and OR/AS), Event Flags (Gen 1 reset, Gen 2, Gen 3–7), Misc Edits (Gen 2, 3, 4, 5 and 8b), Medals (Gen 5), Roamer (Gen 3 and X/Y), Clock/RTC (Gen 2 prompt, Gen 3 editor), Roamer (Gen 3), Honey Tree, Apricorns, Geonet (Gen 4), O-Powers, Pokéblocks, Poké Puffs, Berry Field, Pokémon Link, Super Training (Gen 6), Poké Beans, Cells/Stickers, Seal Stickers, Poffins, Pokéathlon (HG/SS), Hall of Fame (Gen 1, 3, 6 and 7), Raids (Gen 8/9 incl. DLC and 7-Star), Passerby export. Every generation now has a usable save for runtime testing. The remaining sub-editor buttons are shown but disabled with a tooltip |
+| Save sub-editors (SAV tab) | **PARTIAL** — SAV tab with all WinForms buttons/visibility rules, Verify Checksums, Verify All PKMs, box binary export, backup export, PGL JPEG, Korean conversion, Battle Revolution slot selector; editors ported: Items, Trainer Info (every generation), Box Layout, Block Data, Wonder Cards (Gen 4–7), Mail Box (Gen 2–5), Unity Tower, Pokémon Global Link, Chatter, Pokédex (Gen 1–5, 6 X/Y and OR/AS, 7 S/M and US/UM, Let's Go with its capture-record editor, SW/SH, BD/SP, Legends: Arceus, S/V with its DLC variant, Legends: Z-A), Underground (Gen 4 and BD/SP), Secret Base (Gen 3 and OR/AS), Event Flags (Gen 1 reset, Gen 2, Gen 3–7), Misc Edits (Gen 2, 3, 4, 5 and 8b), Medals (Gen 5), Roamer (Gen 3 and X/Y), Clock/RTC (Gen 2 prompt, Gen 3 editor), Roamer (Gen 3), Honey Tree, Apricorns, Geonet (Gen 4), O-Powers, Pokéblocks, Poké Puffs, Berry Field, Pokémon Link, Super Training (Gen 6), Poké Beans, Cells/Stickers, Seal Stickers, Poffins, Pokéathlon (HG/SS), Join Avenue (B2/W2), Hall of Fame (Gen 1, 3, 6 and 7), Raids (Gen 8/9 incl. DLC and 7-Star), Passerby export. Every generation now has a usable save for runtime testing. The remaining sub-editor buttons are shown but disabled with a tooltip |
 | Tools (databases, batch editor, report grid, folder list, box dump) | **RUNTIME VERIFIED** — PKM Database (load/filter/search/view), Encounter Database (filters, criteria grid, search), Mystery Gift Database, Batch Editor (20/20 entities edited, saved and re-read from the exported file), Box Data Report (sortable grid, clipboard/CSV export), Folder List, Dump Boxes / Dump Box. KChart is not ported |
 | Settings editor | **RUNTIME VERIFIED** — reflection based property grid (checkbox/enum/number/text/colour, nested objects), page list, blank-save version picker, reset; an edit was persisted to `cfg.json` |
 | Clipboard (Showdown export, legality report, QR image) | **RUNTIME VERIFIED** (Showdown set export shows the copied text); QR image **NOT YET TESTED** |
@@ -192,7 +192,7 @@ desktop entry for the current user. Both publish modes were launched on Linux Mi
 `KChart`, `SAV_GroupViewer`, `SaveHandlerTroubleshooter`, `EntitySearchSetup`, and the remaining per-game
 `Subforms/Save Editors/*`:
 `SAV_EventWork`/`SAV_FlagWork8b`/`SAV_FlagWork9a`,
-`SAV_DLC4`/`5`, `SAV_BattlePass`, `SAV_Gear`, `SAV_JoinAvenue`,
+`SAV_DLC4`/`5`, `SAV_BattlePass`, `SAV_Gear`,
 `SAV_FestivalPlaza`,
 `SAV_Fashion9`, `SAV_Donut9a`, `SAV_FriendSafari`,
 `PokePreview` (hover preview), `SplashScreen`, sounds (`SystemSounds`),
@@ -236,6 +236,16 @@ block offset `0x2A00` (the `0xB8600` base only locates the footer table, not the
 The remaining effort is the long tail of per-game save sub-editors (secret bases, Pokéathlon, Battle Pass, Gear,
 Join Avenue, Festival Plaza, fashion/donut editors and the BD/SP and Z-A flag editors), the hover preview window,
 and the remaining tools.
+
+## Known cosmetic issues inherited from upstream
+
+**Box wallpapers are stretched to the grid, which distorts the older art.** The grid is sized from the sprite
+dimensions (6x5 slots of 68x56 gives 417x288), and the wallpaper is drawn with `Stretch.Fill`, matching the WinForms
+`BackgroundImageLayout = ImageLayout.Stretch`. Only the Scarlet/Violet art is authored at 417x288 and therefore
+undistorted; everything older is stretched horizontally: R/S +7.7%, D/P +9.0%, B/W and B2/W2 +5.8%, BD/SP +22.2%,
+X/Y +38.2%. Verified pixel-for-pixel against a reference stretch of the source asset, so this is the reference
+behaviour rather than a port defect. Switching to `Stretch.UniformToFill` would remove the distortion by cropping
+instead, but that is a deliberate deviation and has not been made.
 
 ## Known Linux-specific issues
 
@@ -315,6 +325,10 @@ and the remaining tools.
     the fashion property grid with its enum pickers.
   * Pokédex, shared editor: X/Y (native/foreign origin flags), OR/AS (DexNav seen and obtained counters, no origin flag)
     and Sun/Moon (entry list with the per-form entries, form picker, nine language flags).
+  * Join Avenue (B2/W2), on a real Black 2 save: all six tabs open with the save's data — the avenue settings
+    (name, title, experience, rank, ceiling colour, and the remembered visiting-player database), the four entity
+    lists (visitors, fans, occupants, assistants) each with the shared general page, its own per-kind page and
+    import/export, and the player's own entry.
   * Pokéathlon (HG/SS), on a real HeartGold save: all seven pages open — points and the daily-shop and data-card
     unlock flags, the 493-species medal grid with its sprites and five course columns, the 23 global counters (the
     derived total stays read-only), the ten best scores with translated event names, the five course records with
