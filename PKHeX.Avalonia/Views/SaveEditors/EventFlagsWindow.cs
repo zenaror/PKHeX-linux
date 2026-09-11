@@ -396,7 +396,10 @@ public abstract class EventFlagsWindowBase<TSave, TWork> : SaveEditorWindow
 
             var label = UiFactory.Label($"L_W{entry.Index}", entry.Name, clickable: true);
             label.AttachClick(_ => Numeric.Value = 0);
-            label.MinWidth = 240;
+            // Fixed width so the columns line up across rows, as the WinForms table layout does.
+            label.Width = 290;
+            label.TextTrimming = global::Avalonia.Media.TextTrimming.CharacterEllipsis;
+            ToolTip.SetTip(label, entry.Name);
 
             var row = UiFactory.Row(label, Combo, Numeric);
             View = row;

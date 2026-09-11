@@ -119,7 +119,7 @@ public sealed partial class SAVEditorView
             AddToolButton(FLP_SAVtools, b);
 
         // Sub-editors not yet ported: keep the button (for parity/visibility rules) but disable it.
-        Button[] ported = [B_OpenTrainerInfo, B_OpenItemPouch, B_OpenBoxLayout, B_OpenWondercards, B_MailBox, B_OpenBerryField, B_OpenLinkInfo, B_OpenSuperTraining, B_OpenMedalsEditor, B_OpenUnityTowerEditor, B_OpenGlobalLink, B_OpenChatterEditor, B_OpenPokedex, B_OpenEventFlags, B_OpenMiscEditor, B_OpenRTCEditor, B_Roamer, B_OUTPasserby, B_OpenHoneyTreeEditor, B_OpenApricorn, B_OpenOPowers, B_OpenPokeblocks, B_OpenHallofFame, B_OpenGeonetEditor, B_OpenPokepuffs, B_OpenPokeBeans, B_CellsStickers, B_OpenSealStickers, B_Poffins, B_OpenUGSEditor, B_Blocks, B_Raids, B_RaidsDLC1, B_RaidsDLC2, B_RaidsSevenStar, B_OpenSecretBase, B_OpenPokeathlon, B_OpenJoinAvenueEditor, B_OpenGear, B_OpenBattlePass];
+        Button[] ported = [B_OpenTrainerInfo, B_OpenItemPouch, B_OpenBoxLayout, B_OpenWondercards, B_MailBox, B_OpenBerryField, B_OpenLinkInfo, B_OpenSuperTraining, B_OpenMedalsEditor, B_OpenUnityTowerEditor, B_OpenGlobalLink, B_OpenChatterEditor, B_OpenPokedex, B_OpenEventFlags, B_OpenMiscEditor, B_OpenRTCEditor, B_Roamer, B_OUTPasserby, B_OpenHoneyTreeEditor, B_OpenApricorn, B_OpenOPowers, B_OpenPokeblocks, B_OpenHallofFame, B_OpenGeonetEditor, B_OpenPokepuffs, B_OpenPokeBeans, B_CellsStickers, B_OpenSealStickers, B_Poffins, B_OpenUGSEditor, B_Blocks, B_Raids, B_RaidsDLC1, B_RaidsDLC2, B_RaidsSevenStar, B_OpenSecretBase, B_OpenPokeathlon, B_OpenJoinAvenueEditor, B_OpenGear, B_OpenBattlePass, B_OpenFriendSafari];
         foreach (var b in tools.Except(ported))
         {
             b.IsEnabled = false;
@@ -173,6 +173,7 @@ public sealed partial class SAVEditorView
         B_OpenPokeathlon.Click += async (_, _) => await OpenDialog(() => new Pokeathlon4Window((SAV4HGSS)SAV));
         B_OpenJoinAvenueEditor.Click += async (_, _) => await OpenDialog(() => new JoinAvenueWindow((SAV5B2W2)SAV));
         B_OpenGear.Click += async (_, _) => await OpenDialog(() => new Gear4BRWindow((SAV4BR)SAV));
+        B_OpenFriendSafari.Click += async (_, _) => await ClickFriendSafari();
         B_OpenBattlePass.Click += async (_, _) => await OpenDialog(() => new BattlePass4BRWindow(this, (SAV4BR)SAV));
         B_OpenGeonetEditor.Click += async (_, _) => await OpenDialog(() => new Geonet4Window((SAV4)SAV));
         B_OpenPokepuffs.Click += async (_, _) => await OpenDialog(() => new PokepuffWindow((ISaveBlock6Main)SAV));
@@ -257,9 +258,9 @@ public sealed partial class SAVEditorView
         if (!B_OpenPokedex.IsEnabled)
             ToolTip.SetTip(B_OpenPokedex, NotPortedTip);
         B_OpenBerryField.IsVisible = sav is SAV6XY; // OR/AS undocumented
-        B_OpenFriendSafari.IsVisible = sav is SAV6XY;
+        B_OpenFriendSafari.IsVisible = B_OpenFriendSafari.IsEnabled = sav is SAV6XY;
         B_OpenEventFlags.IsVisible = sav is IEventFlag37 or IEventFlagProvider37 or SAV1 or SAV2 or SAV8BS or SAV7b or SAV9ZA;
-        B_OpenEventFlags.IsEnabled = sav is IEventFlag37 or IEventFlagProvider37 or SAV1 or SAV2 or SAV9ZA; // the Gen 7b and 8b flag editors are not ported
+        B_OpenEventFlags.IsEnabled = sav is IEventFlag37 or IEventFlagProvider37 or SAV1 or SAV2 or SAV9ZA or SAV8BS or SAV7b;
         if (!B_OpenEventFlags.IsEnabled)
             ToolTip.SetTip(B_OpenEventFlags, NotPortedTip);
         B_DLC.IsVisible = sav is SAV5 or SAV4HGSS or SAV4Pt;
@@ -580,6 +581,12 @@ public sealed partial class SAVEditorView
             case SAV9ZA sav9za:
                 await OpenDialog(() => new FlagWork9aWindow(sav9za));
                 return;
+            case SAV8BS sav8bs:
+                await OpenDialog(() => new FlagWork8bWindow(sav8bs));
+                return;
+            case SAV7b sav7bFlags:
+                await OpenDialog(() => new EventWork7bWindow(sav7bFlags));
+                return;
             case SAV2 sav2:
                 await OpenDialog(() => new EventFlags2Window(sav2));
                 return;
@@ -689,6 +696,16 @@ public sealed partial class SAVEditorView
 
     /// <summary>Hall of Fame editor (port of <c>B_HallofFame_Click</c>).</summary>
     /// <remarks>Only the Gen 7 editor is ported; Gen 1/3/6 use their own forms.</remarks>
+    /// <summary>Unlocks every Friend Safari slot (port of <c>B_OpenFriendSafari_Click</c>).</summary>
+    private async Task ClickFriendSafari()
+    {
+        if (SAV is not SAV6XY xy)
+            return;
+        var dr = await AppDialogs.Prompt(Owner, MessageBoxButtons.YesNo, MsgSaveGen6FriendSafari, MsgSaveGen6FriendSafariCheatDesc);
+        if (dr == DialogResult.Yes)
+            xy.UnlockAllFriendSafariSlots();
+    }
+
     /// <summary>Secret Base editor (port of <c>B_OpenSecretBase_Click</c>).</summary>
     private async Task ClickSecretBase()
     {
