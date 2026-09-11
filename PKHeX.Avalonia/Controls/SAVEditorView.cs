@@ -85,6 +85,8 @@ public sealed partial class SAVEditorView : UserControl, ISaveHost, ISaveFilePro
         Box.Host = this;
         SL_Party.Host = this;
 
+        Box.B_SearchBox.AttachClickHandled(ClickSearchBox);
+
         // Box manipulation menu: right click the Box tab header (WinForms: Tab_Box.ContextMenuStrip).
         SortMenu = new BoxManipMenu(this);
         Tab_Box.ContextMenu = SortMenu;
@@ -459,6 +461,76 @@ public sealed partial class SAVEditorView : UserControl, ISaveHost, ISaveFilePro
 
     /// <summary>An entity (or file) was dropped on a slot.</summary>
     public void SlotDrop(SlotView view, DragEventArgs e) => _ = SlotDropCore(view, e);
+
+    #region Box search
+
+    private EntitySearchWindow? SearchForm;
+    private Func<PKM, bool>? SearchFilter;
+
+    /// <summary>Opens (or reuses) the box search popout (port of <c>B_SearchBox_Click</c>).</summary>
+    private void ClickSearchBox(KeyModifiers mods)
+    {
+        if (SearchForm is not null)
+        {
+            if (mods == KeyModifiers.Alt)
+            {
+                SearchForm.ForceReset();
+                SearchForm.Hide();
+                return;
+            }
+            if (mods.HasFlag(KeyModifiers.Shift))
+            {
+                BoxSearchSeek(reverse: mods.HasFlag(KeyModifiers.Control));
+                return;
+            }
+        }
+        if (SearchForm?.IsSameSaveFile(SAV) != true)
+            SearchForm = CreateSearcher(SAV, EditEnv.PKMEditor);
+
+        SearchForm.Show();
+        SearchForm.Activate();
+    }
+
+    private EntitySearchWindow CreateSearcher(SaveFile sav, IPKMView edit)
+    {
+        BoxSearchClear();
+        var result = new EntitySearchWindow(edit, sav);
+        result.ResetRequested += UpdateSearch;
+        result.SearchRequested += UpdateSearch;
+        result.SeekNext += (_, _) => BoxSearchSeek();
+        result.SeekPrevious += (_, _) => BoxSearchSeek(reverse: true);
+        return result;
+    }
+
+    private void UpdateSearch(object? sender, EventArgs e)
+    {
+        SearchFilter = SearchForm!.SearchFilter;
+        EditEnv.Slots.Publisher.UpdateFilter(SearchFilter);
+    }
+
+    private void BoxSearchClear()
+    {
+        SearchFilter = null;
+        EditEnv.Slots.Publisher.UpdateFilter(SearchFilter);
+        if (SearchForm is { } form)
+        {
+            form.ResetRequested -= UpdateSearch;
+            form.SearchRequested -= UpdateSearch;
+            form.CloseForReal(); // get rid of previous searcher if it exists
+        }
+        SearchForm = null;
+    }
+
+    private void BoxSearchSeek(bool reverse = false)
+    {
+        if (SearchFilter is null)
+            return;
+        Box.SeekNext(SearchFilter, reverse);
+    }
+
+    public void ApplyNewFilter(Func<PKM, bool>? filter, bool reload = true) => Box.ApplyNewFilter(filter, reload);
+
+    #endregion
 
     private readonly Hover.SummaryPreviewer HoverPreview = new();
 
