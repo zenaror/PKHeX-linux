@@ -11,7 +11,11 @@
     <AssemblyName>PKHeX.Avalonia</AssemblyName>
     <Description>Pokémon Save Editor (Linux / cross-platform frontend)</Description>
     <RootNamespace>PKHeX.Avalonia</RootNamespace>
-    
+    <!--
+      Embedded icon for the executable. Only Windows PE files carry one; a Linux ELF binary cannot, so on Linux the
+      icon comes from the .desktop entry that Packaging/install.sh writes (and from the file manager metadata it sets).
+    -->
+    <ApplicationIcon>..\PKHeX.WinForms\Resources\icon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
