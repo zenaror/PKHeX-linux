@@ -257,7 +257,7 @@ public sealed partial class SAVEditorView
         B_OpenBerryField.IsVisible = sav is SAV6XY; // OR/AS undocumented
         B_OpenFriendSafari.IsVisible = sav is SAV6XY;
         B_OpenEventFlags.IsVisible = sav is IEventFlag37 or IEventFlagProvider37 or SAV1 or SAV2 or SAV8BS or SAV7b or SAV9ZA;
-        B_OpenEventFlags.IsEnabled = sav is IEventFlag37 or IEventFlagProvider37 or SAV1 or SAV2; // Gen 7b/8b/9a flag editors are not ported
+        B_OpenEventFlags.IsEnabled = sav is IEventFlag37 or IEventFlagProvider37 or SAV1 or SAV2 or SAV9ZA; // the Gen 7b and 8b flag editors are not ported
         if (!B_OpenEventFlags.IsEnabled)
             ToolTip.SetTip(B_OpenEventFlags, NotPortedTip);
         B_DLC.IsVisible = sav is SAV5 or SAV4HGSS or SAV4Pt;
@@ -573,6 +573,9 @@ public sealed partial class SAVEditorView
                 return;
             case IEventFlagProvider37 p:
                 await OpenDialog(() => new EventFlagsWindow(p.EventWork, SAV.Version));
+                return;
+            case SAV9ZA sav9za:
+                await OpenDialog(() => new FlagWork9aWindow(sav9za));
                 return;
             case SAV2 sav2:
                 await OpenDialog(() => new EventFlags2Window(sav2));

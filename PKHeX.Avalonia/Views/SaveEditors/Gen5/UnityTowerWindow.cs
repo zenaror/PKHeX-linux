@@ -50,7 +50,7 @@ public sealed class UnityTowerWindow : SaveEditorWindow
         DGV_Geonet.Columns.Add(DataGridUtil.ComboColumn("Point", pointList, nameof(GeonetRow.Point), 130));
         DGV_Geonet.ItemsSource = GeonetRows;
 
-        DGV_UnityTower.Columns.Add(new DataGridCheckBoxColumn { Header = "Floor", Binding = new Binding(nameof(FloorRow.Unlocked)) { Mode = BindingMode.TwoWay }, Width = new DataGridLength(60) });
+        DGV_UnityTower.Columns.Add(DataGridUtil.CheckColumn("Floor", nameof(FloorRow.Unlocked), 60));
         DGV_UnityTower.Columns.Add(new DataGridTextColumn { Header = "Country", Binding = new Binding(nameof(FloorRow.CountryName)), IsReadOnly = true, Width = new DataGridLength(1, DataGridLengthUnitType.Star) });
         DGV_UnityTower.ItemsSource = FloorRows;
         DGV_UnityTower.IsReadOnly = false;

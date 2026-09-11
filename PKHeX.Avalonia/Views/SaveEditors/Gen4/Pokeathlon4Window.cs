@@ -153,12 +153,7 @@ public sealed class Pokeathlon4Window : SaveEditorWindow
         var names = Enum.GetNames<PokeathlonStat4>().Take((int)PokeathlonStat4.Count).ToArray();
         for (int i = 0; i < names.Length; i++)
         {
-            grid.Columns.Add(new DataGridCheckBoxColumn
-            {
-                Header = names[i],
-                Binding = new Binding($"M{i}") { Mode = BindingMode.TwoWay },
-                Width = new DataGridLength(80),
-            });
+            grid.Columns.Add(DataGridUtil.CheckColumn(names[i], $"M{i}", 80));
         }
 
         var giveAll = UiFactory.Button("B_MedalsGiveAll", "Give All");

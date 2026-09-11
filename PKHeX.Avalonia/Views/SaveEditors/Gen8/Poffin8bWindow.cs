@@ -45,7 +45,7 @@ public sealed class Poffin8bWindow : SaveEditorWindow
         dgv.Columns.Add(DataGridUtil.StringComboColumn("Type", ItemNames, nameof(PoffinRow.Type), 150));
         dgv.Columns.Add(Text("Level", nameof(PoffinRow.Level)));
         dgv.Columns.Add(Text("Smooth", nameof(PoffinRow.Taste)));
-        dgv.Columns.Add(new DataGridCheckBoxColumn { Header = "New", Binding = new Binding(nameof(PoffinRow.IsNew)) { Mode = BindingMode.TwoWay }, Width = new DataGridLength(55) });
+        dgv.Columns.Add(DataGridUtil.CheckColumn("New", nameof(PoffinRow.IsNew), 55));
         dgv.Columns.Add(Text("Spicy", nameof(PoffinRow.Spicy)));
         dgv.Columns.Add(Text("Dry", nameof(PoffinRow.Dry)));
         dgv.Columns.Add(Text("Sweet", nameof(PoffinRow.Sweet)));
