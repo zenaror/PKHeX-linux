@@ -1,7 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <!--
+      Linux port: multi-target.
+      * net10.0-windows: upstream System.Drawing (GDI+) resources via Properties/Resources.resx, consumed by PKHeX.WinForms.
+      * net10.0: SkiaSharp bitmaps; PNG files are embedded directly (see Properties/Resources.Skia.cs), consumed by PKHeX.Avalonia.
+      Util/ logic is shared by both targets: "Bitmap"/"Image" resolve to SkiaSharp.SKBitmap on net10.0 (Skia/GlobalUsings.cs).
+      QR image generation is target specific (QR/QREncode.cs + QR/QRImageUtil.cs for GDI+, QR/Skia/ for SkiaSharp).
+    -->
+    <TargetFrameworks>net10.0;net10.0-windows</TargetFrameworks>
     <RootNamespace>PKHeX.Drawing.Misc</RootNamespace>
   </PropertyGroup>
 
@@ -13,10 +20,16 @@
 
   <ItemGroup>
     <PackageReference Include="QRCoder" Version="1.7.0" />
-    <PackageReference Include="System.Resources.Extensions" Version="10.0.1" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows'">
+    <PackageReference Include="System.Resources.Extensions" Version="10.0.1" />
+    <Compile Remove="Skia\**" />
+    <Compile Remove="QR\Skia\**" />
+    <Compile Remove="Properties\Resources.Skia.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows'">
     <Compile Update="Properties\Resources.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -24,11 +37,21 @@
     </Compile>
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows'">
     <EmbeddedResource Update="Properties\Resources.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <!-- QRCoder declares a System.Drawing.Common dependency (only needed for its Windows-only QRCode class); keep it out of the cross-platform build. -->
+    <PackageReference Include="System.Drawing.Common" Version="6.0.0" ExcludeAssets="all" />
+    <Compile Remove="Properties\Resources.Designer.cs" />
+    <Compile Remove="QR\QREncode.cs" />
+    <Compile Remove="QR\QRImageUtil.cs" />
+    <EmbeddedResource Remove="Properties\Resources.resx" />
+    <EmbeddedResource Include="Resources\img\**\*.png" LogicalName="%(Filename)" />
   </ItemGroup>
 
 </Project>

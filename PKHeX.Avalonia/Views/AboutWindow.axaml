@@ -1,0 +1,19 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="PKHeX.Avalonia.Views.AboutWindow"
+        x:Name="About"
+        Title="About"
+        Width="600" Height="480"
+        WindowStartupLocation="CenterOwner">
+  <DockPanel Margin="8">
+    <TextBlock x:Name="L_Thanks" DockPanel.Dock="Bottom" Text="Thanks to all the researchers!" Margin="0,8,0,0" HorizontalAlignment="Center" />
+    <TabControl x:Name="TC_About">
+      <TabItem x:Name="Tab_Shortcuts" Header="Shortcuts">
+        <TextBox x:Name="RTB_Shortcuts" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap" FontFamily="monospace" FontSize="12" />
+      </TabItem>
+      <TabItem x:Name="Tab_Changelog" Header="Changelog">
+        <TextBox x:Name="RTB_Changelog" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap" FontFamily="monospace" FontSize="12" />
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</Window>

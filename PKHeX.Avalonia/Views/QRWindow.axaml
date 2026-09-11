@@ -1,0 +1,13 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="PKHeX.Avalonia.Views.QRWindow"
+        x:Name="QR"
+        Title="PKHeX QR Code (Click QR to Copy Image)"
+        SizeToContent="WidthAndHeight"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+  <StackPanel Margin="8" Spacing="8">
+    <Image x:Name="PB_QR" Stretch="None" Cursor="Hand" />
+    <TextBlock x:Name="L_Info" TextWrapping="Wrap" MaxWidth="480" />
+  </StackPanel>
+</Window>

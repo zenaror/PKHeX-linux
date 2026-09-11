@@ -1,0 +1,68 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:PKHeX.Avalonia.Controls"
+        x:Class="PKHeX.Avalonia.Views.MainWindow"
+        x:Name="Main"
+        Title="PKHeX"
+        Width="1010" Height="600"
+        MinWidth="800" MinHeight="520"
+        WindowStartupLocation="CenterScreen">
+  <DockPanel>
+    <Menu x:Name="menuStrip1" DockPanel.Dock="Top">
+      <MenuItem x:Name="Menu_File" Header="_File">
+        <MenuItem x:Name="Menu_Open" Header="_Open..." HotKey="Ctrl+O" InputGesture="Ctrl+O" Click="MainMenuOpen" />
+        <MenuItem x:Name="Menu_Save" Header="_Save PKM..." HotKey="Ctrl+S" InputGesture="Ctrl+S" Click="MainMenuSave" />
+        <MenuItem x:Name="Menu_ExportSAV" Header="_Export SAV..." HotKey="Ctrl+E" InputGesture="Ctrl+E" Click="ClickExportSAV" />
+        <MenuItem x:Name="Menu_Exit" Header="_Quit" HotKey="Ctrl+Q" InputGesture="Ctrl+Q" Click="MainMenuExit" />
+      </MenuItem>
+      <MenuItem x:Name="Menu_Tools" Header="_Tools">
+        <MenuItem x:Name="Menu_Showdown" Header="_Showdown">
+          <MenuItem x:Name="Menu_ShowdownImportPKM" Header="Import Set from Clipboard" HotKey="Ctrl+T" InputGesture="Ctrl+T" Click="ClickShowdownImportPKM" />
+          <MenuItem x:Name="Menu_ShowdownExportPKM" Header="Export Set to Clipboard" HotKey="Ctrl+Shift+T" InputGesture="Ctrl+Shift+T" Click="ClickShowdownExportPKM" />
+          <MenuItem x:Name="Menu_ShowdownExportParty" Header="Export _Party to Clipboard" Click="ClickShowdownExportParty" />
+          <MenuItem x:Name="Menu_ShowdownExportCurrentBox" Header="Export Current _Box to Clipboard" Click="ClickShowdownExportCurrentBox" />
+        </MenuItem>
+        <MenuItem x:Name="Menu_Data" Header="_Data">
+          <MenuItem x:Name="Menu_LoadBoxes" Header="_Load Boxes" Click="MainMenuBoxLoad" />
+          <MenuItem x:Name="Menu_DumpBoxes" Header="Dump Bo_xes" Click="MainMenuBoxDump" />
+          <MenuItem x:Name="Menu_DumpBox" Header="Dump Bo_x" Click="MainMenuBoxDumpSingle" />
+          <MenuItem x:Name="Menu_Report" Header="Box Data _Report" HotKey="Ctrl+R" InputGesture="Ctrl+R" Click="MainMenuBoxReport" />
+          <MenuItem x:Name="Menu_Database" Header="PKM _Database" HotKey="Ctrl+D" InputGesture="Ctrl+D" Click="MainMenuDatabase" />
+          <MenuItem x:Name="Menu_MGDatabase" Header="Mystery _Gift Database" HotKey="Ctrl+G" InputGesture="Ctrl+G" Click="MainMenuMysteryDB" />
+          <MenuItem x:Name="Menu_EncDatabase" Header="E_ncounter Database" HotKey="Ctrl+N" InputGesture="Ctrl+N" Click="Menu_EncDatabase_Click" />
+          <MenuItem x:Name="Menu_BatchEditor" Header="_Batch Editor" HotKey="Ctrl+M" InputGesture="Ctrl+M" Click="MainMenuBatchEditor" />
+        </MenuItem>
+        <MenuItem x:Name="Menu_Folder" Header="Open _Folder" HotKey="Ctrl+F" InputGesture="Ctrl+F" Click="MainMenuFolder" />
+      </MenuItem>
+      <MenuItem x:Name="Menu_Options" Header="_Options">
+        <MenuItem x:Name="Menu_Language" Header="_Language" />
+        <MenuItem x:Name="Menu_Undo" Header="_Undo Last Change" HotKey="Ctrl+U" InputGesture="Ctrl+U" Click="ClickUndo" IsEnabled="False" />
+        <MenuItem x:Name="Menu_Redo" Header="_Redo Last Change" HotKey="Ctrl+Y" InputGesture="Ctrl+Y" Click="ClickRedo" IsEnabled="False" />
+        <MenuItem x:Name="Menu_Settings" Header="_Settings" HotKey="Ctrl+Shift+S" InputGesture="Ctrl+Shift+S" Click="MainMenuSettings" />
+        <MenuItem x:Name="Menu_About" Header="_About PKHeX" HotKey="Ctrl+P" InputGesture="Ctrl+P" Click="MainMenuAbout" />
+      </MenuItem>
+    </Menu>
+
+    <Grid ColumnDefinitions="520,4,*">
+      <!-- Entity area (WinForms: PKME_Tabs with dragout / PB_Legal on top) -->
+      <DockPanel Grid.Column="0" Margin="6">
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="24,72,*" Height="56" Margin="0,0,0,6">
+          <Image x:Name="PB_Legal" Grid.Column="0" Width="24" Height="24" Stretch="None" VerticalAlignment="Top" />
+          <Border x:Name="dragoutBorder" Grid.Column="1" Width="72" Height="56" Background="Transparent" Cursor="Hand">
+            <Panel>
+              <Image x:Name="dragoutBackground" Stretch="None" />
+              <Image x:Name="dragout" Stretch="None" />
+            </Panel>
+          </Border>
+          <TextBlock x:Name="L_UpdateAvailable" Grid.Column="2" Text="" IsVisible="False" VerticalAlignment="Top" Margin="8,0,0,0" Foreground="DodgerBlue" Cursor="Hand" />
+        </Grid>
+        <controls:PKMEditorView x:Name="PKME_Tabs" />
+      </DockPanel>
+
+      <GridSplitter Grid.Column="1" ResizeDirection="Columns" Background="Transparent" />
+
+      <!-- Save editor area -->
+      <controls:SAVEditorView x:Name="C_SAV" Grid.Column="2" Margin="6" />
+    </Grid>
+  </DockPanel>
+</Window>

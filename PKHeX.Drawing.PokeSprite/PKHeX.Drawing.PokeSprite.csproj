@@ -1,20 +1,28 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <!--
+      Linux port: multi-target.
+      * net10.0-windows: upstream System.Drawing (GDI+) resources via Properties/Resources.resx, consumed by PKHeX.WinForms.
+      * net10.0: SkiaSharp bitmaps; PNG files are embedded directly (see Properties/Resources.Skia.cs), consumed by PKHeX.Avalonia.
+      Sprite logic (Builder/, Util/) is shared by both targets: "Bitmap"/"Image" resolve to SkiaSharp.SKBitmap on net10.0 (Skia/GlobalUsings.cs).
+    -->
+    <TargetFrameworks>net10.0;net10.0-windows</TargetFrameworks>
     <RootNamespace>PKHeX.Drawing.PokeSprite</RootNamespace>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="System.Resources.Extensions" Version="10.0.1" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\PKHeX.Core\PKHeX.Core.csproj" />
     <ProjectReference Include="..\PKHeX.Drawing\PKHeX.Drawing.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows'">
+    <PackageReference Include="System.Resources.Extensions" Version="10.0.1" />
+    <Compile Remove="Skia\**" />
+    <Compile Remove="Properties\Resources.Skia.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows'">
     <Compile Update="Properties\Resources.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -22,11 +30,17 @@
     </Compile>
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows'">
     <EmbeddedResource Update="Properties\Resources.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <Compile Remove="Properties\Resources.Designer.cs" />
+    <EmbeddedResource Remove="Properties\Resources.resx" />
+    <EmbeddedResource Include="Resources\img\**\*.png" LogicalName="%(Filename)" />
   </ItemGroup>
 
 </Project>
