@@ -49,6 +49,13 @@ public sealed class SlotListView : UserControl, ISlotViewer<SlotView>
 
     private void LoadSlots(int count)
     {
+        // The slot views are pooled and re-added on every save load. Clearing the outer panel only detaches the rows,
+        // so each row has to release its slots as well; otherwise re-adding one throws "already has a visual parent".
+        foreach (var child in FLP_Slots.Children)
+        {
+            if (child is Panel row)
+                row.Children.Clear();
+        }
         FLP_Slots.Children.Clear();
         if (count == 0)
         {
