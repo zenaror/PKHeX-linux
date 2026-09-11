@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
 using PKHeX.Core;
+using PKHeX.Core.Searching;
 using PKHeX.Drawing.Misc;
 using PKHeX.Drawing.PokeSprite;
 
@@ -30,6 +31,8 @@ public sealed class BoxView : UserControl, ISlotViewer<SlotView>
     private readonly AvaloniaList<string> BoxNames = [];
     public readonly Button B_BoxLeft = new() { Name = "B_BoxLeft", Content = "<", Width = 32 };
     public readonly Button B_BoxRight = new() { Name = "B_BoxRight", Content = ">", Width = 32 };
+    /// <summary>Opens the box search popout. WinForms floats this button over the grid's right edge.</summary>
+    public readonly Button B_SearchBox = new() { Name = "B_SearchBox", Content = "Search", Padding = new global::Avalonia.Thickness(8, 2), MinHeight = 0 };
     public readonly PokeGrid BoxPokeGrid = new() { Name = "BoxPokeGrid" };
 
     private bool _suppressBoxChange;
@@ -46,6 +49,7 @@ public sealed class BoxView : UserControl, ISlotViewer<SlotView>
         header.Children.Add(B_BoxLeft);
         header.Children.Add(CB_BoxSelect);
         header.Children.Add(B_BoxRight);
+        header.Children.Add(B_SearchBox);
 
         var layout = new StackPanel { Orientation = Orientation.Vertical, HorizontalAlignment = HorizontalAlignment.Center };
         layout.Children.Add(header);
@@ -118,8 +122,28 @@ public sealed class BoxView : UserControl, ISlotViewer<SlotView>
         if (filter == _searchFilter)
             return;
         _searchFilter = filter;
+        _lastSearchResult = null;
         if (reload && SAV.HasBox)
             ResetSlots();
+    }
+
+    private (int Box, int Slot)? _lastSearchResult;
+
+    /// <summary>
+    /// Moves to the next (or previous) slot matching the filter, wrapping around.
+    /// </summary>
+    /// <returns>False if no slot matches.</returns>
+    public bool SeekNext(Func<PKM, bool> searchFilter, bool reverse = false)
+    {
+        // Search from next box, wrapping around
+        var (box, slot) = _lastSearchResult ?? (CurrentBox, -1);
+        if (!SearchUtil.TrySeekNext(SAV, searchFilter, out var result, box, slot, reverse))
+            return false;
+
+        CurrentBox = result.Box;
+        SlotPictureBoxes[result.Slot].Focus();
+        _lastSearchResult = result;
+        return true;
     }
 
     private SlotVisibilityType GetFlags(PKM pk)
