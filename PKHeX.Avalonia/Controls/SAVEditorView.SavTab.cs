@@ -119,7 +119,7 @@ public sealed partial class SAVEditorView
             AddToolButton(FLP_SAVtools, b);
 
         // Sub-editors not yet ported: keep the button (for parity/visibility rules) but disable it.
-        Button[] ported = [B_OpenTrainerInfo, B_OpenItemPouch, B_OpenBoxLayout, B_OpenWondercards, B_MailBox, B_OpenBerryField, B_OpenLinkInfo, B_OpenSuperTraining, B_OpenMedalsEditor, B_OpenUnityTowerEditor, B_OpenGlobalLink, B_OpenChatterEditor, B_OpenPokedex, B_OpenEventFlags, B_OpenMiscEditor, B_OpenRTCEditor, B_Roamer, B_OUTPasserby, B_OpenHoneyTreeEditor, B_OpenApricorn, B_OpenOPowers, B_OpenPokeblocks, B_OpenHallofFame, B_OpenGeonetEditor, B_OpenPokepuffs, B_OpenPokeBeans, B_CellsStickers, B_OpenSealStickers, B_Poffins, B_OpenUGSEditor, B_Blocks, B_Raids, B_RaidsDLC1, B_RaidsDLC2, B_RaidsSevenStar, B_OpenSecretBase];
+        Button[] ported = [B_OpenTrainerInfo, B_OpenItemPouch, B_OpenBoxLayout, B_OpenWondercards, B_MailBox, B_OpenBerryField, B_OpenLinkInfo, B_OpenSuperTraining, B_OpenMedalsEditor, B_OpenUnityTowerEditor, B_OpenGlobalLink, B_OpenChatterEditor, B_OpenPokedex, B_OpenEventFlags, B_OpenMiscEditor, B_OpenRTCEditor, B_Roamer, B_OUTPasserby, B_OpenHoneyTreeEditor, B_OpenApricorn, B_OpenOPowers, B_OpenPokeblocks, B_OpenHallofFame, B_OpenGeonetEditor, B_OpenPokepuffs, B_OpenPokeBeans, B_CellsStickers, B_OpenSealStickers, B_Poffins, B_OpenUGSEditor, B_Blocks, B_Raids, B_RaidsDLC1, B_RaidsDLC2, B_RaidsSevenStar, B_OpenSecretBase, B_OpenPokeathlon];
         foreach (var b in tools.Except(ported))
         {
             b.IsEnabled = false;
@@ -170,6 +170,7 @@ public sealed partial class SAVEditorView
         B_OpenPokeblocks.Click += async (_, _) => await OpenDialog(() => new PokeBlockORASWindow((SAV6AO)SAV));
         B_OpenHallofFame.Click += async (_, _) => await ClickHallOfFame();
         B_OpenSecretBase.Click += async (_, _) => await ClickSecretBase();
+        B_OpenPokeathlon.Click += async (_, _) => await OpenDialog(() => new Pokeathlon4Window((SAV4HGSS)SAV));
         B_OpenGeonetEditor.Click += async (_, _) => await OpenDialog(() => new Geonet4Window((SAV4)SAV));
         B_OpenPokepuffs.Click += async (_, _) => await OpenDialog(() => new PokepuffWindow((ISaveBlock6Main)SAV));
         B_OpenPokeBeans.Click += async (_, _) => await OpenDialog(() => new PokebeanWindow((SAV7)SAV));
@@ -280,7 +281,7 @@ public sealed partial class SAVEditorView
         B_OpenBattlePass.IsVisible = B_OpenGear.IsVisible = sav is SAV4BR;
         B_OpenSealStickers.IsVisible = B_Poffins.IsVisible = sav is SAV8BS;
         B_OpenApricorn.IsVisible = sav is SAV4HGSS;
-        B_OpenPokeathlon.IsVisible = sav is SAV4HGSS;
+        B_OpenPokeathlon.IsVisible = B_OpenPokeathlon.IsEnabled = sav is SAV4HGSS;
         B_OpenRTCEditor.IsVisible = (sav.Generation == 2 && sav is not SAV2Stadium) || sav is SAV3 { SmallBlock: ISaveBlock3SmallHoenn };
         B_MailBox.IsVisible = sav is SAV2 or SAV2Stadium or SAV3 or SAV4 or SAV5;
 
