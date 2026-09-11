@@ -87,12 +87,12 @@ public sealed class Medals5Window : SaveEditorWindow
         DGV_Medals.Columns.Add(new DataGridTextColumn { Header = "Name", Binding = new Binding(nameof(MedalRow.Name)), IsReadOnly = true, Width = new DataGridLength(220) });
         DGV_Medals.Columns.Add(new DataGridTextColumn { Header = "Type", Binding = new Binding(nameof(MedalRow.Type)), IsReadOnly = true, Width = new DataGridLength(110) });
         DGV_Medals.Columns.Add(DataGridUtil.StringComboColumn("State", MedalStateNames, nameof(MedalRow.State), 130));
-        DGV_Medals.Columns.Add(new DataGridCheckBoxColumn { Header = "Unread", Binding = new Binding(nameof(MedalRow.Unread)) { Mode = BindingMode.TwoWay }, Width = new DataGridLength(70) });
+        DGV_Medals.Columns.Add(DataGridUtil.CheckColumn("Unread", nameof(MedalRow.Unread), 90));
         DGV_Medals.Columns.Add(new DataGridTextColumn { Header = "Date", Binding = new Binding(nameof(MedalRow.Date)) { Mode = BindingMode.TwoWay }, Width = new DataGridLength(110) });
         DGV_Medals.ItemsSource = MedalRows;
 
         DGV_Habitat.Columns.Add(new DataGridTextColumn { Header = "#", Binding = new Binding(nameof(HabitatRow.Index)), IsReadOnly = true, Width = new DataGridLength(50) });
-        DGV_Habitat.Columns.Add(new DataGridCheckBoxColumn { Header = "Complete", Binding = new Binding(nameof(HabitatRow.Complete)) { Mode = BindingMode.TwoWay }, Width = new DataGridLength(90) });
+        DGV_Habitat.Columns.Add(DataGridUtil.CheckColumn("Complete", nameof(HabitatRow.Complete), 90));
         DGV_Habitat.Columns.Add(DataGridUtil.StringComboColumn("Grass", HabitatCompletionNames, nameof(HabitatRow.Grass), 170));
         DGV_Habitat.Columns.Add(DataGridUtil.StringComboColumn("Surf", HabitatCompletionNames, nameof(HabitatRow.Surf), 170));
         DGV_Habitat.Columns.Add(DataGridUtil.StringComboColumn("Fish", HabitatCompletionNames, nameof(HabitatRow.Fish), 170));

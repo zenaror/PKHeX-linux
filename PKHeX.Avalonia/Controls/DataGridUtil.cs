@@ -57,4 +57,35 @@ public static class DataGridUtil
             Width = new DataGridLength(width),
         };
     }
+
+    /// <summary>
+    /// Creates a checkbox column that toggles on a single click, two-way bound to the boolean property
+    /// <paramref name="valuePath"/> of the row.
+    /// </summary>
+    /// <remarks>
+    /// Avalonia's <see cref="DataGridCheckBoxColumn"/> renders a non-interactive glyph until the cell enters
+    /// edit mode, so toggling it takes a double click plus a keypress. The WinForms checkbox column toggles on
+    /// the first click, and these grids are mostly used for bulk flag flipping, so a template column is used.
+    /// </remarks>
+    public static DataGridTemplateColumn CheckColumn(string header, string valuePath, double width = 80)
+    {
+        var template = new FuncDataTemplate<object>((_, _) =>
+        {
+            var chk = new CheckBox
+            {
+                HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center,
+                MinHeight = 0,
+                Padding = new Thickness(0),
+            };
+            chk.Bind(ToggleButton.IsCheckedProperty, new Binding(valuePath) { Mode = BindingMode.TwoWay });
+            return chk;
+        });
+        return new DataGridTemplateColumn
+        {
+            Header = header,
+            CellTemplate = template,
+            CellEditingTemplate = template,
+            Width = new DataGridLength(width),
+        };
+    }
 }

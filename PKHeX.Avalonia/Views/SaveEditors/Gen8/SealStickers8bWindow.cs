@@ -44,7 +44,7 @@ public sealed class SealStickers8bWindow : SaveEditorWindow
         dgv.Columns.Add(new DataGridTextColumn { Header = "Name", Binding = new Binding(nameof(StickerRow.Name)), IsReadOnly = true, Width = new DataGridLength(180) });
         dgv.Columns.Add(new DataGridTextColumn { Header = "Count", Binding = new Binding(nameof(StickerRow.Count)) { Mode = BindingMode.TwoWay }, Width = new DataGridLength(90) });
         dgv.Columns.Add(new DataGridTextColumn { Header = "Total", Binding = new Binding(nameof(StickerRow.Total)) { Mode = BindingMode.TwoWay }, Width = new DataGridLength(90) });
-        dgv.Columns.Add(new DataGridCheckBoxColumn { Header = "Obtained", Binding = new Binding(nameof(StickerRow.IsGet)) { Mode = BindingMode.TwoWay }, Width = new DataGridLength(110) });
+        dgv.Columns.Add(DataGridUtil.CheckColumn("Obtained", nameof(StickerRow.IsGet), 110));
         dgv.ItemsSource = Rows;
 
         SetBody(UiFactory.Column(UiFactory.Row(B_All, B_None), dgv));

@@ -43,8 +43,8 @@ public sealed class Underground8bWindow : SaveEditorWindow
         dgv.Columns.Add(new DataGridTextColumn { Header = "Type", Binding = new Binding(nameof(UgRow.Type)), IsReadOnly = true, Width = new DataGridLength(110) });
         dgv.Columns.Add(new DataGridTextColumn { Header = "Name", Binding = new Binding(nameof(UgRow.Name)), IsReadOnly = true, Width = new DataGridLength(190) });
         dgv.Columns.Add(new DataGridTextColumn { Header = "Count", Binding = new Binding(nameof(UgRow.Count)) { Mode = BindingMode.TwoWay }, Width = new DataGridLength(80) });
-        dgv.Columns.Add(new DataGridCheckBoxColumn { Header = "New", Binding = new Binding(nameof(UgRow.IsNew)) { Mode = BindingMode.TwoWay }, Width = new DataGridLength(80) });
-        dgv.Columns.Add(new DataGridCheckBoxColumn { Header = "Favorite", Binding = new Binding(nameof(UgRow.IsFavorite)) { Mode = BindingMode.TwoWay }, Width = new DataGridLength(100) });
+        dgv.Columns.Add(DataGridUtil.CheckColumn("New", nameof(UgRow.IsNew), 80));
+        dgv.Columns.Add(DataGridUtil.CheckColumn("Favorite", nameof(UgRow.IsFavorite), 100));
         dgv.ItemsSource = Rows;
 
         SetBody(UiFactory.Column(UiFactory.Row(B_All, B_None), dgv));
