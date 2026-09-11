@@ -29,6 +29,7 @@ Plaza (Generation 7, including the US/UM Battle Agency tab), Fashion/hair unlock
 with its flavour radar chart and bulk generator (Legends: Z-A Mega Dimension), registered-team viewer for Stadium
 saves, Passerby export, and the block accessor (named blocks for Gen 5-7, the SCBlock dump for Gen 8/9, a plain property grid otherwise). Every generation now has a usable save for runtime testing. Every SAV-tab button is now wired; the few that stay disabled are games upstream's own editor does not handle either (Gen 8/9 Wonder Card album, for instance) and say so in their tooltip |
 | Tools (databases, batch editor, report grid, folder list, box dump) | **RUNTIME VERIFIED** — PKM Database (load/filter/search/view), Encounter Database (filters, criteria grid, search), Mystery Gift Database, Batch Editor (20/20 entities edited, saved and re-read from the exported file), Box Data Report (sortable grid, clipboard/CSV export), Folder List, Dump Boxes / Dump Box, KChart (Shift on the PKM Database menu item), and the Troubleshooting menu (force-load a save through a chosen handler, open a file from clipboard hex, plugin list) |
+| Other tab (daycare + extra slots) | **RUNTIME VERIFIED** — the daycare group (two slots with the occupancy/experience readout, egg flag, editable seed, and the multi-daycare switch) and the extra-slot list (GTS, Fused, PGL, Battle Box, ...) grouped by storage type, all drag/drop and context-menu enabled like the box slots |
 | Box search | **RUNTIME VERIFIED** — the Search button in the box header opens the filter popout (general filters plus the batch-instruction tab); matching slots stay lit and the rest are dimmed, and Next/Previous seek through the matches. Alt resets, Shift seeks without reopening |
 | Slot hover preview | **RUNTIME VERIFIED** — the rich hover card (ball/name/gender header, Showdown paste, moves with type icons and illegal moves in the warning colour, first legality hint, encounter summary) and the plain-text fallback. Cries are played through a command-line audio player when one is installed |
 | Settings editor | **RUNTIME VERIFIED** — reflection based property grid (checkbox/enum/number/text/colour, nested objects), page list, blank-save version picker, reset; an edit was persisted to `cfg.json` |
@@ -278,6 +279,9 @@ caps tooltips at 320px, which clipped the paste and the encounter lines, so `App
 framework has no cross-platform audio API. Rather than take an audio dependency for one optional cue, the wave file is
 handed to the first of `paplay`, `aplay`, `pw-play` or `ffplay` found on `PATH`. If none is installed nothing is
 played and every other hover behaviour is unaffected.
+
+**The daycare "Egg Available" box is read-only.** The WinForms checkbox has no change handler either: it reports the
+flag rather than writing it. The Avalonia one is made non-interactive so it does not look editable.
 
 **The Pokédex skin is import/export only.** The WinForms editor's `LoadPokedexSkin` is an empty method upstream (the
 tile layout is not decoded), so the Avalonia tab offers the same raw import/export and says so.

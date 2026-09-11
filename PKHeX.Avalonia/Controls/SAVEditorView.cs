@@ -17,7 +17,7 @@ namespace PKHeX.Avalonia.Controls;
 /// <summary>
 /// Save file editor: box and party viewers with slot interactions.
 /// </summary>
-/// <remarks>Port of the WinForms <c>SAVEditor</c> (box/party/SAV tabs and <c>ContextMenuSAV</c>); the daycare group and most SAV sub-editors are not ported yet.</remarks>
+/// <remarks>Port of the WinForms <c>SAVEditor</c> (box/party/other/SAV tabs and <c>ContextMenuSAV</c>).</remarks>
 public sealed partial class SAVEditorView : UserControl, ISaveHost, ISaveFileProvider
 {
     public SaveDataEditor<SlotView> EditEnv = null!;
@@ -28,6 +28,8 @@ public sealed partial class SAVEditorView : UserControl, ISaveHost, ISaveFilePro
         SAV = value.SAV;
         value.Slots.Publisher.Subscribe(SL_Party);
         value.Slots.Publisher.Subscribe(Box);
+        value.Slots.Publisher.Subscribe(SL_Daycare);
+        value.Slots.Publisher.Subscribe(SL_Extra);
     }
 
     public SaveFile SAV { get; private set; } = FakeSaveFile.Default;
@@ -47,8 +49,11 @@ public sealed partial class SAVEditorView : UserControl, ISaveHost, ISaveFilePro
     public readonly TabControl tabBoxMulti = new() { Name = "tabBoxMulti" };
     public readonly TabItem Tab_Box = new() { Name = "Tab_Box", Header = "Box" };
     public readonly TabItem Tab_PartyBattle = new() { Name = "Tab_PartyBattle", Header = "Party" };
+    public readonly TabItem Tab_Other = new() { Name = "Tab_Other", Header = "Other" };
     public readonly BoxView Box = new() { Name = "Box" };
     public readonly PartyView SL_Party = new() { Name = "SL_Party" };
+    public readonly DaycareView SL_Daycare = new() { Name = "SL_Daycare" };
+    public readonly SlotListView SL_Extra = new() { Name = "SL_Extra" };
 
     /// <summary>Box manipulation menu (right click the Box tab header).</summary>
     public BoxManipMenu SortMenu { get; private set; } = null!;
@@ -76,14 +81,25 @@ public sealed partial class SAVEditorView : UserControl, ISaveHost, ISaveFilePro
     {
         Tab_Box.Content = Box;
         Tab_PartyBattle.Content = SL_Party;
+        Tab_Other.Content = new StackPanel
+        {
+            Orientation = global::Avalonia.Layout.Orientation.Horizontal,
+            Spacing = 10,
+            Margin = new global::Avalonia.Thickness(8),
+            Children = { SL_Daycare, SL_Extra },
+        };
         tabBoxMulti.Items.Add(Tab_Box);
         tabBoxMulti.Items.Add(Tab_PartyBattle);
+        tabBoxMulti.Items.Add(Tab_Other);
         BuildSavTab();
         tabBoxMulti.Items.Add(Tab_SAV);
         Content = tabBoxMulti;
 
         Box.Host = this;
         SL_Party.Host = this;
+        SL_Daycare.Host = this;
+        SL_Extra.Host = this;
+        SL_Daycare.SwitchRequested += () => _ = SwitchDaycare();
 
         Box.B_SearchBox.AttachClickHandled(ClickSearchBox);
 
@@ -194,7 +210,24 @@ public sealed partial class SAVEditorView : UserControl, ISaveHost, ISaveFilePro
         ResetNonBoxSlots();
     }
 
-    private void ResetNonBoxSlots() => ResetParty();
+    private void ResetNonBoxSlots()
+    {
+        ResetParty();
+        SL_Daycare.ResetSlots();
+        SL_Extra.ResetSlots();
+    }
+
+    /// <summary>Cycles to the next daycare when the save has more than one (port of <c>SwitchDaycare</c>).</summary>
+    private async Task SwitchDaycare()
+    {
+        if (SAV is not IDaycareMulti m)
+            return;
+        var current = string.Format(MessageStrings.MsgSaveSwitchDaycareCurrent, SL_Daycare.DaycareIndex + 1);
+        if (await AppDialogs.Prompt(Owner, MessageBoxButtons.YesNo, MessageStrings.MsgSaveSwitchDaycareView, current) != DialogResult.Yes)
+            return;
+        SL_Daycare.DaycareIndex = (SL_Daycare.DaycareIndex + 1) % m.DaycareCount;
+        SL_Daycare.ResetSlots();
+    }
 
     private void ResetParty()
     {
@@ -227,6 +260,12 @@ public sealed partial class SAVEditorView : UserControl, ISaveHost, ISaveFilePro
         Tab_PartyBattle.IsVisible = hasParty;
         if (hasParty)
             SL_Party.InitializeFromSAV(sav);
+
+        SL_Daycare.FlagIllegal = SL_Extra.FlagIllegal = FlagIllegal;
+        SL_Extra.Initialize(sav.GetExtraSlots(HaX));
+        var hasDaycare = sav is IDaycareStorage or IDaycareMulti;
+        SL_Daycare.IsVisible = hasDaycare;
+        Tab_Other.IsVisible = sav.State.Exportable && (hasDaycare || SL_Extra.SlotCount != 0);
 
         if (tabBoxMulti.SelectedItem is TabItem { IsVisible: false } || tabBoxMulti.SelectedItem is null)
             tabBoxMulti.SelectedItem = hasBox ? Tab_Box : hasParty ? Tab_PartyBattle : null;
