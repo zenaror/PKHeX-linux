@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=PKHeX
+GenericName=Pokémon Save Editor
+Comment=Edit Pokémon save files and entities
+Exec=PKHeX.Avalonia %f
+Icon=pkhex
+Terminal=false
+Categories=Utility;Game;
+MimeType=application/octet-stream;
+StartupWMClass=PKHeX.Avalonia

@@ -1,0 +1,20 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="PKHeX.Avalonia.Views.SelectIndexDialog"
+        Title="PKHeX"
+        SizeToContent="WidthAndHeight"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        MinWidth="360" MaxWidth="720">
+  <DockPanel Margin="16">
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,16,0,0">
+      <Button x:Name="B_OK" Content="OK" MinWidth="80" IsDefault="True" Click="B_OK_Click" />
+      <Button x:Name="B_Cancel" Content="Cancel" MinWidth="80" IsCancel="True" Click="B_Cancel_Click" />
+    </StackPanel>
+    <StackPanel Spacing="12">
+      <SelectableTextBlock x:Name="TB_Text" TextWrapping="Wrap" MaxWidth="640" />
+      <StackPanel x:Name="SP_Options" Spacing="4" />
+    </StackPanel>
+  </DockPanel>
+</Window>

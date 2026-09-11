@@ -79,7 +79,7 @@ public static class SpriteUtil
                 img = Spriter.GetSprite(Spriter.ShadowLugia, Lugia, pk.SpriteItem, pk.IsEgg, shiny, pk.Context);
 
             GetSpriteGlow(pk, 75, 0, 130, out var pixels, out var baseSprite, true);
-            var glowImg = ImageUtil.GetBitmap(pixels, baseSprite.Width, baseSprite.Height, baseSprite.PixelFormat);
+            var glowImg = ImageUtil.GetBitmap(pixels, baseSprite.Width, baseSprite.Height);
             return ImageUtil.LayerImage(glowImg, img, 0, 0);
         }
         if (pk is IGigantamaxReadOnly { CanGigantamax: true })

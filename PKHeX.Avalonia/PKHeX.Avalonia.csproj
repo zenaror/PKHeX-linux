@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <ImplicitUsings>disable</ImplicitUsings>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <AssemblyName>PKHeX.Avalonia</AssemblyName>
+    <Description>Pokémon Save Editor (Linux / cross-platform frontend)</Description>
+    <RootNamespace>PKHeX.Avalonia</RootNamespace>
+    
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="12.1.2" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" Version="12.1.2" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.2" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.2" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="12.1.2" />
+    <!-- Version pinned to match the SkiaSharp used by Avalonia.Skia; PKHeX.Drawing (net10.0) uses the same. -->
+    <PackageReference Include="SkiaSharp" Version="3.119.4" />
+    <!-- QRCoder declares a System.Drawing.Common dependency (only needed for its Windows-only QRCode class); keep it out of the Linux build. -->
+    <PackageReference Include="System.Drawing.Common" Version="6.0.0" ExcludeAssets="all" />
+  </ItemGroup>
+
+  <!--
+    Frontend assets are reused from the WinForms project (linked, not copied) so that upstream updates flow into the Linux port.
+    Logical resource names equal the file name without extension (see Localization/AppResources.cs).
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\icon.png" LogicalName="icon" />
+    <EmbeddedResource Include="..\PKHeX.WinForms\Resources\img\Program\*.png" LogicalName="%(Filename)" />
+    <EmbeddedResource Include="..\PKHeX.WinForms\Resources\img\Accents\*.png" LogicalName="%(Filename)" />
+    <EmbeddedResource Include="..\PKHeX.WinForms\Resources\img\Markings\*.png" LogicalName="%(Filename)" />
+    <EmbeddedResource Include="..\PKHeX.WinForms\Resources\img\Slots\*.png" LogicalName="%(Filename)" />
+    <EmbeddedResource Include="..\PKHeX.WinForms\Resources\img\Bag\*.png" LogicalName="%(Filename)" />
+    <EmbeddedResource Include="..\PKHeX.WinForms\Resources\text\*.txt" LogicalName="%(Filename)" />
+    <EmbeddedResource Include="..\PKHeX.WinForms\Resources\byte\fashion_*" LogicalName="%(Filename)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PKHeX.Core\PKHeX.Core.csproj" />
+    <ProjectReference Include="..\PKHeX.Drawing\PKHeX.Drawing.csproj" />
+    <ProjectReference Include="..\PKHeX.Drawing.PokeSprite\PKHeX.Drawing.PokeSprite.csproj" />
+    <ProjectReference Include="..\PKHeX.Drawing.Misc\PKHeX.Drawing.Misc.csproj" />
+  </ItemGroup>
+
+</Project>

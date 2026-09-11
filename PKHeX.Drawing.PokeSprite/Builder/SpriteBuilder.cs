@@ -150,7 +150,7 @@ public abstract class SpriteBuilder : ISpriteBuilder<Bitmap>
             return null;
 
         SpriteUtil.GetSpriteGlow(b, 0, 165, 255, out var pixels, true);
-        var layer = ImageUtil.GetBitmap(pixels, b.Width, b.Height, b.PixelFormat);
+        var layer = ImageUtil.GetBitmap(pixels, b.Width, b.Height);
         return ImageUtil.LayerImage(b, layer, 0, 0);
     }
 

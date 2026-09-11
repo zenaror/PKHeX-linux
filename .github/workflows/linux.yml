@@ -1,0 +1,42 @@
+# Linux port CI: builds the Avalonia frontend and runs the Core test suite.
+name: Linux
+
+on:
+  push:
+    branches: [ feature/linuxport ]
+  pull_request:
+    branches: [ feature/linuxport ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore PKHeX.Avalonia/PKHeX.Avalonia.csproj
+
+      - name: Build (Debug, warnings as errors)
+        run: dotnet build PKHeX.Avalonia/PKHeX.Avalonia.csproj -c Debug --no-restore
+
+      - name: Build (Release)
+        run: dotnet build PKHeX.Avalonia/PKHeX.Avalonia.csproj -c Release --no-restore
+
+      - name: Core tests
+        run: dotnet test Tests/PKHeX.Core.Tests/PKHeX.Core.Tests.csproj -c Release
+
+      - name: Publish (linux-x64, self-contained)
+        run: dotnet publish PKHeX.Avalonia/PKHeX.Avalonia.csproj -c Release -r linux-x64 --self-contained true -o publish/linux-x64
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PKHeX.Avalonia-linux-x64
+          path: publish/linux-x64
+          if-no-files-found: error
