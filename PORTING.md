@@ -23,7 +23,7 @@ Development branch: `feature/linuxport`. Primary target: Linux Mint (x11/Wayland
 | Legality UI (report dialog, slot indicators, copy to clipboard) | **RUNTIME VERIFIED** (slot indicators, report text); report dialog/clipboard **NOT YET TESTED** |
 | Mystery Gift UI | **RUNTIME VERIFIED** — Mystery Gift Database (947 gifts listed for a Gen 5 save, filters, view/save gift/save PKM) and the Wonder Card album editor (Gen 5 and Gen 6 layouts opened against real block data; the Gen 4 PGT/PCD layout is **BUILD VERIFIED** only, see Known blockers) |
 | Entity sub-editors (Ribbons, Memories, Medals, Tech Records, Move Shop, Plus Records, Trash bytes) | **RUNTIME VERIFIED** — all seven ported; ribbons round-tripped, memories rendered per generation, TR/Plus/Move Shop flag grids with legality colouring, Ctrl+click trash byte editor writes back to the name box |
-| Save sub-editors (SAV tab) | **PARTIAL** — SAV tab with all WinForms buttons/visibility rules, Verify Checksums, Verify All PKMs, box binary export, backup export, PGL JPEG, Korean conversion, Battle Revolution slot selector; editors ported: Items, Trainer Info (every generation), Box Layout, Block Data, Wonder Cards (Gen 4–7), Mail Box (Gen 2–5), Unity Tower, Pokémon Global Link, Chatter, Pokédex (Gen 1–5, 6 X/Y and OR/AS, 7 S/M and US/UM, Let's Go with its capture-record editor, SW/SH, BD/SP, Legends: Arceus, S/V with its DLC variant, Legends: Z-A), Underground (Gen 4 and BD/SP), Secret Base (Gen 3 and OR/AS), Event Flags (Gen 1 reset, Gen 2, Gen 3–7, Legends: Z-A flag/work blocks), Misc Edits (Gen 2, 3, 4, 5 and 8b), Medals (Gen 5), Roamer (Gen 3 and X/Y), Clock/RTC (Gen 2 prompt, Gen 3 editor), Roamer (Gen 3), Honey Tree, Apricorns, Geonet (Gen 4), O-Powers, Pokéblocks, Poké Puffs, Berry Field, Pokémon Link, Super Training (Gen 6), Poké Beans, Cells/Stickers, Seal Stickers, Poffins, Pokéathlon (HG/SS), Join Avenue (B2/W2), Hall of Fame (Gen 1, 3, 6 and 7), Raids (Gen 8/9 incl. DLC and 7-Star), Passerby export. Every generation now has a usable save for runtime testing. The remaining sub-editor buttons are shown but disabled with a tooltip |
+| Save sub-editors (SAV tab) | **PARTIAL** — SAV tab with all WinForms buttons/visibility rules, Verify Checksums, Verify All PKMs, box binary export, backup export, PGL JPEG, Korean conversion, Battle Revolution slot selector; editors ported: Items, Trainer Info (every generation), Box Layout, Block Data, Wonder Cards (Gen 4–7), Mail Box (Gen 2–5), Unity Tower, Pokémon Global Link, Chatter, Pokédex (Gen 1–5, 6 X/Y and OR/AS, 7 S/M and US/UM, Let's Go with its capture-record editor, SW/SH, BD/SP, Legends: Arceus, S/V with its DLC variant, Legends: Z-A), Underground (Gen 4 and BD/SP), Secret Base (Gen 3 and OR/AS), Event Flags (Gen 1 reset, Gen 2, Gen 3–7, Legends: Z-A flag/work blocks), Misc Edits (Gen 2, 3, 4, 5 and 8b), Medals (Gen 5), Roamer (Gen 3 and X/Y), Clock/RTC (Gen 2 prompt, Gen 3 editor), Roamer (Gen 3), Honey Tree, Apricorns, Geonet (Gen 4), O-Powers, Pokéblocks, Poké Puffs, Berry Field, Pokémon Link, Super Training (Gen 6), Poké Beans, Cells/Stickers, Seal Stickers, Poffins, Pokéathlon (HG/SS), Join Avenue (B2/W2), Hall of Fame (Gen 1, 3, 6 and 7), Raids (Gen 8/9 incl. DLC and 7-Star), Battle Passes and Gear (Battle Revolution), Passerby export. Every generation now has a usable save for runtime testing. The remaining sub-editor buttons are shown but disabled with a tooltip |
 | Tools (databases, batch editor, report grid, folder list, box dump) | **RUNTIME VERIFIED** — PKM Database (load/filter/search/view), Encounter Database (filters, criteria grid, search), Mystery Gift Database, Batch Editor (20/20 entities edited, saved and re-read from the exported file), Box Data Report (sortable grid, clipboard/CSV export), Folder List, Dump Boxes / Dump Box. KChart is not ported |
 | Settings editor | **RUNTIME VERIFIED** — reflection based property grid (checkbox/enum/number/text/colour, nested objects), page list, blank-save version picker, reset; an edit was persisted to `cfg.json` |
 | Clipboard (Showdown export, legality report, QR image) | **RUNTIME VERIFIED** (Showdown set export shows the copied text); QR image **NOT YET TESTED** |
@@ -202,9 +202,16 @@ Plugins are loaded (see the status table); the plugins themselves live outside t
 
 ## Known blockers
 
-**No Battle Revolution save.** `SAV_BattlePass` and `SAV_Gear` both take a `SAV4BR`, and `BlankSaveFile.Get` throws
-`ArgumentOutOfRangeException` for that version, so those two editors have no obtainable test data at all. Every other
-remaining sub-editor can be exercised against a fixture or a real save.
+**A Battle Revolution save cannot be generated** — `BlankSaveFile.Get` throws `ArgumentOutOfRangeException` for that
+version — so the Battle Revolution editors are tested against a real save supplied by the repository owner. The
+`PbrSaveData` file inside the Wii save folder is the 0x380000-byte image PKHeX reads; the sibling `data.bin` is a Wii
+container and is not detected.
+
+**`BattlePass.GetPartySlotAtIndex` trips a Debug assertion in Core.** It hands the whole 140-byte party span to
+`PokeCrypto.Decrypt4BE`, which asserts a length of 136 (`SIZE_4STORED`); the extra four bytes are the box/slot/flags
+metadata. The assertion is compiled out of Release, and the decrypt only touches the first 136 bytes, so the editor
+behaves correctly there — but opening the Battle Pass editor from a Debug build kills the process. This is upstream
+Core behaviour, not a port defect, and it is why that editor is verified against the Release build.
 
 **A blank save cannot be generated for Sword/Shield, Legends: Arceus, Scarlet/Violet or Legends: Z-A.** These
 serialise the union of every block, so a blank save writes a byte length that matches no shipped game revision
@@ -333,6 +340,12 @@ instead, but that is a deliberate deviation and has not been made.
     the fashion property grid with its enum pickers.
   * Pokédex, shared editor: X/Y (native/foreign origin flags), OR/AS (DexNav seen and obtained counters, no origin flag)
     and Sun/Moon (entry list with the per-form entries, form picker, nine language flags).
+  * Battle Revolution, on a real Pokémon Battle Revolution save: the Gear editor lists every piece with its
+    character style, category and unlock flag (badge rows labelled as shared across all styles), and "Reset Gear to
+    Default" clears everything but the starting cap. The Battle Pass editor lists all the passes with their type and
+    name, and its five pages read the real data back — Lance's title and full appearance, his six party members with
+    sprites and their box/slot references, his six catchphrases with the multi-line and placeholder glyphs intact,
+    the creator details, and the battle records. Switching passes and returning preserves every field.
   * Legends: Z-A event flag/work editor, on a real Z-A save: all fifteen block pages open with their hashed
     keys and values — flag pages as checkboxes, value pages as text, and the wider blocks with their two or
     three key columns. The debounced search filters to matching rows while keeping their original indices, and
