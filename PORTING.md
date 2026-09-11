@@ -23,7 +23,7 @@ Development branch: `feature/linuxport`. Primary target: Linux Mint (x11/Wayland
 | Legality UI (report dialog, slot indicators, copy to clipboard) | **RUNTIME VERIFIED** (slot indicators, report text); report dialog/clipboard **NOT YET TESTED** |
 | Mystery Gift UI | **RUNTIME VERIFIED** — Mystery Gift Database (947 gifts listed for a Gen 5 save, filters, view/save gift/save PKM) and the Wonder Card album editor (Gen 5 and Gen 6 layouts opened against real block data; the Gen 4 PGT/PCD layout is **BUILD VERIFIED** only, see Known blockers) |
 | Entity sub-editors (Ribbons, Memories, Medals, Tech Records, Move Shop, Plus Records, Trash bytes) | **RUNTIME VERIFIED** — all seven ported; ribbons round-tripped, memories rendered per generation, TR/Plus/Move Shop flag grids with legality colouring, Ctrl+click trash byte editor writes back to the name box |
-| Save sub-editors (SAV tab) | **PARTIAL** — SAV tab with all WinForms buttons/visibility rules, Verify Checksums, Verify All PKMs, box binary export, backup export, PGL JPEG, Korean conversion, Battle Revolution slot selector; editors ported: Items, Trainer Info (every generation), Box Layout, Block Data, Wonder Cards (Gen 4–7), Mail Box (Gen 2–5), Unity Tower, Pokémon Global Link, Chatter, Pokédex (Gen 1–5, 6 X/Y and OR/AS, 7 S/M and US/UM, Let's Go with its capture-record editor, SW/SH, BD/SP, Legends: Arceus, S/V with its DLC variant, Legends: Z-A), Underground (BD/SP), Event Flags (Gen 1 reset, Gen 2, Gen 3–7), Misc Edits (Gen 2, 3, 4, 5 and 8b), Medals (Gen 5), Roamer (Gen 3 and X/Y), Clock/RTC (Gen 2 prompt, Gen 3 editor), Roamer (Gen 3), Honey Tree, Apricorns, Geonet (Gen 4), O-Powers, Pokéblocks, Poké Puffs, Berry Field, Pokémon Link, Super Training (Gen 6), Poké Beans, Cells/Stickers, Seal Stickers, Poffins, Hall of Fame (Gen 1, 6 and 7), Raids (Gen 8/9 incl. DLC and 7-Star), Passerby export. Every generation now has a usable save for runtime testing. The remaining sub-editor buttons are shown but disabled with a tooltip |
+| Save sub-editors (SAV tab) | **PARTIAL** — SAV tab with all WinForms buttons/visibility rules, Verify Checksums, Verify All PKMs, box binary export, backup export, PGL JPEG, Korean conversion, Battle Revolution slot selector; editors ported: Items, Trainer Info (every generation), Box Layout, Block Data, Wonder Cards (Gen 4–7), Mail Box (Gen 2–5), Unity Tower, Pokémon Global Link, Chatter, Pokédex (Gen 1–5, 6 X/Y and OR/AS, 7 S/M and US/UM, Let's Go with its capture-record editor, SW/SH, BD/SP, Legends: Arceus, S/V with its DLC variant, Legends: Z-A), Underground (Gen 4 and BD/SP), Secret Base (Gen 3 and OR/AS), Event Flags (Gen 1 reset, Gen 2, Gen 3–7), Misc Edits (Gen 2, 3, 4, 5 and 8b), Medals (Gen 5), Roamer (Gen 3 and X/Y), Clock/RTC (Gen 2 prompt, Gen 3 editor), Roamer (Gen 3), Honey Tree, Apricorns, Geonet (Gen 4), O-Powers, Pokéblocks, Poké Puffs, Berry Field, Pokémon Link, Super Training (Gen 6), Poké Beans, Cells/Stickers, Seal Stickers, Poffins, Hall of Fame (Gen 1, 3, 6 and 7), Raids (Gen 8/9 incl. DLC and 7-Star), Passerby export. Every generation now has a usable save for runtime testing. The remaining sub-editor buttons are shown but disabled with a tooltip |
 | Tools (databases, batch editor, report grid, folder list, box dump) | **RUNTIME VERIFIED** — PKM Database (load/filter/search/view), Encounter Database (filters, criteria grid, search), Mystery Gift Database, Batch Editor (20/20 entities edited, saved and re-read from the exported file), Box Data Report (sortable grid, clipboard/CSV export), Folder List, Dump Boxes / Dump Box. KChart is not ported |
 | Settings editor | **RUNTIME VERIFIED** — reflection based property grid (checkbox/enum/number/text/colour, nested objects), page list, blank-save version picker, reset; an edit was persisted to `cfg.json` |
 | Clipboard (Showdown export, legality report, QR image) | **RUNTIME VERIFIED** (Showdown set export shows the copied text); QR image **NOT YET TESTED** |
@@ -191,8 +191,8 @@ desktop entry for the current user. Both publish modes were launched on Linux Mi
 
 `KChart`, `SAV_GroupViewer`, `SaveHandlerTroubleshooter`, `EntitySearchSetup`, and the remaining per-game
 `Subforms/Save Editors/*`:
-`SAV_EventWork`/`SAV_FlagWork8b`/`SAV_FlagWork9a`, `SAV_SecretBase*`, `SAV_HallOfFame3`,
-`SAV_DLC4`/`5`, `SAV_Underground` (Gen 4), `SAV_Pokeathlon4`, `SAV_BattlePass`, `SAV_Gear`, `SAV_JoinAvenue`,
+`SAV_EventWork`/`SAV_FlagWork8b`/`SAV_FlagWork9a`,
+`SAV_DLC4`/`5`, `SAV_Pokeathlon4`, `SAV_BattlePass`, `SAV_Gear`, `SAV_JoinAvenue`,
 `SAV_FestivalPlaza`,
 `SAV_Fashion9`, `SAV_Donut9a`, `SAV_FriendSafari`,
 `PokePreview` (hover preview), `SplashScreen`, sounds (`SystemSounds`),
@@ -201,6 +201,10 @@ developer/translation update utilities (`DevUtil`).
 Plugins are loaded (see the status table); the plugins themselves live outside this repository.
 
 ## Known blockers
+
+**No Battle Revolution save.** `SAV_BattlePass` and `SAV_Gear` both take a `SAV4BR`, and `BlankSaveFile.Get` throws
+`ArgumentOutOfRangeException` for that version, so those two editors have no obtainable test data at all. Every other
+remaining sub-editor can be exercised against a fixture or a real save.
 
 **A blank save cannot be generated for Sword/Shield, Legends: Arceus, Scarlet/Violet or Legends: Z-A.** These
 serialise the union of every block, so a blank save writes a byte length that matches no shipped game revision
@@ -311,6 +315,14 @@ and the remaining tools.
     the fashion property grid with its enum pickers.
   * Pokédex, shared editor: X/Y (native/foreign origin flags), OR/AS (DexNav seen and obtained counters, no origin flag)
     and Sun/Moon (entry list with the per-form entries, form picker, nine language flags).
+  * Secret bases, Hall of Fame and the Underground: the Generation 3 Hall of Fame on a real Emerald save (50 entries,
+    six members each, sprite and computed shiny flag — entry 0 reads back a level 100 Rayquaza with its IDs and
+    nickname); the Generation 6 Secret Base editor on a real Alpha Sapphire save (the player's own base in the property
+    grid with its location, trainer name and four catchphrases, the 28-slot object layout, and the three-member
+    participant editor that appears only for received bases); the Generation 4 Underground on a Platinum fixture
+    (13 score counters and the four 40-slot pouches, the sphere pouch with its extra size column). The Generation 3
+    Secret Base editor opens and disables Save with an empty list, which is correct: neither available Generation 3
+    save has received a base through record mixing, so only that path could be exercised.
   * Generation 8 and 9, on real save files (Sword at the Isle of Armor revision, Legends: Arceus, Violet at the base
     revision, Scarlet at the Teal Mask revision, Legends: Z-A): every save opens with its boxes, sprites and localized
     box names. Sword: trainer editor (four tabs, trainer card, Battle Tower records), Pokédex editor (owned/battled
