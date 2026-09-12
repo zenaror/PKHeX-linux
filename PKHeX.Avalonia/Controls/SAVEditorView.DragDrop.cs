@@ -58,6 +58,96 @@ public sealed partial class SAVEditorView
             _ = StartSlotDrag(view, press);
     }
 
+    private Point? BoxDragStart;
+    private PointerPressedEventArgs? BoxDragPress;
+
+    /// <summary>
+    /// Arms a box-binary drag when the Box tab header is pressed (WinForms <c>TabMouseDown</c>).
+    /// </summary>
+    /// <remarks>Opt-in, like upstream: <see cref="SlotExportSettings.AllowBoxDataDrop"/> defaults to off.</remarks>
+    private void BoxTabPointerPressed(PointerPressedEventArgs e)
+    {
+        ResetBoxDrag();
+        if (!MainWindow.Settings.SlotExport.AllowBoxDataDrop)
+            return;
+        if (!e.GetCurrentPoint(Tab_Box).Properties.IsLeftButtonPressed)
+            return;
+        if (e.KeyModifiers is KeyModifiers.Alt or KeyModifiers.Shift)
+            return;
+        if (!SAV.HasBox)
+            return;
+
+        BoxDragStart = e.GetPosition(this);
+        BoxDragPress = e; // the drag API starts from the press event
+    }
+
+    /// <summary>
+    /// Starts the drag once the pointer leaves the press position (WinForms <c>TabMouseMove</c>).
+    /// </summary>
+    private void BoxTabPointerMoved(PointerEventArgs e)
+    {
+        if (BoxDragStart is not { } start || BoxDragPress is not { } press)
+            return;
+        if (!e.GetCurrentPoint(Tab_Box).Properties.IsLeftButtonPressed)
+        {
+            ResetBoxDrag();
+            return;
+        }
+
+        var pos = e.GetPosition(this);
+        if (Math.Abs(pos.X - start.X) < DragThreshold && Math.Abs(pos.Y - start.Y) < DragThreshold)
+            return;
+
+        BoxDragStart = null; // only start once
+        _ = StartBoxDrag(press);
+    }
+
+    private void ResetBoxDrag()
+    {
+        BoxDragStart = null;
+        BoxDragPress = null;
+    }
+
+    /// <summary>
+    /// Writes the current box as a binary temp file and drags it out, so it can be dropped into another application
+    /// (or back into the program, which imports it through <see cref="OpenPCBoxBin"/>).
+    /// </summary>
+    private async Task StartBoxDrag(PointerPressedEventArgs e)
+    {
+        if (Owner is null)
+            return;
+
+        var src = Box.CurrentBox;
+        var bin = SAV.GetBoxBinary(src);
+        if (bin.Length == 0)
+        {
+            ResetBoxDrag();
+            return;
+        }
+
+        var newFile = Path.Combine(Path.GetTempPath(), $"box_{src}.bin");
+        try
+        {
+            await File.WriteAllBytesAsync(newFile, bin);
+            var file = await Owner.StorageProvider.TryGetFileFromPathAsync(newFile);
+            if (file is null)
+                return;
+            var transfer = new DataTransfer();
+            transfer.Add(DataTransferItem.CreateFile(file));
+            await DragDrop.DoDragDropAsync(e, transfer, DragDropEffects.Copy);
+        }
+        // Tons of things can happen with drag & drop; don't try to handle things, just indicate failure.
+        catch (Exception x)
+        {
+            await AppDialogs.Error(Owner, "Drag && Drop Error", x);
+        }
+        finally
+        {
+            DeleteTempAsync(newFile);
+            ResetBoxDrag();
+        }
+    }
+
     private void ResetDrag()
     {
         DragStart = null;

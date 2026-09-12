@@ -124,7 +124,11 @@ public sealed partial class SAVEditorView : UserControl, ISaveHost, ISaveFilePro
                 _ = SortMenu.Clear();
             else if (e.KeyModifiers.HasFlag(KeyModifiers.Control))
                 _ = SortMenu.Sort();
+            else
+                BoxTabPointerPressed(e); // opt-in box binary drag out
         }, RoutingStrategies.Tunnel);
+        Tab_Box.AddHandler(PointerMovedEvent, (_, e) => BoxTabPointerMoved(e), RoutingStrategies.Tunnel);
+        Tab_Box.AddHandler(PointerReleasedEvent, (_, _) => ResetBoxDrag(), RoutingStrategies.Tunnel);
 
         menu.Items.Add(mnuView);
         menu.Items.Add(mnuSet);
