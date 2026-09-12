@@ -257,11 +257,13 @@ version — so the Battle Revolution editors are tested against a real save supp
 `PbrSaveData` file inside the Wii save folder is the 0x380000-byte image PKHeX reads; the sibling `data.bin` is a Wii
 container and is not detected.
 
-**`BattlePass.GetPartySlotAtIndex` trips a Debug assertion in Core.** It hands the whole 140-byte party span to
-`PokeCrypto.Decrypt4BE`, which asserts a length of 136 (`SIZE_4STORED`); the extra four bytes are the box/slot/flags
-metadata. The assertion is compiled out of Release, and the decrypt only touches the first 136 bytes, so the editor
-behaves correctly there — but opening the Battle Pass editor from a Debug build kills the process. This is upstream
-Core behaviour, not a port defect, and it is why that editor is verified against the Release build.
+**The Battle Revolution pass slots were fixed in Core** (they used to be a blocker). A slot is the stored entity plus
+four bytes of box/slot metadata, which two places got wrong: `GetPartySlotAtIndex` handed all 140 bytes to
+`PokeCrypto.Decrypt4BE`, whose `Debug.Assert` demands 136, so opening the editor from a Debug build killed the
+process; and `SetPartySlotAtIndex` wrote a *party* buffer into the 140-byte slot, which threw
+`ArgumentOutOfRangeException` for any entity type. Both now address the stored entity explicitly. Verified against the
+repository owner's real save in a Debug build: 858 occupied slots read across the 187 passes, an entity written into a
+pass slot reads back with its species, PID and nickname, and the box/slot metadata beside it survives the write.
 
 **A blank save cannot be generated for Sword/Shield, Legends: Arceus, Scarlet/Violet or Legends: Z-A.** These
 serialise the union of every block, so a blank save writes a byte length that matches no shipped game revision
@@ -302,9 +304,9 @@ the scratchpad tool writes one: it deflates entities out of the save's own boxes
 fills the trainer names, refreshes the checksums, drops the block at `0x27000` and points the general block's key
 table at it. The Battle Video editor is **RUNTIME VERIFIED** against that fixture.
 
-**`BattleVideo4.DeflateFromPK4` drops the species and held item.** `InflateToPK4` reads them back from `video[6..0xA]`,
-but the deflate direction never writes that pair, so a round-trip loses the species. This is upstream Core behaviour
-and was not changed; the fixture generator writes those four bytes itself.
+**`BattleVideo4.DeflateFromPK4` used to drop the species and held item.** `InflateToPK4` reads them back from
+`video[6..0xA]`, but the deflate direction never wrote that pair, so a round-trip lost the species. Fixed in Core with
+the one missing copy, covered by a test.
 
 **No Stadium save is available.** `BlankSaveFile.Get` does not support any Stadium version, so the registered-team
 viewer is tested against a fixture: `new SAV2Stadium(japanese: false)` plus the `P3v0` list-footer magic written where
@@ -320,30 +322,22 @@ The remaining effort is packaging/CI and the developer-only translation utilitie
 
 ## Remaining work
 
-Nothing in `PKHeX.WinForms` is left unported except the item below; what remains is verification breadth and
-packaging, not missing screens.
+Nothing in `PKHeX.WinForms` is left unported except the item below.
+
+**Scope.** This port targets Linux. Windows and macOS are deliberately neither built nor tested here — Windows users
+have upstream PKHeX — even though the frontend takes no Linux-only dependency (`dotnet publish -r win-x64
+--self-contained` does produce a working 248 MB `PKHeX.Avalonia.exe`, and `AppPaths` falls back to
+`%USERPROFILE%\.config\PKHeX` and `%USERPROFILE%\.local\share\PKHeX` when the XDG variables are unset).
 
 **Intentionally not ported**
 
 * `DevUtil` — a build-time utility that regenerates the WinForms translation files by walking WinForms designers.
   It has no meaning in the Avalonia frontend and no user-facing function.
 
-**Out of scope**
+**Not exercised at runtime**
 
-* Windows and macOS. The port targets Linux; those platforms are neither built nor tested here by decision, even
-  though the frontend takes no Linux-only dependency (`dotnet publish -r win-x64 --self-contained` does produce a
-  248 MB `PKHeX.Avalonia.exe`, and `AppPaths` falls back to `%USERPROFILE%\.config\PKHeX` and
-  `%USERPROFILE%\.local\share\PKHeX` when the XDG variables are unset). Windows users have upstream PKHeX.
-
-**Not exercised at runtime (build verified only)**
-
-* A real Wayland session. Avalonia 12 has no Wayland backend (`Avalonia.Desktop` brings `Avalonia.X11`), so on Wayland
-  the application is an XWayland client. That path was exercised in a nested compositor (`muffin --wayland --nested`,
-  which starts its own XWayland): the save loaded, the window rendered correctly at the compositor's 800x563 size,
-  tabs and slots responded, Ctrl+E wrote a file byte-identical to the X11 run, and the QR click-to-copy put the same
-  7,608-byte PNG on the clipboard and survived closing the window. The one thing that could not be checked there is
-  the portal file dialog: `xdg-desktop-portal-gtk` belongs to the host session, so it never mapped a window for the
-  nested client (the application stayed responsive with the request pending). A login Wayland session was not used.
+* Nothing of the frontend. A login Wayland session was never used, but everything it would exercise was: see the
+  Wayland entry in the test notes, which now includes the portal file dialog.
 
 **Runner notes**
 
@@ -361,8 +355,6 @@ packaging, not missing screens.
 * Gen 8/9 Wonder Card album: upstream's `SAV_Wondercard` throws for those generations too. The button is disabled
   with a tooltip that says the editor does not support the game.
 * Pokédex skin (Generation 5): upstream's `LoadPokedexSkin` is an empty method, so the tab offers raw import/export.
-* `BattleVideo4.DeflateFromPK4` drops the species and held item that `InflateToPK4` reads back. Core was not changed.
-* `BattlePass.GetPartySlotAtIndex` trips a Core `Debug.Assert`; see Known blockers.
 
 ## Deliberate deviations
 
@@ -498,7 +490,9 @@ instead, but that is a deliberate deviation and has not been made.
     Default" clears everything but the starting cap. The Battle Pass editor lists all the passes with their type and
     name, and its five pages read the real data back — Lance's title and full appearance, his six party members with
     sprites and their box/slot references, his six catchphrases with the multi-line and placeholder glyphs intact,
-    the creator details, and the battle records. Switching passes and returning preserves every field.
+    the creator details, and the battle records. Switching passes and returning preserves every field. It runs in Debug
+    now too, since the Core slot fixes; a headless pass over the same save read 858 occupied slots across the 187
+    passes and wrote an entity into a slot without disturbing the metadata beside it.
   * Legends: Z-A event flag/work editor, on a real Z-A save: all fifteen block pages open with their hashed
     keys and values — flag pages as checkboxes, value pages as text, and the wider blocks with their two or
     three key columns. The debounced search filters to matching rows while keeping their original indices, and
@@ -609,8 +603,13 @@ instead, but that is a deliberate deviation and has not been made.
   * Wayland (nested `muffin --wayland --nested`, so the application ran as an XWayland client): the Crystal save passed on
     the command line loaded, the window rendered at 800x563 with sprites and wallpaper, the Party tab switched, Ctrl+E →
     Overwrite produced a file byte-identical (md5 `70971c66…`) to the same export under X11, and the QR click-to-copy put
-    the same 7,608-byte PNG on the clipboard, still readable after the window closed. Ctrl+O could not be completed: the
-    host session's `xdg-desktop-portal-gtk` maps no window for a nested client; the application stayed responsive.
+    the same 7,608-byte PNG on the clipboard, still readable after the window closed.
+  * Wayland, portal file dialog: the first attempt could not test it, because the host session's `xdg-desktop-portal-gtk`
+    maps no window for a nested client. Running the whole nested session on its own bus fixes that —
+    `dbus-run-session -- …` around the compositor, then `dbus-update-activation-environment DISPLAY WAYLAND_DISPLAY
+    XDG_SESSION_TYPE` so the portal is activated with the nested display. Ctrl+O then opened the GTK chooser *inside*
+    the nested compositor (header "Cancelar"/"Selecionar"), and Ctrl+L with a path plus Enter loaded that save — the
+    window title changed to it.
   * AppImage: built with `build-appimage.sh`, launched from the mounted image (`/tmp/.mount_PKHeX-*/usr/bin/PKHeX.Avalonia`)
     with a save on the command line, and the Mobile Adapter plugin — a `.dll` in `~/.local/share/PKHeX/plugins`, outside
     the read-only image — appeared in the Tools menu and opened its window with the save's data decoded.
