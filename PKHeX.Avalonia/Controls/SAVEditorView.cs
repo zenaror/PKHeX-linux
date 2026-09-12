@@ -576,6 +576,7 @@ public sealed partial class SAVEditorView : UserControl, ISaveHost, ISaveFilePro
     #endregion
 
     private readonly Hover.SummaryPreviewer HoverPreview = new();
+    private readonly Hover.SlotGlowAnimator HoverGlow = new();
 
     public void SlotPointerEntered(ISlotViewer<SlotView> viewer, SlotView view)
     {
@@ -583,7 +584,10 @@ public sealed partial class SAVEditorView : UserControl, ISaveHost, ISaveFilePro
         try
         {
             var info = viewer.GetSlotData(view);
-            HoverPreview.Show(view, info.Read(viewer.SAV), info.Type);
+            var pk = info.Read(viewer.SAV);
+            if (MainWindow.Settings.Hover.HoverSlotGlowEdges)
+                HoverGlow.Start(view, pk);
+            HoverPreview.Show(view, pk, info.Type);
         }
         catch (Exception ex)
         {
@@ -595,6 +599,7 @@ public sealed partial class SAVEditorView : UserControl, ISaveHost, ISaveFilePro
     public void SlotPointerExited(ISlotViewer<SlotView> viewer, SlotView view)
     {
         view.Cursor = Cursor.Default;
+        HoverGlow.Stop();
         HoverPreview.Clear();
     }
 
