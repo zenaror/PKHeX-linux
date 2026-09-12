@@ -16,6 +16,15 @@ public sealed partial class QRWindow : Window
 {
     private readonly global::Avalonia.Media.Imaging.Bitmap? Image;
 
+    /// <summary>
+    /// Set once the image has been handed to the clipboard.
+    /// </summary>
+    /// <remarks>
+    /// X11 clipboards are lazy: the owner keeps the data and only encodes it when another application asks for it.
+    /// Disposing the bitmap when the window closes would make that later request throw, so the image is kept alive.
+    /// </remarks>
+    private bool CopiedToClipboard;
+
     public QRWindow()
     {
         InitializeComponent();
@@ -39,7 +48,7 @@ public sealed partial class QRWindow : Window
         pb.Source = Image;
         pb.PointerPressed += async (_, _) => await CopyImage();
         this.FindControl<TextBlock>("L_Info")!.Text = string.Join("\n", [.. lines, footer]);
-        Closed += (_, _) => Image?.Dispose();
+        Closed += (_, _) => ReleaseImage();
     }
 
     public QRWindow(SKBitmap qr, SKBitmap sprite, PKM pk, string line1, string line2, string line3, string line4) : this()
@@ -56,7 +65,13 @@ public sealed partial class QRWindow : Window
         pb.Source = Image;
         pb.PointerPressed += async (_, _) => await CopyImage();
         this.FindControl<TextBlock>("L_Info")!.Text = $"{line1}\n{line2}\n{line3}\n{line4}";
-        Closed += (_, _) => Image?.Dispose();
+        Closed += (_, _) => ReleaseImage();
+    }
+
+    private void ReleaseImage()
+    {
+        if (!CopiedToClipboard)
+            Image?.Dispose();
     }
 
     private async System.Threading.Tasks.Task CopyImage()
@@ -64,7 +79,10 @@ public sealed partial class QRWindow : Window
         try
         {
             if (Clipboard is { } clipboard && Image is not null)
+            {
+                CopiedToClipboard = true;
                 await clipboard.SetBitmapAsync(Image);
+            }
         }
         catch (Exception ex)
         {
