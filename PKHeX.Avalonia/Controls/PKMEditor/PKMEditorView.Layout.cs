@@ -30,7 +30,7 @@ public sealed partial class PKMEditorView
     private readonly ComboBox CB_Species = UiFactory.Combo("CB_Species", 160);
     private readonly TextBlock CHK_Nicknamed = UiFactory.Label("CHK_Nicknamed", "Nickname:", true);
     private readonly CheckBox CHK_NicknamedFlag = UiFactory.Check("CHK_NicknamedFlag", string.Empty);
-    private readonly TextBox TB_Nickname = UiFactory.Text("TB_Nickname", 12, 130);
+    private readonly RenderedString TB_Nickname = UiFactory.Name("TB_Nickname", 12, 130);
     private readonly Button BTN_NicknameWarn = UiFactory.Button("BTN_NicknameWarn", "?");
     private readonly TextBlock Label_EXP = UiFactory.Label("Label_EXP", "EXP:");
     private readonly NumericTextBox TB_EXP = UiFactory.Numeric("TB_EXP", 7, 72);
@@ -162,7 +162,7 @@ public sealed partial class PKMEditorView
     private readonly TextBlock GB_OT = UiFactory.Header("GB_OT", "Trainer Information");
     private readonly TrainerIDView TID_Trainer = new() { Name = "TID_Trainer" };
     private readonly TextBlock Label_OT = UiFactory.Label("Label_OT", "OT:", true);
-    private readonly TextBox TB_OT = UiFactory.Text("TB_OT", 12, 130);
+    private readonly RenderedString TB_OT = UiFactory.Name("TB_OT", 12, 130);
     private readonly GenderToggleView UC_OTGender = new() { Name = "UC_OTGender" };
     private readonly Button BTN_OTNameWarn = UiFactory.Button("BTN_OTNameWarn", "?");
     private StackPanel FLP_FriendshipLeft = null!;
@@ -181,7 +181,7 @@ public sealed partial class PKMEditorView
     private readonly TextBlock GB_nOT = UiFactory.Header("GB_nOT", "Latest (not OT) Handler");
     private readonly TextBlock Label_PrevOT = UiFactory.Label("Label_PrevOT", "OT:", true);
     private StackPanel FLP_HT = null!;
-    private readonly TextBox TB_HT = UiFactory.Text("TB_HT", 12, 130);
+    private readonly RenderedString TB_HT = UiFactory.Name("TB_HT", 12, 130);
     private readonly GenderToggleView UC_HTGender = new() { Name = "UC_HTGender" };
     private readonly TextBlock L_LanguageHT = UiFactory.Label("L_LanguageHT", "Language:");
     private readonly ComboBox CB_HTLanguage = UiFactory.Combo("CB_HTLanguage", 110);

@@ -47,6 +47,8 @@
     <EmbeddedResource Include="..\PKHeX.WinForms\Resources\img\Bag\*.png" LogicalName="%(Filename)" />
     <EmbeddedResource Include="..\PKHeX.WinForms\Resources\text\*.txt" LogicalName="%(Filename)" />
     <EmbeddedResource Include="..\PKHeX.WinForms\Resources\byte\fashion_*" LogicalName="%(Filename)" />
+    <!-- In-game glyph font (WinForms FontUtil): loaded through an avares URI, so it must be an Avalonia resource. -->
+    <AvaloniaResource Include="..\PKHeX.WinForms\Resources\byte\PGLDings-NormalRegular.ttf" Link="Assets/Fonts/PGLDings-NormalRegular.ttf" />
   </ItemGroup>
 
   <ItemGroup>
