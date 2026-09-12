@@ -31,18 +31,9 @@ jobs:
       - name: Core tests
         run: dotnet test Tests/PKHeX.Core.Tests/PKHeX.Core.Tests.csproj -c Release
 
-      - name: Publish (linux-x64, self-contained)
-        run: dotnet publish PKHeX.Avalonia/PKHeX.Avalonia.csproj -c Release -r linux-x64 --self-contained true -o publish/linux-x64
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v5
-        with:
-          name: PKHeX.Avalonia-linux-x64
-          path: publish/linux-x64
-          if-no-files-found: error
-
-      # appimagetool is fetched by the script; it runs with --appimage-extract-and-run, so the runner needs no FUSE.
-      - name: Build AppImage
+      # The AppImage is the deliverable: the script runs the self-contained publish itself.
+      # appimagetool is fetched by the script and runs with --appimage-extract-and-run, so the runner needs no FUSE.
+      - name: Publish and build the AppImage
         run: PKHeX.Avalonia/Packaging/build-appimage.sh --download-tool publish/appimage
 
       - name: Upload AppImage

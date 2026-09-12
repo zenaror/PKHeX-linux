@@ -336,8 +336,12 @@ have upstream PKHeX — even though the frontend takes no Linux-only dependency 
 
 **Not exercised at runtime**
 
-* Nothing of the frontend. A login Wayland session was never used, but everything it would exercise was: see the
-  Wayland entry in the test notes, which now includes the portal file dialog.
+* Nothing of the frontend. A login Wayland session was never used — a full Cinnamon Wayland session cannot run
+  nested inside X11 (`cinnamon-session-cinnamon --wayland` puts muffin in display-server mode, which wants a VT),
+  and logging into one would end the user's own session. Everything such a session would exercise was verified in a
+  nested compositor instead, including the portal file dialog: see the Wayland entries in the test notes.
+  `/usr/share/wayland-sessions/cinnamon-wayland.desktop` exists on this machine, so the greeter offers the session
+  whenever someone wants to confirm it first-hand.
 
 **Runner notes**
 
@@ -352,9 +356,15 @@ have upstream PKHeX — even though the frontend takes no Linux-only dependency 
 
 **Upstream limits, not port gaps**
 
-* Gen 8/9 Wonder Card album: upstream's `SAV_Wondercard` throws for those generations too. The button is disabled
-  with a tooltip that says the editor does not support the game.
-* Pokédex skin (Generation 5): upstream's `LoadPokedexSkin` is an empty method, so the tab offers raw import/export.
+* Gen 8/9 Wonder Card album: those games do not keep the cards in the save at all — only Generation 4 to 7 saves
+  implement `IMysteryGiftStorageProvider`, which is the storage the album edits — so there is nothing to show and
+  upstream's `SAV_Wondercard` throws for them as well. The button is disabled with a tooltip that says so.
+* Pokédex skin (Generation 5): upstream's `LoadPokedexSkin` is an empty method, so the tab offers raw import/export
+  of the block. Core already describes the block (`PokeDexSkin5`: 768 tiles of 8x8 at 4bpp — exactly the 256x192
+  screen — plus a 16-colour foreground palette and a 64-colour background one), so a renderer looks within reach,
+  but nothing here can confirm one: the repository owner's Black 2 save reports the skin as uninitialised, and no
+  `.pds` sample exists to check a decode against. Implementing it blind would be guesswork, so it was left alone;
+  a save with an initialised skin is all it would take.
 
 ## Deliberate deviations
 
