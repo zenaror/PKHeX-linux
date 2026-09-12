@@ -18,7 +18,7 @@ Development branch: `feature/linuxport`. Primary target: Linux Mint (x11/Wayland
 | Save loading (open dialog, command line, drag & drop) | **RUNTIME VERIFIED** — command line argument (Gen 5 save, Gen 2 save inside a `.zip`), open dialog (Mystery Gift import), and drag & drop from the file manager |
 | Save writing (Export SAV, `.bak` handling, zip update) | **RUNTIME VERIFIED** — Ctrl+E → overwrite prompt → file written and re-loaded by Core; the zip path too: a Crystal save opened from `t_en.zip` and exported over the same path left a valid deflate archive whose single entry holds the rewritten 65,584-byte save |
 | PKM editor (`PKMEditor` + sub-controls, all tabs, all formats Gen 1–9) | **RUNTIME VERIFIED** — view/edit/set/export cycle verified with a Gen 5 save; sub-editor dialogs (Ribbons, Memories, Medals, Tech Records, Move Shop, Plus Records, Trash editor) not ported |
-| Box editor (view, box navigation, wallpaper, slot context menu View/Set/Delete/Legality, undo/redo) | **RUNTIME VERIFIED** — Ctrl+click view, Shift+click set, context menu delete, undo/redo, box navigation, tiled wallpapers, slot drag & drop (move/swap/clone, files and folders), box manipulation menu (sort/delete/modify), box popout viewer and all-boxes storage viewer |
+| Box editor (view, box navigation, wallpaper, slot context menu View/Set/Delete/Legality, undo/redo) | **RUNTIME VERIFIED** — Ctrl+click view, Shift+click set, context menu delete, undo/redo, box navigation, tiled wallpapers, slot drag & drop (move/swap/clone, files and folders), box manipulation menu (sort/delete/modify), box popout viewer and all-boxes storage viewer, and the opt-in box binary drag out from the Box tab header (`AllowBoxDataDrop`) |
 | Party editor | **RUNTIME VERIFIED** (display); slot operations share the box code path |
 | Legality UI (report dialog, slot indicators, copy to clipboard) | **RUNTIME VERIFIED** (slot indicators, report text); report dialog/clipboard **NOT YET TESTED** |
 | Mystery Gift UI | **RUNTIME VERIFIED** — Mystery Gift Database (947 gifts listed for a Gen 5 save, filters, view/save gift/save PKM) and the Wonder Card album editor (Gen 5 and Gen 6 layouts opened against real block data; the Gen 4 PGT/PCD layout is **BUILD VERIFIED** only, see Known blockers) |
@@ -29,8 +29,8 @@ Plaza (Generation 7, including the US/UM Battle Agency tab), Fashion/hair unlock
 with its flavour radar chart and bulk generator (Legends: Z-A Mega Dimension), registered-team viewer for Stadium
 saves, Passerby export, and the block accessor (named blocks for Gen 5-7, the SCBlock dump for Gen 8/9, a plain property grid otherwise). Every generation now has a usable save for runtime testing. Every SAV-tab button is now wired; the few that stay disabled are games upstream's own editor does not handle either (Gen 8/9 Wonder Card album, for instance) and say so in their tooltip |
 | File dialogs (open and save) | **RUNTIME VERIFIED** — the desktop portal dialog can be driven after all: it is the active window rather than the named `xdg-desktop-portal-gtk` one, so Ctrl+A, the path and Enter drive a save, and Ctrl+L, the path and Enter drive an open. Exporting a Mystery Gift wrote a 260-byte `.pgt` (the exact card size), importing it back filled an empty album slot and the card survived reselecting it, and File → Export SAV (Ctrl+E) wrote the save, which reads back with its three cards intact |
-| Mystery Gift album, Generation 4 (PGT/PCD) | **RUNTIME VERIFIED** — no Gen 4 save with gift data was supplied, so one was generated (an HG/SS save carrying three cards written through the save's own gift storage: a Pokémon, an egg and the Manaphy egg, which is its own card type). The album opens with the Gen 4 layout — PGT 1-6, PGT 7-8, PCD 1-3 and the Lock Capsule — draws each card's sprite, and the details pane names the gift and its trainer ("Celebi @ (None) --- REON", "Manaphy @ (None) --- Egg"). Import, export and QR still go through the file dialogs, which remain unexercised |
-| Generation 5 DLC editor, Black/White paths | **RUNTIME VERIFIED** — no Black/White save was supplied, so one was generated (a blank `SAV5BW` with a C-Gear background written through `CGearBackgroundBW`, which is the path that also runs the shift-format palette conversion). The editor opens on it and draws the background from the BW tile layout, and the Musical tab renders; headless checks confirm the BW musical block size (130048, against 97280 for B2/W2), the `.psk` extension, that the BW tile index maps back to itself over 0..254, and that writing the background and reading it again returns the same bytes. Import and export still go through the file dialogs, which remain unexercised |
+| Mystery Gift album, Generation 4 (PGT/PCD) | **RUNTIME VERIFIED** — no Gen 4 save with gift data was supplied, so one was generated (an HG/SS save carrying three cards written through the save's own gift storage: a Pokémon, an egg and the Manaphy egg, which is its own card type). The album opens with the Gen 4 layout — PGT 1-6, PGT 7-8, PCD 1-3 and the Lock Capsule — draws each card's sprite, and the details pane names the gift and its trainer ("Celebi @ (None) --- REON", "Manaphy @ (None) --- Egg"). Import and export were later exercised through the file dialogs (a 260-byte `.pgt` written and imported back) |
+| Generation 5 DLC editor, Black/White paths | **RUNTIME VERIFIED** — no Black/White save was supplied, so one was generated (a blank `SAV5BW` with a C-Gear background written through `CGearBackgroundBW`, which is the path that also runs the shift-format palette conversion). The editor opens on it and draws the background from the BW tile layout, and the Musical tab renders; headless checks confirm the BW musical block size (130048, against 97280 for B2/W2), the `.psk` extension, that the BW tile index maps back to itself over 0..254, and that writing the background and reading it again returns the same bytes. Import and export go through the file dialogs, which are exercised elsewhere |
 | Tools (databases, batch editor, report grid, folder list, box dump) | **RUNTIME VERIFIED** — PKM Database (load/filter/search/view), Encounter Database (filters, criteria grid, search), Mystery Gift Database, Batch Editor (20/20 entities edited, saved and re-read from the exported file), Box Data Report (sortable grid, clipboard/CSV export), Folder List, Dump Boxes / Dump Box, KChart (Shift on the PKM Database menu item), and the Troubleshooting menu (force-load a save through a chosen handler, open a file from clipboard hex, plugin list) |
 | Other tab (daycare + extra slots) | **RUNTIME VERIFIED** — the daycare group (two slots with the occupancy/experience readout, egg flag, editable seed, and the multi-daycare switch) and the extra-slot list (GTS, Fused, PGL, Battle Box, ...) grouped by storage type, all drag/drop and context-menu enabled like the box slots |
 | Box search | **RUNTIME VERIFIED** — the Search button in the box header opens the filter popout (general filters plus the batch-instruction tab); matching slots stay lit and the rest are dimmed, and Next/Previous seek through the matches. Alt resets, Shift seeks without reopening |
@@ -221,14 +221,16 @@ controls, while this one hands them the Avalonia Tools menu and its own editor t
   conversion), Battle Revolution save-slot selector, double-click to re-detect a save, and the full sub-editor button panel
   with the WinForms visibility rules (sorted by translated text); every button has a handler (see the status table for
   the editor list). Other tab (daycare group and extra slots), box search popout and the slot hover preview are ported.
-  Slot glow on hover (`HoverSlotGlowEdges`) is the one hover behavior still missing: the cursor changes and the preview
-  card appears, but the sprite is not outlined.
+  Slot glow on hover (`HoverSlotGlowEdges`) pulses the sprite's edges between the two configured colors, in its own
+  layer so the touch-type background underneath is left alone.
 * Entity editor (`Controls/PKMEditor/*`): full port of `PKMEditor` (Main / Met / Stats / Moves / Cosmetic / OT-Misc tabs,
   per-format load/save for PK1–PK9/PB7/PA8/PB8/PA9, legality-driven move highlighting, shiny/PID/EC tools, ball browser,
   status condition browser, experience bar, form arguments, contest stats, size/CP, shiny leaf, catch rate, markings)
   including every secondary editor window (Ribbons, Memories/Amie, Super Training medals, Tech Records, Move Shop,
   Plus Records, trash bytes) with the same Shift/Ctrl/Alt shortcuts.
-  Nickname/OT boxes do not use the in-game font (`RenderedString`).
+  Nickname, OT and HT boxes use the in-game glyph font (`RenderedString`): the font file only carries the game's
+  symbols (gender, card suits, the private-use PK/MN range), so ordinary letters fall back to the interface font, as
+  they do in WinForms.
 
 ## Unported components
 
@@ -298,9 +300,10 @@ viewer is tested against a fixture: `new SAV2Stadium(japanese: false)` plus the 
 the box list footer lives (detection is footer gated), with a few entities placed into a team. The viewer is
 **RUNTIME VERIFIED** against that fixture.
 
-**No Black/White (non-B2/W2) save is available**, so the Generation 5 DLC editor's BW-specific code paths
-(`CGearBackgroundBW`, the BW musical size, the shift-format palette conversion) are build-verified only; the B2/W2
-paths are runtime-verified against the repository owner's save, including the real C-Gear skin it contains.
+**No Black/White (non-B2/W2) save is available.** A blank `SAV5BW` is generated instead (Generation 5 blank saves
+are exportable), and the Generation 5 DLC editor's BW-specific code paths — `CGearBackgroundBW`, the BW musical size,
+the shift-format palette conversion — are runtime-verified against it; see the status table. The B2/W2 paths are
+verified against the repository owner's save, including the real C-Gear skin it contains.
 
 The remaining effort is packaging/CI and the developer-only translation utilities.
 
@@ -314,6 +317,13 @@ packaging, not missing screens.
 * `DevUtil` — a build-time utility that regenerates the WinForms translation files by walking WinForms designers.
   It has no meaning in the Avalonia frontend and no user-facing function.
 
+**Out of scope**
+
+* Windows and macOS. The port targets Linux; those platforms are neither built nor tested here by decision, even
+  though the frontend takes no Linux-only dependency (`dotnet publish -r win-x64 --self-contained` does produce a
+  248 MB `PKHeX.Avalonia.exe`, and `AppPaths` falls back to `%USERPROFILE%\.config\PKHeX` and
+  `%USERPROFILE%\.local\share\PKHeX` when the XDG variables are unset). Windows users have upstream PKHeX.
+
 **Not exercised at runtime (build verified only)**
 
 * A real Wayland session. Avalonia 12 has no Wayland backend (`Avalonia.Desktop` brings `Avalonia.X11`), so on Wayland
@@ -323,12 +333,6 @@ packaging, not missing screens.
   7,608-byte PNG on the clipboard and survived closing the window. The one thing that could not be checked there is
   the portal file dialog: `xdg-desktop-portal-gtk` belongs to the host session, so it never mapped a window for the
   nested client (the application stayed responsive with the request pending). A login Wayland session was not used.
-* Windows: `dotnet publish -r win-x64 --self-contained` produces a working `PKHeX.Avalonia.exe` (248 MB), but it was
-  never launched — no Windows machine here. Note that `AppPaths` falls back to `%USERPROFILE%\.config\PKHeX` and
-  `%USERPROFILE%\.local\share\PKHeX` there, since the XDG variables are unset; dropping a `cfg.json` next to the
-  executable switches to the portable (WinForms-style) layout instead.
-* macOS. The frontend takes no Linux-only dependency and uses `Path.Combine` and the XDG helper everywhere, but the
-  platform was neither built nor launched.
 
 **Runner notes**
 
@@ -337,8 +341,8 @@ packaging, not missing screens.
   `dotnet build -c Release --no-restore`, `dotnet test Tests/PKHeX.Core.Tests -c Release` and
   `dotnet publish -c Release -r linux-x64 --self-contained true -o publish/linux-x64` (0 warnings, 572 passed /
   1 skipped, 145 MB of published files whose executable launches and loads a save).
-* The runner warns that `actions/checkout@v4`, `actions/setup-dotnet@v4` and `actions/upload-artifact@v4` target the
-  deprecated Node.js 20 and are forced onto Node.js 24. The workflow still succeeds; the pins are left as they are.
+* The actions are pinned at `@v5` (`checkout`, `setup-dotnet`, `upload-artifact`). The `@v4` pins still worked but the
+  runner warned that they target the deprecated Node.js 20 and were being forced onto Node.js 24.
 
 **Upstream limits, not port gaps**
 
@@ -359,6 +363,10 @@ caps tooltips at 320px, which clipped the paste and the encounter lines, so `App
 framework has no cross-platform audio API. Rather than take an audio dependency for one optional cue, the wave file is
 handed to the first of `paplay`, `aplay`, `pw-play` or `ffplay` found on `PATH`. If none is installed nothing is
 played and every other hover behaviour is unaffected.
+
+**Drags carry no custom cursor.** WinForms paints the dragged box into a bitmap and makes it the cursor while the box
+binary drag is in flight (`BitmapCursor`). Avalonia's `DoDragDropAsync` has no cursor hook and the drop target draws
+its own feedback, so the drag proceeds with the platform's normal drag indicator.
 
 **The daycare "Egg Available" box is read-only.** The WinForms checkbox has no change handler either: it reports the
 flag rather than writing it. The Avalonia one is made non-interactive so it does not look editable.
@@ -393,7 +401,6 @@ instead, but that is a deliberate deviation and has not been made.
 * Message dialog buttons ("OK", "Yes", "No", "Cancel") are English; WinForms relies on OS-localized `MessageBox` buttons.
 * WinForms hides menu shortcut text (`ShowShortcutKeys = false`); the Avalonia menus display the gestures (standard on Linux desktops).
 * Sounds (`SystemSounds`) have no cross-platform equivalent; sound settings are read but no sound is played.
-* Box/PC binary drag & drop from the box tab (`AllowBoxDataDrop`) is not implemented.
 * X11 clipboards are lazy: the owner application keeps the data and only encodes it when another application asks for
   it, which can happen long after the window that produced it is gone. `QRWindow` therefore keeps the copied bitmap
   alive instead of disposing it when the window closes — disposing it crashed the process with
@@ -577,6 +584,16 @@ instead, but that is a deliberate deviation and has not been made.
     the same path with Ctrl+E → Overwrite; the archive is still a valid deflate zip whose entry is the rewritten save
     (the only differences against the input are the party slots past the party count, which `PKHeX.Core` blanks, and the
     two save checksums).
+  * Slot hover glow (`HoverSlotGlowEdges`): hovering a box slot halos the sprite, the shiny star and the held item;
+    six captures 120 ms apart differ only inside that slot's rectangle (peak channel delta 34), which is the pulse
+    between the two configured colors. Moving away restores the slot pixel-for-pixel, sweeping twelve slots leaves
+    nothing behind, and with the setting off the hover changes nothing.
+  * In-game font (`RenderedString`): the Nickname and OT boxes render `♀`/`♂` and the private-use characters with the
+    game's glyphs while ordinary letters fall back to the interface font.
+  * Box binary drag out (`AllowBoxDataDrop`, off by default): with the setting on, dragging the Box tab header into the
+    file manager wrote `box_2.bin` (1,460 bytes, the length `SAV.GetBoxBinary` reports for a Crystal box) and dragging
+    that file back onto the window re-imported it ("Box Binary loaded.") with the box unchanged; the temp file is gone
+    afterwards. With the setting off nothing is written and the tab keeps its normal click behavior.
   * Wayland (nested `muffin --wayland --nested`, so the application ran as an XWayland client): the Crystal save passed on
     the command line loaded, the window rendered at 800x563 with sprites and wallpaper, the Party tab switched, Ctrl+E →
     Overwrite produced a file byte-identical (md5 `70971c66…`) to the same export under X11, and the QR click-to-copy put
