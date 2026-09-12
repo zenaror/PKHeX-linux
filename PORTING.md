@@ -40,7 +40,7 @@ saves, Passerby export, and the block accessor (named blocks for Gen 5-7, the SC
 | File dialogs (open/save/folder via Avalonia storage provider) | **RUNTIME VERIFIED** — open, save and the folder picker all driven through the desktop portal dialog (see the row above and the box dump) |
 | Linux publish | **RUNTIME VERIFIED** — `Packaging/publish-linux.sh` (self-contained 144 MB and framework-dependent 65 MB) and `Packaging/build-appimage.sh` (single-file AppImage, 63 MB); all three launch and load a save, and the AppImage also loads a plugin from `~/.local/share/PKHeX/plugins` and opens its window |
 | Plugins | **RUNTIME VERIFIED** — plugin loader (`Plugins/PluginLoader.cs`) reads `IPlugin` assemblies from the configured plugin folder, hands them the save editor, the entity editor, the Tools menu and the version, and notifies them when a save loads. Verified with an internal plugin that added a Tools entry and opened its own editor |
-| CI | **RUNTIME VERIFIED** — `.github/workflows/linux.yml` builds Debug + Release, runs the Core tests and uploads a linux-x64 publish. It runs on every push to `feature/linuxport` and has succeeded on `ubuntu-latest`, most recently in 2m39s with a 71 MB (compressed) `PKHeX.Avalonia-linux-x64` artifact |
+| CI | **RUNTIME VERIFIED** — `.github/workflows/linux.yml` builds Debug + Release, runs the Core tests, and uploads both the linux-x64 publish and an AppImage. It runs on every push to `feature/linuxport` and has succeeded on `ubuntu-latest`, most recently in 3m05s with a 71 MB `PKHeX.Avalonia-linux-x64` and a 65 MB `PKHeX-x86_64.AppImage` artifact |
 
 ## Architecture
 
