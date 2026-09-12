@@ -345,11 +345,16 @@ have upstream PKHeX — even though the frontend takes no Linux-only dependency 
 
 **Runner notes**
 
-* CI runs on `ubuntu-latest` on every push to `feature/linuxport` and has been green. Before pushing, the same steps
-  can be reproduced locally on a fresh clone: `dotnet restore`, `dotnet build -c Debug --no-restore`,
-  `dotnet build -c Release --no-restore`, `dotnet test Tests/PKHeX.Core.Tests -c Release` and
-  `dotnet publish -c Release -r linux-x64 --self-contained true -o publish/linux-x64` (0 warnings, 572 passed /
-  1 skipped, 145 MB of published files whose executable launches and loads a save).
+* CI runs on `ubuntu-latest` on every push to `feature/linuxport` and has been green. It ends in the AppImage, which
+  is the artifact it uploads (~65 MB). Before pushing, the same steps can be reproduced locally on a fresh clone:
+  `dotnet restore`, `dotnet build -c Debug --no-restore`, `dotnet build -c Release --no-restore`,
+  `dotnet test Tests/PKHeX.Core.Tests -c Release` and `PKHeX.Avalonia/Packaging/build-appimage.sh` (0 warnings,
+  574 passed / 1 skipped, and an AppImage that launches and loads a save).
+* `StringQualityTests.HasNoDuplicates` is flaky by construction, roughly once in a few thousand runs per language.
+  It hashes every name with `string.GetHashCode()` and reports a duplicate when two entries land in the same bucket;
+  .NET randomizes string hashing per process, so the same data can collide in one run and not the next. Seen once on
+  the runner (German species, run 34719189677), green on the re-run and 6/6 locally. Upstream's test, left as is: a
+  collision does mean Core's hash-keyed lookups would misbehave in that process.
 * The actions are pinned at `@v5` (`checkout`, `setup-dotnet`, `upload-artifact`). The `@v4` pins still worked but the
   runner warned that all three target the deprecated Node.js 20. At `@v5` only `upload-artifact` still does — its
   newest release has not moved either, so the warning stays until upstream ships one that has.
