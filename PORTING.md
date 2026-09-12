@@ -40,7 +40,7 @@ saves, Passerby export, and the block accessor (named blocks for Gen 5-7, the SC
 | File dialogs (open/save/folder via Avalonia storage provider) | **RUNTIME VERIFIED** — open, save and the folder picker all driven through the desktop portal dialog (see the row above and the box dump) |
 | Linux publish | **RUNTIME VERIFIED** — `Packaging/publish-linux.sh` (self-contained 144 MB and framework-dependent 65 MB); both published binaries launch and load a save |
 | Plugins | **RUNTIME VERIFIED** — plugin loader (`Plugins/PluginLoader.cs`) reads `IPlugin` assemblies from the configured plugin folder, hands them the save editor, the entity editor, the Tools menu and the version, and notifies them when a save loads. Verified with an internal plugin that added a Tools entry and opened its own editor |
-| CI | **NOT YET RUN on GitHub** — `.github/workflows/linux.yml` builds Debug + Release, runs the Core tests and uploads a linux-x64 publish. Every step was executed locally on a fresh clone (0 warnings, 572 passed / 1 skipped, 145 MB artifact that launches); running it on GitHub needs a push |
+| CI | **RUNTIME VERIFIED** — `.github/workflows/linux.yml` builds Debug + Release, runs the Core tests and uploads a linux-x64 publish. It runs on every push to `feature/linuxport` and has succeeded on `ubuntu-latest`, most recently in 2m39s with a 71 MB (compressed) `PKHeX.Avalonia-linux-x64` artifact |
 
 ## Architecture
 
@@ -330,16 +330,15 @@ packaging, not missing screens.
 * macOS. The frontend takes no Linux-only dependency and uses `Path.Combine` and the XDG helper everywhere, but the
   platform was neither built nor launched.
 
-**Not run**
+**Runner notes**
 
-* CI (`.github/workflows/linux.yml`) has never executed on GitHub from this fork — that needs a push. Every step it
-  runs was executed locally against a fresh `git clone` of `feature/linuxport` with the working-tree diff applied,
-  in this order: `dotnet restore`, `dotnet build -c Debug --no-restore`, `dotnet build -c Release --no-restore`,
-  `dotnet test Tests/PKHeX.Core.Tests -c Release` and `dotnet publish -c Release -r linux-x64 --self-contained true
-  -o publish/linux-x64`. Result: 0 warnings and 0 errors in both builds, 572 passed / 1 skipped, and a 145 MB
-  artifact of 232 files whose `PKHeX.Avalonia` executable starts and loads a save (so `if-no-files-found: error`
-  is satisfied). The runner still differs from this machine in the .NET patch level (`10.0.112` here) and in the
-  image's native packages.
+* CI runs on `ubuntu-latest` on every push to `feature/linuxport` and has been green. Before pushing, the same steps
+  can be reproduced locally on a fresh clone: `dotnet restore`, `dotnet build -c Debug --no-restore`,
+  `dotnet build -c Release --no-restore`, `dotnet test Tests/PKHeX.Core.Tests -c Release` and
+  `dotnet publish -c Release -r linux-x64 --self-contained true -o publish/linux-x64` (0 warnings, 572 passed /
+  1 skipped, 145 MB of published files whose executable launches and loads a save).
+* The runner warns that `actions/checkout@v4`, `actions/setup-dotnet@v4` and `actions/upload-artifact@v4` target the
+  deprecated Node.js 20 and are forced onto Node.js 24. The workflow still succeeds; the pins are left as they are.
 
 **Upstream limits, not port gaps**
 
