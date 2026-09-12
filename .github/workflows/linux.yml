@@ -40,3 +40,14 @@ jobs:
           name: PKHeX.Avalonia-linux-x64
           path: publish/linux-x64
           if-no-files-found: error
+
+      # appimagetool is fetched by the script; it runs with --appimage-extract-and-run, so the runner needs no FUSE.
+      - name: Build AppImage
+        run: PKHeX.Avalonia/Packaging/build-appimage.sh --download-tool publish/appimage
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v5
+        with:
+          name: PKHeX-x86_64.AppImage
+          path: publish/appimage/PKHeX-x86_64.AppImage
+          if-no-files-found: error
