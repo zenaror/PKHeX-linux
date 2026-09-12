@@ -499,6 +499,7 @@ public sealed partial class PKMEditorView : UserControl, IMainEditor
     {
         gendersymbols = symbols;
         BTN_Shinytize.Content = Unicode ? Draw.ShinyUnicode : Draw.ShinyDefault;
+        TB_Nickname.DisableInGameFont = !Unicode; // WinForms: the glyph font is only useful with the unicode symbols
     }
 
     public void UpdateSprite()

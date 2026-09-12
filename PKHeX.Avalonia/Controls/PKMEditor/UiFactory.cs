@@ -77,6 +77,18 @@ public static class UiFactory
         Padding = new Thickness(4, 2),
     };
 
+    /// <summary>
+    /// Text box that renders names with the in-game glyph font (WinForms <c>RenderedString</c>).
+    /// </summary>
+    public static RenderedString Name(string name, int maxLength, double width = 120) => new()
+    {
+        Name = name,
+        MaxLength = maxLength,
+        Width = width,
+        VerticalAlignment = VerticalAlignment.Center,
+        Padding = new Thickness(4, 2),
+    };
+
     public static CheckBox Check(string name, string text) => new()
     {
         Name = name,
