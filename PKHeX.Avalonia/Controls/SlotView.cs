@@ -15,6 +15,7 @@ public sealed class SlotView : Border
     private static readonly IBrush FrameBrush = new SolidColorBrush(Color.FromRgb(0x64, 0x64, 0x64));
 
     private readonly Image BackgroundImage = new() { Stretch = Stretch.None, HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center, VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center };
+    private readonly Image GlowImage = new() { Stretch = Stretch.None, HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center, VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center };
     private readonly Image SpriteImage = new() { Stretch = Stretch.None, HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center, VerticalAlignment = global::Avalonia.Layout.VerticalAlignment.Center };
 
     private Bitmap? _background;
@@ -33,6 +34,7 @@ public sealed class SlotView : Border
 
         var panel = new Panel();
         panel.Children.Add(BackgroundImage);
+        panel.Children.Add(GlowImage); // hover glow sits over the touch-type background, under the sprite
         panel.Children.Add(SpriteImage);
         Child = panel;
     }
@@ -48,6 +50,15 @@ public sealed class SlotView : Border
             _background = value;
             BackgroundImage.Source = value;
         }
+    }
+
+    /// <summary>
+    /// Hover glow drawn between the background and the sprite. Ownership stays with the animator that supplies it.
+    /// </summary>
+    public Bitmap? GlowBitmap
+    {
+        get => GlowImage.Source as Bitmap;
+        set => GlowImage.Source = value;
     }
 
     /// <summary>
