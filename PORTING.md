@@ -38,7 +38,7 @@ saves, Passerby export, and the block accessor (named blocks for Gen 5-7, the SC
 | Settings editor | **RUNTIME VERIFIED** — reflection based property grid (checkbox/enum/number/text/colour, nested objects), page list, blank-save version picker, reset; an edit was persisted to `cfg.json` |
 | Clipboard (Showdown export, legality report, QR image) | **RUNTIME VERIFIED** — Showdown set export shows the copied text, and the QR window's click-to-copy puts a 365x415 PNG on the clipboard that other applications read back |
 | File dialogs (open/save/folder via Avalonia storage provider) | **RUNTIME VERIFIED** — open, save and the folder picker all driven through the desktop portal dialog (see the row above and the box dump) |
-| Linux publish | **RUNTIME VERIFIED** — `Packaging/publish-linux.sh` (self-contained 144 MB and framework-dependent 65 MB); both published binaries launch and load a save |
+| Linux publish | **RUNTIME VERIFIED** — `Packaging/publish-linux.sh` (self-contained 144 MB and framework-dependent 65 MB) and `Packaging/build-appimage.sh` (single-file AppImage, 63 MB); all three launch and load a save, and the AppImage also loads a plugin from `~/.local/share/PKHeX/plugins` and opens its window |
 | Plugins | **RUNTIME VERIFIED** — plugin loader (`Plugins/PluginLoader.cs`) reads `IPlugin` assemblies from the configured plugin folder, hands them the save editor, the entity editor, the Tools menu and the version, and notifies them when a save loads. Verified with an internal plugin that added a Tools entry and opened its own editor |
 | CI | **RUNTIME VERIFIED** — `.github/workflows/linux.yml` builds Debug + Release, runs the Core tests and uploads a linux-x64 publish. It runs on every push to `feature/linuxport` and has succeeded on `ubuntu-latest`, most recently in 2m39s with a 71 MB (compressed) `PKHeX.Avalonia-linux-x64` artifact |
 
@@ -164,6 +164,17 @@ PKHeX.Avalonia/Packaging/publish-linux.sh publish/linux-x64 --framework-dependen
 
 The script copies `icon.png`, `Packaging/pkhex.desktop` and `Packaging/install.sh` next to the binary. Both publish
 modes were launched on Linux Mint and opened the main window.
+
+```bash
+# single-file AppImage (self-contained, ~63 MB)
+PKHeX.Avalonia/Packaging/build-appimage.sh publish/appimage
+```
+
+The AppImage script needs `appimagetool`; point `APPIMAGETOOL` at it, have it on `PATH`, or pass `--download-tool`
+to fetch it into `~/.cache/pkhex-packaging`. The image is read-only, so the program keeps its XDG layout: settings in
+`$XDG_CONFIG_HOME/PKHeX/cfg.json` and the local resource folders (pkmdb, bak, template, **plugins**) in
+`$XDG_DATA_HOME/PKHeX`. Plugins therefore still load — the folder is outside the image, which is exactly what a
+read-only bundle needs.
 
 `install.sh`, run from inside the published folder, registers the program with the desktop for the current user: it
 installs the icon into the hicolor theme, writes the menu entry pointing at that copy of the binary, and sets the
@@ -599,5 +610,8 @@ instead, but that is a deliberate deviation and has not been made.
     Overwrite produced a file byte-identical (md5 `70971c66…`) to the same export under X11, and the QR click-to-copy put
     the same 7,608-byte PNG on the clipboard, still readable after the window closed. Ctrl+O could not be completed: the
     host session's `xdg-desktop-portal-gtk` maps no window for a nested client; the application stayed responsive.
+  * AppImage: built with `build-appimage.sh`, launched from the mounted image (`/tmp/.mount_PKHeX-*/usr/bin/PKHeX.Avalonia`)
+    with a save on the command line, and the Mobile Adapter plugin — a `.dll` in `~/.local/share/PKHeX/plugins`, outside
+    the read-only image — appeared in the Tools menu and opened its window with the save's data decoded.
   * Test fixtures were generated from blank saves with `PKHeX.Core` (Gen 1/2/5 blank saves are exportable and re-detectable;
     Gen 3/4 blank saves throw on export and Gen 6+ blank saves are not detected — a limitation of blank saves, not of the port).
