@@ -353,7 +353,8 @@ packaging, not missing screens.
   `dotnet publish -c Release -r linux-x64 --self-contained true -o publish/linux-x64` (0 warnings, 572 passed /
   1 skipped, 145 MB of published files whose executable launches and loads a save).
 * The actions are pinned at `@v5` (`checkout`, `setup-dotnet`, `upload-artifact`). The `@v4` pins still worked but the
-  runner warned that they target the deprecated Node.js 20 and were being forced onto Node.js 24.
+  runner warned that all three target the deprecated Node.js 20. At `@v5` only `upload-artifact` still does — its
+  newest release has not moved either, so the warning stays until upstream ships one that has.
 
 **Upstream limits, not port gaps**
 
