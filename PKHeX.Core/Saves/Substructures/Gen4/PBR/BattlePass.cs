@@ -151,7 +151,8 @@ public sealed class BattlePass(Memory<byte> raw)
     public BK4 GetPartySlotAtIndex(int index)
     {
         var data = GetPartySpan(index).ToArray();
-        PokeCrypto.Decrypt4BE(data);
+        // The four bytes past the entity are this pass's box/slot metadata, not part of the stored entity.
+        PokeCrypto.Decrypt4BE(data.AsSpan(0, PokeCrypto.SIZE_4STORED));
         return new BK4(data);
     }
 
@@ -160,7 +161,9 @@ public sealed class BattlePass(Memory<byte> raw)
         while (index > 0 && !GetPartySlotPresent(index - 1))
             index--;
 
-        pk.WriteEncryptedDataParty(GetPartySpan(index));
+        // A slot holds the stored entity plus four bytes of box/slot metadata (kept by SetPartySlotBoxSlot),
+        // so only the stored data is written here; a party write would run past the slot.
+        pk.WriteEncryptedDataStored(GetPartySpan(index)[..PokeCrypto.SIZE_4STORED]);
         SetPartySlotPresent(index, pk.Species != 0);
     }
 
