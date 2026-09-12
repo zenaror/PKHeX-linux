@@ -230,6 +230,7 @@ public sealed class BattleVideo4(Memory<byte> Raw) : IBattleVideo
         VerifySpanSizes(entity, video);
 
         entity[..6].CopyTo(video[..6]); // PID & Sanity -- skip checksum.
+        entity[8..0xC].CopyTo(video[6..0xA]); // Species & Held Item
         // 10,11 unused alignment
         entity[0xC..0x16].CopyTo(video[0xC..0x16]); // OTID, Experience, Friendship, Ability
         // Skip PK4 Marking and Language
