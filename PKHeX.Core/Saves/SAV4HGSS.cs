@@ -9,7 +9,7 @@ namespace PKHeX.Core;
 /// </summary>
 public sealed class SAV4HGSS : SAV4, IBoxDetailName, IBoxDetailWallpaper
 {
-    public SAV4HGSS() : base(GeneralSize, StorageSize)
+    public SAV4HGSS() : base(GeneralSize, StorageSize, GeneralSize + GeneralGap)
     {
         Initialize();
         Mystery = new MysteryBlock4HGSS(this, GeneralBuffer.Slice(OffsetMystery, MysteryBlock4HGSS.Size));

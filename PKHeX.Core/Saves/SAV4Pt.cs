@@ -8,7 +8,7 @@ namespace PKHeX.Core;
 /// </summary>
 public sealed class SAV4Pt : SAV4Sinnoh
 {
-    public SAV4Pt() : base(GeneralSize, StorageSize)
+    public SAV4Pt() : base(GeneralSize, StorageSize, GeneralSize)
     {
         Initialize();
         Mystery = new MysteryBlock4Pt(this, GeneralBuffer.Slice(OffsetMystery, MysteryBlock4Pt.Size));
