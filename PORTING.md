@@ -387,9 +387,10 @@ pinned to the old screen corner), the Delete submenu opens with its eight entrie
 are correct (menu, submenu and back to English). The fix was also confirmed not to have disturbed the box slot
 context menu or the box popout menu. Ctrl+click on the tab header still sorts the box directly without opening the
 menu, matching the shortcut. Alt+click (expected: Clear directly) could not be exercised — Cinnamon's window manager
-consumes Alt+click as a window-move grab before it reaches the app, confirmed again on this attempt; this is inferred
-from the verified Ctrl+click sibling code path, not a direct observation, and is already listed under "Known
-Linux-specific issues".
+consumes Alt+click as a window-move grab before it reaches the app, confirmed again on this attempt. Since
+2026-09-28 **Ctrl+Shift+click on the tab header does it instead**, and that was exercised: the "Clear ALL Boxes?!"
+prompt appeared and was answered No, leaving the save copy byte-identical (see "Ctrl+Shift+click stands in for
+Alt+click" under "Deliberate deviations").
 
 **Save sub-editor parity pass (2026-09-27, BUILD VERIFIED, screen-verified 2026-09-28).** A static comparison against
 `PKHeX.WinForms` found two editors with no Avalonia counterpart, which have now been ported:
@@ -703,6 +704,19 @@ layout; and the inventory Sort menu separators.
 
 ## Deliberate deviations
 
+**Ctrl+Shift+click stands in for Alt+click.** On X11 the window manager takes a passive grab on its window-drag
+chord, and the press never reaches the application. Cinnamon - the desktop this port targets first - binds
+`<Alt>` by default (`org.cinnamon.desktop.wm.preferences mouse-button-modifier`), so upstream's Alt+click shortcuts
+are unreachable on a stock Linux Mint. Measured here: an Alt+click on a box slot changes nothing on screen, while
+Ctrl+Alt+click (clone a box full) works, because the grab is on that exact chord and not on supersets of it.
+`PKHeX.Avalonia/Services/ModifierAlias.cs` therefore reads Ctrl+Shift as Alt for the slot click (delete), the Box tab
+click (clear boxes), the box search button (reset) and the drop modifier (overwrite). It is offered **alongside** Alt,
+never instead of it, so Alt+click keeps working where the desktop leaves it alone - GNOME and KDE bind Super, and
+Cinnamon can be set to it with
+`gsettings set org.cinnamon.desktop.wm.preferences mouse-button-modifier '<Super>'`. The same actions also remain on
+the slot context menu, which needs no modifier at all. Screen-verified 2026-09-28: Ctrl+Shift+click on an occupied box
+slot deletes it, on a save copy that was then closed without saving and stayed byte-identical.
+
 **A blank Generation 4 save is a full image, so it can be written (a `PKHeX.Core` change).** This is the only
 behavioural change this port makes to Core, and it fixes a defect rather than adapting anything to Linux: `SAV4`'s
 blank constructor left `Data` empty, so writing one threw and, but for the throw, would have produced nothing.
@@ -1003,11 +1017,14 @@ instead, but that is a deliberate deviation and has not been made.
   `ObjectDisposedException: Ref<IBitmapImpl>` inside Avalonia's X11 selection handler the next time anything read the
   clipboard.
 * **Alt+click** (WinForms: delete slot) is intercepted by most Linux window managers (Cinnamon/Mint uses Alt+drag to move
-  windows) and never reaches the application. Use the slot context menu (right click → Delete) instead.
-* Alt+click on IV/EV boxes (WinForms: set to 0) has the same window-manager conflict; use Ctrl (max) or type the value.
-* Ctrl+Alt+click on a box slot (WinForms: fill the box with clones of the editor's entity) is wired up, but it inherits
-  the same Alt+click window-manager conflict; the box manipulation menu has no equivalent entry, so on desktops that
-  grab Alt+click the operation is unreachable.
+  windows) and never reaches the application - measured here, not assumed. **Ctrl+Shift+click does the same thing**
+  (see "Ctrl+Shift+click stands in for Alt+click" under "Deliberate deviations"), and the slot context menu
+  (right click → Delete) needs no modifier at all.
+* Alt+click on IV/EV boxes (WinForms: set to 0) has the same window-manager conflict; Ctrl+Shift+click is not wired
+  there, so use Ctrl (max) or type the value.
+* Ctrl+Alt+click on a box slot (WinForms: fill the box with clones of the editor's entity) is **not** affected: the
+  grab is on the exact Alt+Button1 chord and not on supersets of it, and this was screen-verified working
+  (see "Main window / Box tab parity pass"). An earlier note here claimed it was unreachable; that was wrong.
 * Switching the language back leaves controls whose key is missing from the target `lang_*.txt` untranslated
   (same behavior as WinForms; e.g. tab names exist in `lang_ja` but not in `lang_en`).
 

@@ -954,7 +954,7 @@ public sealed partial class MainWindow : Window
 
     internal async Task<bool> OpenSAV(SaveFile sav, string path, bool forceOpen = false)
     {
-        if (ModifierKeys == KeyModifiers.Alt)
+        if (ModifierKeys.Normalize() == KeyModifiers.Alt)
         {
             SaveTypeInfo other = default;
             if (SaveUtil.TryOverride(sav, other, out var replace))
@@ -1278,7 +1278,7 @@ public sealed partial class MainWindow : Window
 
     private async Task ClickQR()
     {
-        if (ModifierKeys == KeyModifiers.Alt)
+        if (ModifierKeys.Normalize() == KeyModifiers.Alt)
         {
             string? url = await ClipboardService.GetText(this);
             if (!string.IsNullOrWhiteSpace(url))
@@ -1464,7 +1464,7 @@ public sealed partial class MainWindow : Window
             if (!props.IsLeftButtonPressed)
                 return;
 
-            if (ModifierKeys is KeyModifiers.Alt or KeyModifiers.Shift)
+            if (ModifierKeys.Normalize() is KeyModifiers.Alt or KeyModifiers.Shift)
             {
                 await ClickQR();
                 return;

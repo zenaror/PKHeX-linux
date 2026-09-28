@@ -251,7 +251,7 @@ public sealed class DatabaseWindow : Window
 
     private async Task SlotClick(SlotView slot, KeyModifiers mods)
     {
-        switch (mods)
+        switch (mods.Normalize()) // Ctrl+Shift reads as Alt (ModifierAlias)
         {
             case KeyModifiers.Control: await ClickView(slot); break;
             case KeyModifiers.Alt: await ClickDelete(slot); break;
