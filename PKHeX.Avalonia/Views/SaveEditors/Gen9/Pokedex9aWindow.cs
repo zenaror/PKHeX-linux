@@ -81,7 +81,7 @@ public sealed class Pokedex9aWindow : SaveEditorWindow
 
         var filtered = GameInfo.FilteredSources;
         var strings = filtered.Source.Strings;
-        MegaNames = FormConverter.GetMegaFormNames(strings.forms, GameInfo.GenderSymbolUnicode, strings.Types);
+        MegaNames = FormConverter.GetMegaFormNames(strings.forms, MainWindow.GenderSymbols, strings.Types);
         int maxSpecies = sav.MaxSpeciesID; // no DLC species
 
         var species = filtered.Species.Where(z => z.Value <= maxSpecies).ToArray();
@@ -115,9 +115,10 @@ public sealed class Pokedex9aWindow : SaveEditorWindow
         LB_Species.ItemsSource = SpeciesItems;
         CB_DisplayForm.ItemsSource = DisplayFormItems;
 
-        var seen = new GroupBoxView("GB_Seen", "Seen", UiFactory.Column(
-            CHK_IsNew, CHK_SeenMale, CHK_SeenFemale, CHK_SeenGenderless, CHK_SeenAlpha,
-            CHK_SeenMega0, CHK_SeenMega1, CHK_SeenMega2));
+        // CHK_IsNew sits outside the Seen group in WinForms (SAV_Pokedex9a.Designer.cs:608-609).
+        var seen = UiFactory.Column(CHK_IsNew, new GroupBoxView("GB_Seen", "Seen", UiFactory.Column(
+            CHK_SeenMale, CHK_SeenFemale, CHK_SeenGenderless, CHK_SeenAlpha,
+            CHK_SeenMega0, CHK_SeenMega1, CHK_SeenMega2)));
 
         var displayGrid = UiFactory.FormGrid(3);
         UiFactory.AddFormRow(displayGrid, 0, UiFactory.Label("L_DisplayForm", "Form:"), CB_DisplayForm);

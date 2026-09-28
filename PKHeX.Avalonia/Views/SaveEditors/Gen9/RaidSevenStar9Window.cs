@@ -16,7 +16,7 @@ public sealed class RaidSevenStar9Window : SaveEditorWindow
     private readonly ComboBox CB_Raid = UiFactory.StringCombo("CB_Raid", 160);
     private readonly PropertyGridView PG_Raid = new() { MinHeight = 360 };
 
-    public RaidSevenStar9Window(SAV9SV sav) : base("SAV_RaidSevenStar9", "Raid Editor")
+    public RaidSevenStar9Window(SAV9SV sav) : base("SAV_RaidSevenStar9", "7 Star Raid Parameter Editor")
     {
         SAV = (SAV9SV)(Origin = sav).Clone();
         Raids = SAV.RaidSevenStar;

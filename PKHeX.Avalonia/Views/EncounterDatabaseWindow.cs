@@ -11,6 +11,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Layout;
 using PKHeX.Avalonia.Controls;
+using PKHeX.Avalonia.Controls.Hover;
 using PKHeX.Avalonia.Drawing;
 using PKHeX.Avalonia.Localization;
 using PKHeX.Avalonia.Services;
@@ -27,7 +28,11 @@ namespace PKHeX.Avalonia.Views;
 public sealed class EncounterDatabaseWindow : Window
 {
     private const int GridWidth = 6;
-    private const int GridHeight = 11;
+
+    /// <summary>Vertical space the window needs for everything except the sprite grid (menu, label, margins, chrome).</summary>
+    private const int NonGridHeight = 110;
+
+    private readonly int GridHeight;
 
     private readonly PKMEditorView PKME_Tabs;
     private SaveFile SAV => PKME_Tabs.RequestSaveFile;
@@ -42,6 +47,7 @@ public sealed class EncounterDatabaseWindow : Window
     private int slotSelected = -1;
     private SlotTouchType slotColor = SlotTouchType.None;
     private readonly string Counter;
+    private readonly SummaryPreviewer ShowSet = new();
 
     private readonly PokeGrid EncounterPokeGrid = new() { Name = "EncounterPokeGrid" };
     private readonly ScrollBar SCR_Box = new() { Orientation = Orientation.Vertical, Minimum = 0, Maximum = 0, Width = 18, Visibility = ScrollBarVisibility.Visible };
@@ -76,7 +82,8 @@ public sealed class EncounterDatabaseWindow : Window
     private readonly Button B_CriteriaFromTabs = UiFactory.Button("B_CriteriaFromTabs", "From Editor");
     private readonly TextBlock L_Count = UiFactory.Label("L_Count", "Count: {0}");
     private readonly TextBlock L_Viewed = UiFactory.Label("L_Viewed", "Last Viewed: {0}");
-    private readonly MenuItem Menu_Exit = new() { Name = "Menu_Exit", Header = "_Close" };
+    // WinForms binds Ctrl+E to Close here (hidden in its menu; Avalonia menus show their gestures).
+    private readonly MenuItem Menu_Exit = new() { Name = "Menu_Exit", Header = "_Close", HotKey = global::Avalonia.Input.KeyGesture.Parse("Ctrl+E"), InputGesture = global::Avalonia.Input.KeyGesture.Parse("Ctrl+E") };
     private readonly ContextMenu SlotMenu = new();
     private SlotView? menuSlot;
 
@@ -87,7 +94,10 @@ public sealed class EncounterDatabaseWindow : Window
         Icon = AppIcon.Get();
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         Width = 1030;
-        Height = 690;
+
+        // WinForms sizes the grid from the setting and then resizes the form around it.
+        GridHeight = PokeGrid.GetDatabaseRowCount(this, MainWindow.Settings.EncounterDb.ResultsGridRowCount, NonGridHeight);
+        Height = NonGridHeight + PokeGrid.GetGridSize(GridWidth, GridHeight, SpriteUtil.Spriter.Width, SpriteUtil.Spriter.Height).Height;
 
         PKME_Tabs = f1;
         Trainers = db;
@@ -98,6 +108,7 @@ public sealed class EncounterDatabaseWindow : Window
         menuFile.Items.Add(Menu_Exit);
         var menu = new Menu();
         menu.Items.Add(menuFile);
+        WindowUtil.SetMenuIcon(Menu_Exit, "exit"); // WinForms SAV_Encounters.Designer
 
         var filters = UiFactory.FormGrid(7);
         UiFactory.AddFormRow(filters, 0, Label_Species, CB_Species);
@@ -147,6 +158,7 @@ public sealed class EncounterDatabaseWindow : Window
 
         EncounterPokeGrid.InitializeGrid(GridWidth, GridHeight, SpriteUtil.Spriter);
         EncounterPokeGrid.SetBackground(AppResources.GetSkBitmap("box_wp_clean") ?? SpriteUtil.Spriter.Transparent);
+        var showHover = MainWindow.Settings.Hover.HoverSlotShowText; // WinForms gates the database hover on this setting
         foreach (var slot in EncounterPokeGrid.Entries)
         {
             slot.AttachClickHandled(async mods =>
@@ -162,9 +174,14 @@ public sealed class EncounterDatabaseWindow : Window
                     SlotMenu.Open(slot);
                 }
             };
+            if (!showHover)
+                continue;
+            slot.PointerEntered += (_, _) => ShowHoverTextForSlot(slot);
+            slot.PointerExited += (_, _) => ShowSet.Clear();
         }
         var mnuView = new MenuItem { Name = "mnuView", Header = "View" };
         mnuView.Click += async (_, _) => await ClickView(menuSlot);
+        WindowUtil.SetMenuIcon(mnuView, "other");
         SlotMenu.Items.Add(mnuView);
         Translator.TranslateControls(SlotMenu, "SAV_Encounters", MainWindow.CurrentLanguage);
 
@@ -176,7 +193,12 @@ public sealed class EncounterDatabaseWindow : Window
             SCR_Box.Value = newval;
             e.Handled = true;
         };
-        SCR_Box.Scroll += (_, _) => FillPKXBoxes((int)SCR_Box.Value);
+        // Covers both the scrollbar and the wheel handler above; Avalonia's Scroll event does not fire for a programmatic value.
+        SCR_Box.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == global::Avalonia.Controls.Primitives.RangeBase.ValueProperty)
+                FillPKXBoxes((int)SCR_Box.Value);
+        };
 
         Counter = L_Count.Text ?? "Count: {0}";
         L_Viewed.Text = string.Empty; // invisible for now
@@ -193,7 +215,7 @@ public sealed class EncounterDatabaseWindow : Window
         B_CriteriaFromTabs.Click += (_, _) => UpdateCriteriaPropertyGrid(BuildCriteriaFromTabs());
         Menu_Exit.Click += (_, _) => Close();
         CB_Species.SelectionChanged += (_, _) => CheckIsSearchAllowed();
-        Closing += (_, _) => TokenSource.Cancel();
+        Closing += (_, _) => { TokenSource.Cancel(); ShowSet.Clear(); };
 
         // Load Data
         L_Count.Text = "Ready...";
@@ -522,6 +544,7 @@ public sealed class EncounterDatabaseWindow : Window
     private void SetResults(List<IEncounterInfo> res)
     {
         Results = res;
+        ShowSet.Clear();
 
         SCR_Box.Maximum = (int)Math.Ceiling((decimal)Results.Count / GridWidth);
         if (SCR_Box.Maximum > 0)
@@ -567,6 +590,15 @@ public sealed class EncounterDatabaseWindow : Window
         // Reload last viewed index's background if still within view
         if (slotSelected != -1 && slotSelected >= begin && slotSelected < begin + boxes.Count)
             boxes[slotSelected - begin].BackgroundBitmap = SlotUtil.GetTouchTypeBackground(slotColor);
+    }
+
+    private void ShowHoverTextForSlot(SlotView pb)
+    {
+        int index = EncounterPokeGrid.Entries.IndexOf(pb);
+        if (!GetShiftedIndex(ref index))
+            return;
+
+        ShowSet.Show(pb, Results[index]);
     }
 
     private void CheckIsSearchAllowed()

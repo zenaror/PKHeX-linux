@@ -40,14 +40,14 @@ public sealed class ZygardeCellWindow : SaveEditorWindow
         SAV = (SAV7)(Origin = sav).Clone();
         var ew = SAV.EventWork;
 
-        dgv.Columns.Add(new DataGridTextColumn { Header = "#", Binding = new Binding(nameof(CellRow.Index)), IsReadOnly = true, Width = new DataGridLength(50) });
-        dgv.Columns.Add(new DataGridTextColumn { Header = "Location", Binding = new Binding(nameof(CellRow.Location)), IsReadOnly = true, Width = new DataGridLength(320) });
-        dgv.Columns.Add(DataGridUtil.StringComboColumn("State", States, nameof(CellRow.State), 130));
+        dgv.Columns.Add(new DataGridTextColumn { Header = "Ref", Binding = new Binding(nameof(CellRow.Index)), IsReadOnly = true, Width = new DataGridLength(50) }.Named("dgv_ref"));
+        dgv.Columns.Add(new DataGridTextColumn { Header = "Location", Binding = new Binding(nameof(CellRow.Location)), IsReadOnly = true, Width = new DataGridLength(320) }.Named("dgv_location"));
+        dgv.Columns.Add(DataGridUtil.StringComboColumn("Value", States, nameof(CellRow.State), 130).Named("dgv_val"));
         dgv.ItemsSource = Rows;
 
         var top = UiFactory.FormGrid(2);
-        UiFactory.AddFormRow(top, 0, UiFactory.Label("L_CellsTotal", "Total:"), NUD_CellsTotal);
-        UiFactory.AddFormRow(top, 1, UiFactory.Label("L_CellsCollected", "Collected:"), NUD_CellsCollected);
+        UiFactory.AddFormRow(top, 0, UiFactory.Label("L_Cells", "Stored:"), NUD_CellsTotal);
+        UiFactory.AddFormRow(top, 1, UiFactory.Label("L_Collected", "Collected:"), NUD_CellsCollected);
         SetBody(UiFactory.Column(top, B_GiveAll, dgv));
 
         NUD_CellsTotal.Value = ew.ZygardeCellTotal;

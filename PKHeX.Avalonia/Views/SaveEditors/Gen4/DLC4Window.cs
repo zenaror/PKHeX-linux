@@ -34,7 +34,7 @@ public sealed class DLC4Window : SaveEditorWindow
     private readonly Button B_Import = UiFactory.Button("B_Import", "Import");
     private readonly Button B_Export = UiFactory.Button("B_Export", "Export");
 
-    public DLC4Window(SAV4 sav) : base("SAV_DLC4", "Battle Videos")
+    public DLC4Window(SAV4 sav) : base("SAV_DLC4", "Generation 4 Battle Videos")
     {
         Origin = sav;
         SAV = (SAV4)sav.Clone();

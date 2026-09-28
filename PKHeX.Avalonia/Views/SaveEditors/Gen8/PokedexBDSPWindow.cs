@@ -79,19 +79,19 @@ public sealed class PokedexBDSPWindow : SaveEditorWindow
     {
         LB_Species.ItemsSource = SpeciesItems;
 
-        var seen = new GroupBoxView("GB_Seen", "Seen", UiFactory.Column(CHK_M, CHK_F, CHK_MS, CHK_FS));
+        var seen = new GroupBoxView("GB_Encountered", "Seen", UiFactory.Column(CHK_M, CHK_F, CHK_MS, CHK_FS));
         var languages = new GroupBoxView("GB_Language", "Languages", UiFactory.Column(CL));
         var flags = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         flags.Children.Add(seen);
         flags.Children.Add(languages);
 
         var forms = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        forms.Children.Add(UiFactory.Column(UiFactory.Label("L_FormRegular", "Forms"), CLB_FormRegular));
-        forms.Children.Add(UiFactory.Column(UiFactory.Label("L_FormShiny", "Forms (Shiny)"), CLB_FormShiny));
+        forms.Children.Add(UiFactory.Column(UiFactory.Label("L_FormsSeen", "Forms:"), CLB_FormRegular));
+        forms.Children.Add(UiFactory.Column(UiFactory.Label("L_FormDisplayed", "Shiny Forms:"), CLB_FormShiny));
 
         var right = UiFactory.Column(
             UiFactory.Row(UiFactory.Label("L_goto", "goto:"), CB_Species),
-            UiFactory.Row(UiFactory.Label("L_State", "State:"), CB_State),
+            CB_State, // WinForms has no label here; the entries name themselves
             flags,
             UiFactory.Row(B_GiveAll, B_Modify),
             forms,
@@ -136,9 +136,9 @@ public sealed class PokedexBDSPWindow : SaveEditorWindow
     private MenuFlyout BuildModifyFormsMenu()
     {
         var flyout = new MenuFlyout { Placement = PlacementMode.Bottom };
-        AddFormItem(flyout, "mnuFormAllRegular", "All regular", regular: true, shiny: false);
-        AddFormItem(flyout, "mnuFormAllShinies", "All shiny", regular: false, shiny: true);
-        AddFormItem(flyout, "mnuFormNone", "None", regular: false, shiny: false, clear: true);
+        AddFormItem(flyout, "mnuFormNone", "Seen none", regular: false, shiny: false, clear: true);
+        AddFormItem(flyout, "mnuFormAllRegular", "Seen all", regular: true, shiny: false);
+        AddFormItem(flyout, "mnuFormAllShinies", "Seen all shinies", regular: false, shiny: true);
         return flyout;
     }
 
@@ -156,7 +156,11 @@ public sealed class PokedexBDSPWindow : SaveEditorWindow
                     continue;
                 }
                 if (regular)
+                {
+                    // "Seen all" checks every regular form and clears the shiny column, as in WinForms.
                     CLB_FormRegular.SetItemChecked(i, true);
+                    CLB_FormShiny.SetItemChecked(i, false);
+                }
                 if (shiny)
                     CLB_FormShiny.SetItemChecked(i, true);
             }
@@ -225,7 +229,7 @@ public sealed class PokedexBDSPWindow : SaveEditorWindow
         if (fc <= 0)
             return;
 
-        var forms = FormConverter.GetFormList(species, GameInfo.Strings.types, GameInfo.Strings.forms, GameInfo.GenderSymbolUnicode, SAV.Context).Take(fc).ToArray();
+        var forms = FormConverter.GetFormList(species, GameInfo.Strings.types, GameInfo.Strings.forms, MainWindow.GenderSymbols, SAV.Context).Take(fc).ToArray();
         for (byte i = 0; i < forms.Length; i++)
         {
             CLB_FormRegular.Add(forms[i], Zukan.GetHasFormFlag(species, i, false));

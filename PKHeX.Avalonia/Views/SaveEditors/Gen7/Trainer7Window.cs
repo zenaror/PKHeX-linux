@@ -38,7 +38,7 @@ public sealed class Trainer7Window : SaveEditorWindow
     private readonly ComboBox CB_Game = UiFactory.StringCombo("CB_Game", 130);
     private readonly TrainerIDView trainerID1 = new() { Name = "trainerID1" };
     private readonly NumericTextBox MT_Money = UiFactory.Numeric("MT_Money", 8, 100);
-    private readonly Button B_MaxCash = UiFactory.Button("B_MaxCash", "Max");
+    private readonly Button B_MaxCash = UiFactory.Button("B_MaxCash", "+");
     private readonly ComboBox CB_Country = UiFactory.Combo("CB_Country", 180);
     private readonly ComboBox CB_Region = UiFactory.Combo("CB_Region", 180);
     private readonly ComboBox CB_3DSReg = UiFactory.Combo("CB_3DSReg", 180);
@@ -48,20 +48,20 @@ public sealed class Trainer7Window : SaveEditorWindow
     private readonly NumericTextBox MT_Minutes = UiFactory.Numeric("MT_Minutes", 2, 44);
     private readonly NumericTextBox MT_Seconds = UiFactory.Numeric("MT_Seconds", 2, 44);
     private readonly NumericUpDown NUD_BP = UiFactory.NumericUpDown("NUD_BP", 0, 9999, 110);
-    private readonly NumericUpDown NUD_FC = UiFactory.NumericUpDown("NUD_FC", 0, 9999, 110);
+    private readonly NumericUpDown NUD_FC = UiFactory.NumericUpDown("NUD_FC", 0, 9999999, 110);
     private readonly NumericUpDown NUD_DaysFromRefreshed = UiFactory.NumericUpDown("NUD_DaysFromRefreshed", 0, byte.MaxValue, 110);
     private readonly ComboBox CB_Vivillon = UiFactory.StringCombo("CB_Vivillon", 160);
     private readonly TextBlock L_Vivillon = UiFactory.Label("L_Vivillon", "Vivillon:");
     private readonly RenderedString TB_PlazaName = UiFactory.Name("TB_PlazaName", 20, 200);
     private readonly ComboBox CB_SkinColor = UiFactory.StringCombo("CB_SkinColor", 160);
     private readonly ComboBox CB_BallThrowType = UiFactory.StringCombo("CB_BallThrowType", 160);
-    private readonly CheckBox CHK_UnlockMega = UiFactory.Check("CHK_UnlockMega", "Mega Unlocked");
-    private readonly CheckBox CHK_UnlockZMove = UiFactory.Check("CHK_UnlockZMove", "Z-Move Unlocked");
-    private readonly CheckBox CHK_UnlockSuperSingles = UiFactory.Check("CHK_UnlockSuperSingles", "Super Singles");
-    private readonly CheckBox CHK_UnlockSuperDoubles = UiFactory.Check("CHK_UnlockSuperDoubles", "Super Doubles");
-    private readonly CheckBox CHK_UnlockSuperMulti = UiFactory.Check("CHK_UnlockSuperMulti", "Super Multi");
+    private readonly CheckBox CHK_UnlockMega = UiFactory.Check("CHK_UnlockMega", "Unlocked Mega Evolution");
+    private readonly CheckBox CHK_UnlockZMove = UiFactory.Check("CHK_UnlockZMove", "Unlocked Z-Moves");
+    private readonly CheckBox CHK_UnlockSuperSingles = UiFactory.Check("CHK_UnlockSuperSingles", "Singles");
+    private readonly CheckBox CHK_UnlockSuperDoubles = UiFactory.Check("CHK_UnlockSuperDoubles", "Doubles");
+    private readonly CheckBox CHK_UnlockSuperMulti = UiFactory.Check("CHK_UnlockSuperMulti", "Multi");
     private readonly ComboBox CB_Fashion = UiFactory.StringCombo("CB_Fashion", 160);
-    private readonly Button B_Fashion = UiFactory.Button("B_Fashion", "Apply Fashion");
+    private readonly Button B_Fashion = UiFactory.Button("B_Fashion", "Give all Fashion Items");
 
     private readonly DatePicker CAL_AdventureStartDate = new() { Name = "CAL_AdventureStartDate" };
     private readonly TimePicker CAL_AdventureStartTime = new() { Name = "CAL_AdventureStartTime" };
@@ -72,17 +72,17 @@ public sealed class Trainer7Window : SaveEditorWindow
     private readonly TextBlock L_LastSaved = UiFactory.Label("L_LastSaved", "Last Saved:");
 
     // Map
-    private readonly NumericUpDown NUD_M = UiFactory.NumericUpDown("NUD_M", 0, ushort.MaxValue, 110);
-    private readonly NumericUpDown NUD_X = UiFactory.NumericUpDown("NUD_X", -100000, 100000, 110);
-    private readonly NumericUpDown NUD_Z = UiFactory.NumericUpDown("NUD_Z", -100000, 100000, 110);
-    private readonly NumericUpDown NUD_Y = UiFactory.NumericUpDown("NUD_Y", -100000, 100000, 110);
-    private readonly NumericUpDown NUD_R = UiFactory.NumericUpDown("NUD_R", -360, 360, 110);
+    private readonly NumericUpDown NUD_M = UiFactory.NumericUpDown("NUD_M", 0, 1000, 110);
+    private readonly NumericUpDown NUD_X = UiFactory.NumericUpDown("NUD_X", -99999999, 99999999, 110);
+    private readonly NumericUpDown NUD_Z = UiFactory.NumericUpDown("NUD_Z", -99999999, 99999999, 110);
+    private readonly NumericUpDown NUD_Y = UiFactory.NumericUpDown("NUD_Y", -99999999, 99999999, 110);
+    private readonly NumericUpDown NUD_R = UiFactory.NumericUpDown("NUD_R", -99999999, 99999999, 110);
     private GroupBoxView GB_Map = null!;
 
     // Poké Finder / Battle Tree
-    private readonly NumericUpDown NUD_SnapCount = UiFactory.NumericUpDown("NUD_SnapCount", 0, uint.MaxValue, 130);
-    private readonly NumericUpDown NUD_ThumbsTotal = UiFactory.NumericUpDown("NUD_ThumbsTotal", 0, uint.MaxValue, 130);
-    private readonly NumericUpDown NUD_ThumbsRecord = UiFactory.NumericUpDown("NUD_ThumbsRecord", 0, uint.MaxValue, 130);
+    private readonly NumericUpDown NUD_SnapCount = UiFactory.NumericUpDown("NUD_SnapCount", 0, 9999999, 130);
+    private readonly NumericUpDown NUD_ThumbsTotal = UiFactory.NumericUpDown("NUD_ThumbsTotal", 0, 9999999, 130);
+    private readonly NumericUpDown NUD_ThumbsRecord = UiFactory.NumericUpDown("NUD_ThumbsRecord", 0, 9999999, 130);
     private readonly ComboBox CB_CameraVersion = UiFactory.StringCombo("CB_CameraVersion", 100);
     private readonly CheckBox CHK_Gyro = UiFactory.Check("CHK_Gyro", "Gyro");
     private readonly NumericUpDown[] TreeStreaks = new NumericUpDown[12];
@@ -90,8 +90,8 @@ public sealed class Trainer7Window : SaveEditorWindow
     // Flags
     private readonly CheckedListView CLB_FlyDest = new() { Name = "CLB_FlyDest", Width = 280, Height = 280 };
     private readonly CheckedListView CLB_MapUnmask = new() { Name = "CLB_MapUnmask", Width = 280, Height = 280 };
-    private readonly Button B_AllFlyDest = UiFactory.Button("B_AllFlyDest", "All");
-    private readonly Button B_AllMapUnmask = UiFactory.Button("B_AllMapUnmask", "All");
+    private readonly Button B_AllFlyDest = UiFactory.Button("B_AllFlyDest", "Check All");
+    private readonly Button B_AllMapUnmask = UiFactory.Button("B_AllMapUnmask", "Check All");
     private readonly ListBox LB_Stamps = new() { Name = "LB_Stamps", Width = 240, Height = 220, SelectionMode = SelectionMode.Multiple };
     private readonly ObservableCollection<string> StampItems = [];
     private readonly ListBox LB_BallThrowTypeUnlocked = new() { Name = "LB_BallThrowTypeUnlocked", Width = 200, Height = 160, SelectionMode = SelectionMode.Multiple };
@@ -103,9 +103,9 @@ public sealed class Trainer7Window : SaveEditorWindow
     // Ultra only
     private readonly NumericUpDown[] NUD_Surf = new NumericUpDown[4];
     private readonly RenderedString TB_RotomOT = UiFactory.Name("TB_RotomOT", 12, 140);
-    private readonly NumericUpDown NUD_RotomAffection = UiFactory.NumericUpDown("NUD_RotomAffection", 0, ushort.MaxValue, 110);
-    private readonly CheckBox CHK_RotoLoto1 = UiFactory.Check("CHK_RotoLoto1", "Roto Loto 1");
-    private readonly CheckBox CHK_RotoLoto2 = UiFactory.Check("CHK_RotoLoto2", "Roto Loto 2");
+    private readonly NumericUpDown NUD_RotomAffection = UiFactory.NumericUpDown("NUD_RotomAffection", 0, 9999, 110);
+    private readonly CheckBox CHK_RotoLoto1 = UiFactory.Check("CHK_RotoLoto1", "Loto1");
+    private readonly CheckBox CHK_RotoLoto2 = UiFactory.Check("CHK_RotoLoto2", "Loto2");
 
     private readonly TrainerStatView TrainerStats = new();
 
@@ -125,17 +125,19 @@ public sealed class Trainer7Window : SaveEditorWindow
         for (int i = 0; i < TreeStreaks.Length; i++)
             TreeStreaks[i] = UiFactory.NumericUpDown($"NUD_TreeStreak{i}", 0, ushort.MaxValue, 100);
         for (int i = 0; i < NUD_Surf.Length; i++)
-            NUD_Surf[i] = UiFactory.NumericUpDown($"NUD_Surf{i}", 0, ushort.MaxValue, 110);
+            NUD_Surf[i] = UiFactory.NumericUpDown($"NUD_Surf{i}", 0, 999999999, 110);
 
         foreach (var s in MainWindow.GenderSymbols.Take(2)) // m/f depending on unicode selection
             CB_Gender.Items.Add(s);
-        foreach (var v in new[] { GameVersion.SN, GameVersion.MN, GameVersion.US, GameVersion.UM })
-            CB_Game.Items.Add(v.ToString());
-        foreach (var s in new[] { "Unlocked", "Learned" })
+        foreach (var s in new[] { "Sun", "Moon", "US", "UM" })
+            CB_Game.Items.Add(s);
+        foreach (var s in new[] { "unlocked list", "learned list" })
             CB_BallThrowTypeListMode.Items.Add(s);
-        foreach (var s in new[] { "Base Fashion", "Full Legal", "Everything" })
+        foreach (var s in new[] { "New Game", "All Legal", "Everything" })
             CB_Fashion.Items.Add(s);
-        foreach (var s in new[] { "0", "1", "2" })
+        // Five entries, as in the WinForms designer: the index is written straight into PokeFinder.CameraVersion,
+        // so a shorter list would clamp a save that already holds 3 or 4.
+        foreach (var s in new[] { "1", "2", "3", "4", "5" })
             CB_CameraVersion.Items.Add(s);
 
         BuildLayout();
@@ -160,97 +162,11 @@ public sealed class Trainer7Window : SaveEditorWindow
     private void BuildLayout()
     {
         var tabs = new TabControl { Name = "TC_Editor" };
-
-        var main = UiFactory.FormGrid(13);
-        UiFactory.AddFormRow(main, 0, UiFactory.Label("L_TrainerName", "Trainer Name:"), UiFactory.Row(TB_OTName, CB_Gender));
-        UiFactory.AddFormRow(main, 1, UiFactory.Label("L_Game", "Game:"), CB_Game);
-        UiFactory.AddFormRow(main, 2, UiFactory.Label("L_TrainerID", "Trainer ID:"), trainerID1);
-        UiFactory.AddFormRow(main, 3, UiFactory.Label("L_Money", "Money:"), UiFactory.Row(MT_Money, B_MaxCash));
-        UiFactory.AddFormRow(main, 4, UiFactory.Label("L_Language", "Language:"), CB_Language);
-        UiFactory.AddFormRow(main, 5, UiFactory.Label("L_Country", "Country:"), CB_Country);
-        UiFactory.AddFormRow(main, 6, UiFactory.Label("L_Region", "Region:"), CB_Region);
-        UiFactory.AddFormRow(main, 7, UiFactory.Label("L_3DSReg", "3DS Region:"), CB_3DSReg);
-        UiFactory.AddFormRow(main, 8, UiFactory.Label("L_AlolaTime", "Alola Time:"), CB_AlolaTime);
-        UiFactory.AddFormRow(main, 9, UiFactory.Label("L_PlayTime", "Play Time:"), UiFactory.Row(MT_Hours, MT_Minutes, MT_Seconds));
-        UiFactory.AddFormRow(main, 10, UiFactory.Label("L_BP", "BP / Festa Coins:"), UiFactory.Row(NUD_BP, NUD_FC));
-        UiFactory.AddFormRow(main, 11, L_Vivillon, CB_Vivillon);
-        UiFactory.AddFormRow(main, 12, UiFactory.Label("L_PlazaName", "Plaza Name:"), TB_PlazaName);
-
-        var dates = UiFactory.FormGrid(3);
-        UiFactory.AddFormRow(dates, 0, UiFactory.Label("L_AdventureStart", "Adventure Started:"), UiFactory.Row(CAL_AdventureStartDate, CAL_AdventureStartTime));
-        UiFactory.AddFormRow(dates, 1, UiFactory.Label("L_HoF", "Hall of Fame:"), UiFactory.Row(CAL_HoFDate, CAL_HoFTime));
-        UiFactory.AddFormRow(dates, 2, L_LastSaved, UiFactory.Row(CAL_LastSavedDate, CAL_LastSavedTime));
-
-        GB_Map = new GroupBoxView("GB_Map", "Map Position", UiFactory.Row(
-            UiFactory.Label("L_M", "M:"), NUD_M,
-            UiFactory.Label("L_X", "X:"), NUD_X,
-            UiFactory.Label("L_Z", "Z:"), NUD_Z,
-            UiFactory.Label("L_Y", "Y:"), NUD_Y,
-            UiFactory.Label("L_R", "R:"), NUD_R));
-
-        var appearance = UiFactory.Column(
-            UiFactory.Row(UiFactory.Label("L_SkinColor", "Skin Color:"), CB_SkinColor),
-            UiFactory.Row(UiFactory.Label("L_BallThrowType", "Ball Throw:"), CB_BallThrowType),
-            UiFactory.Row(UiFactory.Label("L_DaysFromRefreshed", "Days From Refreshed:"), NUD_DaysFromRefreshed),
-            UiFactory.Row(CB_Fashion, B_Fashion),
-            UiFactory.Row(CHK_UnlockMega, CHK_UnlockZMove),
-            UiFactory.Row(CHK_UnlockSuperSingles, CHK_UnlockSuperDoubles, CHK_UnlockSuperMulti));
-
-        var overview = UiFactory.Column(main, dates, GB_Map, appearance);
-        tabs.Items.Add(new TabItem { Name = "Tab_Overview", Header = "Overview", Content = new ScrollViewer { Content = overview, MaxHeight = 560 } });
-
-        tabs.Items.Add(new TabItem { Name = "Tab_Records", Header = "Records", Content = TrainerStats });
-
-        // Poké Finder + Battle Tree
-        var finder = UiFactory.FormGrid(5);
-        UiFactory.AddFormRow(finder, 0, UiFactory.Label("L_SnapCount", "Snaps:"), NUD_SnapCount);
-        UiFactory.AddFormRow(finder, 1, UiFactory.Label("L_ThumbsTotal", "Thumbs Total:"), NUD_ThumbsTotal);
-        UiFactory.AddFormRow(finder, 2, UiFactory.Label("L_ThumbsRecord", "Thumbs Record:"), NUD_ThumbsRecord);
-        UiFactory.AddFormRow(finder, 3, UiFactory.Label("L_CameraVersion", "Camera Version:"), CB_CameraVersion);
-        UiFactory.AddFormRow(finder, 4, null, CHK_Gyro);
-
-        var treeGrid = new Grid { ColumnSpacing = 6, RowSpacing = 3 };
-        for (int i = 0; i < 4; i++)
-            treeGrid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
-        string[] rowNames = ["Regular Current", "Regular Max", "Super Current", "Super Max"];
-        for (int r = 0; r < 4; r++)
-        {
-            treeGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
-            var label = UiFactory.Label($"L_Tree{r}", rowNames[r]);
-            label.MinWidth = 130;
-            UiFactory.SetRowCol(label, r, 0);
-            treeGrid.Children.Add(label);
-            for (int c = 0; c < 3; c++)
-            {
-                var nud = TreeStreaks[(r * 3) + c];
-                UiFactory.SetRowCol(nud, r, c + 1);
-                treeGrid.Children.Add(nud);
-            }
-        }
-        var finderTab = UiFactory.Column(
-            new GroupBoxView("GB_PokeFinder", "Poké Finder", finder),
-            new GroupBoxView("GB_BattleTree", "Battle Tree", treeGrid));
-        tabs.Items.Add(new TabItem { Name = "Tab_Finder", Header = "Poké Finder", Content = new ScrollViewer { Content = finderTab, MaxHeight = 560 } });
-
-        // Flags
-        LB_Stamps.ItemsSource = StampItems;
-        LB_BallThrowTypeUnlocked.ItemsSource = UnlockedItems;
-        LB_BallThrowTypeLearned.ItemsSource = LearnedItems;
-        var flags = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
-        flags.Children.Add(UiFactory.Column(UiFactory.Label("L_FlyDest", "Fly Destinations"), CLB_FlyDest, B_AllFlyDest));
-        flags.Children.Add(UiFactory.Column(UiFactory.Label("L_MapUnmask", "Map Reveal"), CLB_MapUnmask, B_AllMapUnmask));
-        flags.Children.Add(UiFactory.Column(
-            UiFactory.Label("L_Stamps", "Stamps"), LB_Stamps,
-            CB_BallThrowTypeListMode, LB_BallThrowTypeUnlocked, LB_BallThrowTypeLearned));
-        tabs.Items.Add(new TabItem { Name = "Tab_Flags", Header = "Flags", Content = new ScrollViewer { Content = flags, MaxHeight = 560 } });
-
-        // Ultra
-        var ultra = UiFactory.FormGrid(4);
-        UiFactory.AddFormRow(ultra, 0, UiFactory.Label("L_Surf", "Surf Scores:"), UiFactory.Row(NUD_Surf));
-        UiFactory.AddFormRow(ultra, 1, UiFactory.Label("L_RotomOT", "Rotom OT:"), TB_RotomOT);
-        UiFactory.AddFormRow(ultra, 2, UiFactory.Label("L_RotomAffection", "Rotom Affection:"), NUD_RotomAffection);
-        UiFactory.AddFormRow(ultra, 3, null, UiFactory.Row(CHK_RotoLoto1, CHK_RotoLoto2));
-        tabs.Items.Add(new TabItem { Name = "Tab_Ultra", Header = "Ultra", Content = ultra });
+        tabs.Items.Add(new TabItem { Name = "Tab_Overview", Header = "Overview", Content = new ScrollViewer { Content = BuildOverview(), MaxHeight = 560 } });
+        tabs.Items.Add(new TabItem { Name = "Tab_BadgeMap", Header = "Map", Content = new ScrollViewer { Content = BuildMap(), MaxHeight = 560 } });
+        tabs.Items.Add(new TabItem { Name = "Tab_BattleTree", Header = "Battle Tree", Content = new ScrollViewer { Content = BuildBattleTree(), MaxHeight = 560 } });
+        tabs.Items.Add(new TabItem { Name = "Tab_Misc", Header = "Misc", Content = new ScrollViewer { Content = BuildMisc(), MaxHeight = 560 } });
+        tabs.Items.Add(new TabItem { Name = "Tab_Ultra", Header = "Ultra", Content = BuildUltra() });
 
         SetBody(tabs);
 
@@ -273,6 +189,154 @@ public sealed class Trainer7Window : SaveEditorWindow
         });
         foreach (var nud in new[] { NUD_M, NUD_X, NUD_Z, NUD_Y, NUD_R })
             nud.ValueChanged += (_, _) => { if (!Loading) MapUpdated = true; };
+    }
+
+    private Control BuildOverview()
+    {
+        var main = UiFactory.FormGrid(9);
+        UiFactory.AddFormRow(main, 0, UiFactory.Label("L_TrainerName", "Trainer Name:"), UiFactory.Row(TB_OTName, CB_Gender, CB_Game));
+        UiFactory.AddFormRow(main, 1, null, trainerID1);
+        UiFactory.AddFormRow(main, 2, UiFactory.Label("L_Money", "$:"), UiFactory.Row(MT_Money, B_MaxCash));
+        UiFactory.AddFormRow(main, 3, UiFactory.Label("L_Language", "Language:"), CB_Language);
+        UiFactory.AddFormRow(main, 4, UiFactory.Label("L_Country", "Country:"), CB_Country);
+        UiFactory.AddFormRow(main, 5, UiFactory.Label("L_Region", "Sub Region:"), CB_Region);
+        UiFactory.AddFormRow(main, 6, UiFactory.Label("L_3DSReg", "3DS Region:"), CB_3DSReg);
+        UiFactory.AddFormRow(main, 7, UiFactory.Label("L_AlolaTime", "Time Offset:"), CB_AlolaTime);
+        UiFactory.AddFormRow(main, 8, L_Vivillon, CB_Vivillon);
+
+        var stats = UiFactory.FormGrid(3);
+        UiFactory.AddFormRow(stats, 0, UiFactory.Label("L_BP", "BP:"), NUD_BP);
+        UiFactory.AddFormRow(stats, 1, UiFactory.Label("L_FC", "Festa Coins:"), NUD_FC);
+        UiFactory.SetRowCol(TrainerStats, 2, 0, 2);
+        stats.Children.Add(TrainerStats);
+        var gbStats = new GroupBoxView("GB_Stats", "Stats", stats);
+
+        var adventure = UiFactory.FormGrid(4);
+        UiFactory.AddFormRow(adventure, 0, UiFactory.Label("L_Started", "Game Started:"), UiFactory.Row(CAL_AdventureStartDate, CAL_AdventureStartTime));
+        UiFactory.AddFormRow(adventure, 1, UiFactory.Label("L_Fame", "HoF Entered:"), UiFactory.Row(CAL_HoFDate, CAL_HoFTime));
+        UiFactory.AddFormRow(adventure, 2, L_LastSaved, UiFactory.Row(CAL_LastSavedDate, CAL_LastSavedTime));
+        UiFactory.AddFormRow(adventure, 3, null, UiFactory.Row(
+            UiFactory.Label("L_Hours", "Hrs:"), MT_Hours,
+            UiFactory.Label("L_Minutes", "Min:"), MT_Minutes,
+            UiFactory.Label("L_Seconds", "Sec:"), MT_Seconds));
+        var gbAdventure = new GroupBoxView("GB_Adventure", "Adventure Info", adventure);
+
+        return UiFactory.Column(main, UiFactory.Row(gbStats, gbAdventure));
+    }
+
+    private Control BuildMap()
+    {
+        var map = UiFactory.FormGrid(5);
+        UiFactory.AddFormRow(map, 0, UiFactory.Label("L_CurrentMap", "Current Map:"), NUD_M);
+        UiFactory.AddFormRow(map, 1, UiFactory.Label("L_X", "X Coordinate:"), NUD_X);
+        UiFactory.AddFormRow(map, 2, UiFactory.Label("L_Z", "Z Coordinate:"), NUD_Z);
+        UiFactory.AddFormRow(map, 3, UiFactory.Label("L_Y", "Y Coordinate:"), NUD_Y);
+        UiFactory.AddFormRow(map, 4, UiFactory.Label("L_R", "Rotation:"), NUD_R);
+        GB_Map = new GroupBoxView("GB_Map", "Map Position", map);
+
+        var flyDest = new GroupBoxView("GB_FlyDest", "Fly Destination", UiFactory.Column(CLB_FlyDest, B_AllFlyDest));
+        var unmask = new GroupBoxView("GB_MapUnmask", "Map Unmask", UiFactory.Column(CLB_MapUnmask, B_AllMapUnmask));
+        var row = UiFactory.Row(GB_Map, flyDest, unmask);
+        row.Spacing = 10;
+        row.VerticalAlignment = VerticalAlignment.Top;
+        return row;
+    }
+
+    private Control BuildBattleTree()
+    {
+        // Two value columns (Regular / Super) over six rows: current and max streak per singles/doubles/multi.
+        var g = new Grid { ColumnSpacing = 6, RowSpacing = 3 };
+        for (int i = 0; i < 3; i++)
+            g.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+        for (int i = 0; i < 7; i++)
+            g.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+
+        var regular = UiFactory.Label("L_Regular", "Regular");
+        regular.HorizontalAlignment = HorizontalAlignment.Center;
+        UiFactory.SetRowCol(regular, 0, 1);
+        g.Children.Add(regular);
+        var super = UiFactory.Label("L_Super", "Super");
+        super.HorizontalAlignment = HorizontalAlignment.Center;
+        UiFactory.SetRowCol(super, 0, 2);
+        g.Children.Add(super);
+
+        string[] names = ["L_CStreak0", "L_MStreak0", "L_CStreak1", "L_MStreak1", "L_CStreak2", "L_MStreak2"];
+        string[] texts =
+        [
+            "Current Streak Singles:", "Max Streak Singles:",
+            "Current Streak Doubles:", "Max Streak Doubles:",
+            "Current Streak Multi:", "Max Streak Multi:",
+        ];
+        // TreeStreaks is laid out [regular current x3][regular max x3][super current x3][super max x3].
+        int[] regularIndex = [0, 3, 1, 4, 2, 5];
+        int[] superIndex = [6, 9, 7, 10, 8, 11];
+        for (int i = 0; i < names.Length; i++)
+        {
+            var label = UiFactory.Label(names[i], texts[i]);
+            label.HorizontalAlignment = HorizontalAlignment.Right;
+            UiFactory.SetRowCol(label, i + 1, 0);
+            g.Children.Add(label);
+            UiFactory.SetRowCol(TreeStreaks[regularIndex[i]], i + 1, 1);
+            g.Children.Add(TreeStreaks[regularIndex[i]]);
+            UiFactory.SetRowCol(TreeStreaks[superIndex[i]], i + 1, 2);
+            g.Children.Add(TreeStreaks[superIndex[i]]);
+        }
+
+        var supers = new GroupBoxView("GB_UnlockSupers", "Unlock Super*",
+            UiFactory.Row(CHK_UnlockSuperSingles, CHK_UnlockSuperDoubles, CHK_UnlockSuperMulti));
+        return UiFactory.Column(g, supers);
+    }
+
+    private Control BuildMisc()
+    {
+        var finder = UiFactory.FormGrid(5);
+        UiFactory.AddFormRow(finder, 0, UiFactory.Label("L_SnapCount", "Snap Count:"), NUD_SnapCount);
+        UiFactory.AddFormRow(finder, 1, UiFactory.Label("L_ThumbsTotal", "Total Thumbs-Ups:"), NUD_ThumbsTotal);
+        UiFactory.AddFormRow(finder, 2, UiFactory.Label("L_ThumbsRecord", "Record Thumbs-Ups:"), NUD_ThumbsRecord);
+        UiFactory.AddFormRow(finder, 3, UiFactory.Label("L_CameraVersion", "Camera Version:"), CB_CameraVersion);
+        UiFactory.AddFormRow(finder, 4, null, CHK_Gyro);
+        var gbFinder = new GroupBoxView("GB_PokeFinder", "Poké Finder", finder);
+
+        var misc = UiFactory.FormGrid(4);
+        UiFactory.AddFormRow(misc, 0, UiFactory.Label("L_SkinColor", "Skin Color:"), CB_SkinColor);
+        UiFactory.AddFormRow(misc, 1, UiFactory.Label("L_BallThrowType", "Ball Throw Type:"), CB_BallThrowType);
+        UiFactory.AddFormRow(misc, 2, UiFactory.Label("L_DaysFromRefreshed", "Days from Refreshed:"), NUD_DaysFromRefreshed);
+        UiFactory.AddFormRow(misc, 3, null, UiFactory.Row(CHK_UnlockMega, CHK_UnlockZMove));
+
+        LB_Stamps.ItemsSource = StampItems;
+        LB_BallThrowTypeUnlocked.ItemsSource = UnlockedItems;
+        LB_BallThrowTypeLearned.ItemsSource = LearnedItems;
+
+        var throwLists = UiFactory.Column(CB_BallThrowTypeListMode, LB_BallThrowTypeUnlocked, LB_BallThrowTypeLearned);
+        var stamps = UiFactory.Column(UiFactory.Label("L_Stamps", "Stamps:"), LB_Stamps);
+        var plaza = UiFactory.Column(UiFactory.Label("L_PlazaName", "Festival Plaza Name:"), TB_PlazaName, UiFactory.Row(CB_Fashion, B_Fashion));
+
+        var left = UiFactory.Column(misc, throwLists, plaza);
+        var row = UiFactory.Row(left, UiFactory.Column(stamps, gbFinder));
+        row.Spacing = 10;
+        row.VerticalAlignment = VerticalAlignment.Top;
+        return row;
+    }
+
+    private Control BuildUltra()
+    {
+        var surf = UiFactory.FormGrid(4);
+        string[] names = ["L_Surf0", "L_Surf1", "L_Surf2", "L_Surf3"];
+        string[] texts = ["Melemele", "Akala", "Ula'ula", "Poni"];
+        for (int i = 0; i < NUD_Surf.Length; i++)
+            UiFactory.AddFormRow(surf, i, UiFactory.Label(names[i], texts[i]), NUD_Surf[i]);
+        var gbSurf = new GroupBoxView("GB_Surf", "Surf Scores", surf);
+
+        var rotom = UiFactory.FormGrid(3);
+        UiFactory.AddFormRow(rotom, 0, UiFactory.Label("L_RotomOT", "OT Name:"), TB_RotomOT);
+        UiFactory.AddFormRow(rotom, 1, UiFactory.Label("L_RotomAffection", "Affection:"), NUD_RotomAffection);
+        UiFactory.AddFormRow(rotom, 2, null, UiFactory.Row(CHK_RotoLoto1, CHK_RotoLoto2));
+        var gbRotom = new GroupBoxView("GB_Rotom", "Rotom", rotom);
+
+        var row = UiFactory.Row(gbSurf, gbRotom);
+        row.Spacing = 10;
+        row.VerticalAlignment = VerticalAlignment.Top;
+        return row;
     }
 
     private void RemoveTab(string name)

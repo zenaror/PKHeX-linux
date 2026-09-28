@@ -176,7 +176,7 @@ public sealed partial class SAVEditorView
         B_OpenJoinAvenueEditor.Click += async (_, _) => await OpenDialog(() => new JoinAvenueWindow((SAV5B2W2)SAV));
         B_OpenGear.Click += async (_, _) => await OpenDialog(() => new Gear4BRWindow((SAV4BR)SAV));
         B_OpenFriendSafari.Click += async (_, _) => await ClickFriendSafari();
-        B_OpenBattlePass.Click += async (_, _) => await OpenDialog(() => new BattlePass4BRWindow(this, (SAV4BR)SAV));
+        B_OpenBattlePass.Click += async (_, _) => await ClickBattlePass();
         B_Donuts.Click += async (_, _) => await OpenDialog(() => new Donut9aWindow((SAV9ZA)SAV));
         B_DLC.Click += async (_, _) => await ClickDLC();
         B_OpenFashion.Click += async (_, _) => await OpenDialog(() => new Fashion9Window(SAV));
@@ -233,6 +233,36 @@ public sealed partial class SAVEditorView
             return;
         }
         GroupViewer.Activate();
+    }
+
+    /// <summary>
+    /// The Battle Pass editor, kept alive between clicks (port of <c>B_OpenBattlePass_Click</c>).
+    /// </summary>
+    /// <remarks>
+    /// WinForms shows this form non-modally and reuses the single instance, so its slots can load entities into
+    /// the main entity editor and read them back while it stays open.
+    /// </remarks>
+    private BattlePass4BRWindow? BattlePassWindow;
+
+    private async Task ClickBattlePass()
+    {
+        if (SAV is not SAV4BR br || Owner is null)
+            return;
+        if (BattlePassWindow is { IsVisible: true })
+        {
+            BattlePassWindow.Activate();
+            return;
+        }
+        try
+        {
+            BattlePassWindow = new BattlePass4BRWindow(this, br);
+            BattlePassWindow.Show(Owner);
+        }
+        catch (Exception ex)
+        {
+            BattlePassWindow = null;
+            await AppDialogs.Error(Owner, ex.Message, ex);
+        }
     }
 
     /// <summary>Opens the DLC editor for the loaded save (port of <c>B_DLC_Click</c>).</summary>
@@ -361,6 +391,10 @@ public sealed partial class SAVEditorView
         var index = CB_SaveSlot.GetValue();
         if (SAV is not SAV4BR br || br.CurrentSlot == index)
             return;
+
+        // The open pass editor belongs to the slot being left (WinForms closes it here too).
+        if (BattlePassWindow is { IsVisible: true })
+            BattlePassWindow.Close();
 
         br.CurrentSlot = index;
         Box.ResetBoxNames(); // fix box names

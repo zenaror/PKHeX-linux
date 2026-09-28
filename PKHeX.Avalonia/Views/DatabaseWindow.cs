@@ -13,6 +13,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Layout;
 using PKHeX.Avalonia.Controls;
+using PKHeX.Avalonia.Controls.Hover;
 using PKHeX.Avalonia.Drawing;
 using PKHeX.Avalonia.Localization;
 using PKHeX.Avalonia.Services;
@@ -29,7 +30,11 @@ namespace PKHeX.Avalonia.Views;
 public sealed class DatabaseWindow : Window
 {
     private const int GridWidth = 6;
-    private const int GridHeight = 11;
+
+    /// <summary>Vertical space the window needs for everything except the sprite grid (menu, label, margins, chrome).</summary>
+    private const int NonGridHeight = 110;
+
+    private readonly int GridHeight;
 
     private readonly SaveFile SAV;
     private readonly SAVEditorView BoxView;
@@ -43,6 +48,7 @@ public sealed class DatabaseWindow : Window
     private SlotTouchType slotColor = SlotTouchType.None;
     private readonly string Counter;
     private readonly string Viewed;
+    private readonly SummaryPreviewer ShowSet = new();
     private readonly CancellationTokenSource cts = new();
 
     private readonly PokeGrid DatabasePokeGrid = new() { Name = "DatabasePokeGrid" };
@@ -61,18 +67,19 @@ public sealed class DatabaseWindow : Window
     private readonly TextBlock L_Viewed = UiFactory.Label("L_Viewed", "Last Viewed: {0}");
 
     // Menu
-    private readonly MenuItem Menu_SearchBoxes = new() { Name = "Menu_SearchBoxes", Header = "Search Within Boxes", ToggleType = MenuItemToggleType.CheckBox, IsChecked = true };
-    private readonly MenuItem Menu_SearchDatabase = new() { Name = "Menu_SearchDatabase", Header = "Search Within Database", ToggleType = MenuItemToggleType.CheckBox, IsChecked = true };
-    private readonly MenuItem Menu_SearchBackups = new() { Name = "Menu_SearchBackups", Header = "Search Within Backups", ToggleType = MenuItemToggleType.CheckBox, IsChecked = true };
-    private readonly MenuItem Menu_SearchLegal = new() { Name = "Menu_SearchLegal", Header = "Show Legal", ToggleType = MenuItemToggleType.CheckBox, IsChecked = true };
-    private readonly MenuItem Menu_SearchIllegal = new() { Name = "Menu_SearchIllegal", Header = "Show Illegal", ToggleType = MenuItemToggleType.CheckBox, IsChecked = true };
-    private readonly MenuItem Menu_SearchClones = new() { Name = "Menu_SearchClones", Header = "Clones Only", ToggleType = MenuItemToggleType.CheckBox };
+    private readonly MenuItem Menu_SearchBoxes = new() { Name = "Menu_SearchBoxes", Header = "Search Within Boxes", ToggleType = MenuItemToggleType.CheckBox, IsChecked = true, StaysOpenOnClick = true };
+    private readonly MenuItem Menu_SearchDatabase = new() { Name = "Menu_SearchDatabase", Header = "Search Within Database", ToggleType = MenuItemToggleType.CheckBox, IsChecked = true, StaysOpenOnClick = true };
+    private readonly MenuItem Menu_SearchBackups = new() { Name = "Menu_SearchBackups", Header = "Search Within Backups", ToggleType = MenuItemToggleType.CheckBox, IsChecked = true, StaysOpenOnClick = true };
+    private readonly MenuItem Menu_SearchLegal = new() { Name = "Menu_SearchLegal", Header = "Show Legal", ToggleType = MenuItemToggleType.CheckBox, IsChecked = true, StaysOpenOnClick = true };
+    private readonly MenuItem Menu_SearchIllegal = new() { Name = "Menu_SearchIllegal", Header = "Show Illegal", ToggleType = MenuItemToggleType.CheckBox, IsChecked = true, StaysOpenOnClick = true };
+    private readonly MenuItem Menu_SearchClones = new() { Name = "Menu_SearchClones", Header = "Clones Only", ToggleType = MenuItemToggleType.CheckBox, StaysOpenOnClick = true };
     private readonly MenuItem Menu_OpenDB = new() { Name = "Menu_OpenDB", Header = "Open Database Folder" };
     private readonly MenuItem Menu_Report = new() { Name = "Menu_Report", Header = "Create Data Report" };
     private readonly MenuItem Menu_Export = new() { Name = "Menu_Export", Header = "Export Results to Folder" };
     private readonly MenuItem Menu_Import = new() { Name = "Menu_Import", Header = "Import Results to SaveFile" };
     private readonly MenuItem Menu_DeleteClones = new() { Name = "Menu_DeleteClones", Header = "Delete Clones" };
-    private readonly MenuItem Menu_Exit = new() { Name = "Menu_Exit", Header = "_Close" };
+    // WinForms binds Ctrl+E to Close here (hidden in its menu; Avalonia menus show their gestures).
+    private readonly MenuItem Menu_Exit = new() { Name = "Menu_Exit", Header = "_Close", HotKey = global::Avalonia.Input.KeyGesture.Parse("Ctrl+E"), InputGesture = global::Avalonia.Input.KeyGesture.Parse("Ctrl+E") };
 
     private readonly ContextMenu SlotMenu = new();
 
@@ -83,7 +90,10 @@ public sealed class DatabaseWindow : Window
         Icon = AppIcon.Get();
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         Width = 1030;
-        Height = 690;
+
+        // WinForms sizes the grid from the setting and then resizes the form around it.
+        GridHeight = PokeGrid.GetDatabaseRowCount(this, MainWindow.Settings.EntityDb.ResultsGridRowCount, NonGridHeight);
+        Height = NonGridHeight + PokeGrid.GetGridSize(GridWidth, GridHeight, SpriteUtil.Spriter.Width, SpriteUtil.Spriter.Height).Height;
 
         SAV = saveditor.SAV;
         BoxView = saveditor;
@@ -103,6 +113,15 @@ public sealed class DatabaseWindow : Window
         var menu = new Menu();
         menu.Items.Add(menuFile);
         menu.Items.Add(menuTools);
+
+        // Menu icons (WinForms SAV_Database.Designer; inverted in dark mode as InvertToolStripIcons does).
+        WindowUtil.SetMenuIcon(Menu_Exit, "exit");
+        WindowUtil.SetMenuIcon(menuSearchSettings, "settings");
+        WindowUtil.SetMenuIcon(Menu_OpenDB, "folder");
+        WindowUtil.SetMenuIcon(Menu_Report, "report");
+        WindowUtil.SetMenuIcon(Menu_Export, "export");
+        WindowUtil.SetMenuIcon(Menu_Import, "savePKM");
+        WindowUtil.SetMenuIcon(Menu_DeleteClones, "nocheck");
 
         // Search panel
         Tab_General.Content = UC_EntitySearch;
@@ -144,6 +163,7 @@ public sealed class DatabaseWindow : Window
         // Slot grid
         DatabasePokeGrid.InitializeGrid(GridWidth, GridHeight, SpriteUtil.Spriter);
         DatabasePokeGrid.SetBackground(AppResources.GetSkBitmap("box_wp_clean") ?? SpriteUtil.Spriter.Transparent);
+        var showHover = MainWindow.Settings.Hover.HoverSlotShowText; // WinForms gates the database hover on this setting
         foreach (var slot in DatabasePokeGrid.Entries)
         {
             slot.AttachClickHandled(mods => _ = SlotClick(slot, mods));
@@ -152,6 +172,10 @@ public sealed class DatabaseWindow : Window
                 if (e.GetCurrentPoint(slot).Properties.IsRightButtonPressed)
                     OpenSlotMenu(slot);
             };
+            if (!showHover)
+                continue;
+            slot.PointerEntered += (_, _) => ShowHoverTextForSlot(slot);
+            slot.PointerExited += (_, _) => ShowSet.Clear();
         }
         BuildSlotMenu();
 
@@ -163,7 +187,12 @@ public sealed class DatabaseWindow : Window
             SCR_Box.Value = newval;
             e.Handled = true;
         };
-        SCR_Box.Scroll += (_, _) => FillPKXBoxes((int)SCR_Box.Value);
+        // Covers both the scrollbar and the wheel handler above; Avalonia's Scroll event does not fire for a programmatic value.
+        SCR_Box.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == global::Avalonia.Controls.Primitives.RangeBase.ValueProperty)
+                FillPKXBoxes((int)SCR_Box.Value);
+        };
 
         if (!Directory.Exists(DatabasePath))
             Menu_OpenDB.IsVisible = false;
@@ -188,7 +217,7 @@ public sealed class DatabaseWindow : Window
         Menu_Import.Click += async (_, _) => await Menu_Import_Click();
         Menu_DeleteClones.Click += async (_, _) => await Menu_DeleteClones_Click();
 
-        Closing += (_, _) => cts.Cancel();
+        Closing += (_, _) => { cts.Cancel(); ShowSet.Clear(); };
 
         // Load Data
         B_Search.IsEnabled = false;
@@ -199,14 +228,15 @@ public sealed class DatabaseWindow : Window
 
     private void BuildSlotMenu()
     {
-        var mnuView = new MenuItem { Name = "mnuView", Header = "_View" };
-        var mnuSet = new MenuItem { Name = "mnuSet", Header = "_Set" };
-        var mnuDelete = new MenuItem { Name = "mnuDelete", Header = "_Delete" };
+        // WinForms ContextMenuSAV for the database grid has exactly these two entries (no mnemonics, no "Set":
+        // adding to the database is Shift+click, which no window manager intercepts).
+        var mnuView = new MenuItem { Name = "mnuView", Header = "View" };
+        var mnuDelete = new MenuItem { Name = "mnuDelete", Header = "Delete" };
         mnuView.Click += async (_, _) => await ClickView(menuSlot);
-        mnuSet.Click += async (_, _) => await ClickSet();
         mnuDelete.Click += async (_, _) => await ClickDelete(menuSlot);
+        WindowUtil.SetMenuIcon(mnuView, "other");
+        WindowUtil.SetMenuIcon(mnuDelete, "nocheck");
         SlotMenu.Items.Add(mnuView);
-        SlotMenu.Items.Add(mnuSet);
         SlotMenu.Items.Add(mnuDelete);
         Translator.TranslateControls(SlotMenu, "SAV_Database", MainWindow.CurrentLanguage);
     }
@@ -350,6 +380,9 @@ public sealed class DatabaseWindow : Window
     private async Task GenerateDBReport()
     {
         if (await AppDialogs.Prompt(this, MessageBoxButtons.YesNo, MsgDBCreateReportPrompt, MsgDBCreateReportWarning) != DialogResult.Yes)
+            return;
+
+        if (WindowUtil.OpenWindowExists<ReportGridWindow>())
             return;
 
         var reportGrid = new ReportGridWindow();
@@ -584,6 +617,7 @@ public sealed class DatabaseWindow : Window
     private void SetResults(List<SlotCache> res)
     {
         Results = res;
+        ShowSet.Clear();
 
         SCR_Box.Maximum = (int)Math.Ceiling((decimal)Results.Count / GridWidth);
         if (SCR_Box.Maximum > 0)
@@ -676,6 +710,16 @@ public sealed class DatabaseWindow : Window
         if (src is not SlotInfoFileSingle(var path))
             return DateTime.UtcNow;
         return File.GetLastWriteTimeUtc(path);
+    }
+
+    private void ShowHoverTextForSlot(SlotView pb)
+    {
+        int index = DatabasePokeGrid.Entries.IndexOf(pb);
+        if (!GetShiftedIndex(ref index))
+            return;
+
+        var ent = Results[index];
+        ShowSet.Show(pb, ent.Entity, ent.Source.Type);
     }
 
     private bool IsBackupSaveFile(SlotCache pk) => pk.SAV is not FakeSaveFile && pk.SAV != SAV;

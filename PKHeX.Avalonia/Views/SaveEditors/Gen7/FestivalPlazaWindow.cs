@@ -117,7 +117,9 @@ public sealed class FestivalPlazaWindow : SaveEditorWindow
     private readonly NumericUpDown NUD_DefeatMon = UiFactory.NumericUpDown("NUD_DefeatMon", 0, 65535, 110);
     private readonly CheckBox CHK_Choosed = UiFactory.Check("CHK_Choosed", "Choosed");
     private readonly CheckBox CHK_TrainerInvited = UiFactory.Check("CHK_TrainerInvited", "Invited");
-    private readonly Button B_ImportParty = UiFactory.Button("B_ImportParty", "Import Party");
+    private readonly Button B_ImportParty = UiFactory.Button("B_ImportParty", "Import from Party");
+    private readonly ContextMenu mnu = new();
+    private int menuIndex;
     private readonly Button B_AgentGlass = UiFactory.Button("B_AgentGlass", "Give Agent Sunglasses");
 
     #endregion
@@ -407,11 +409,23 @@ public sealed class FestivalPlazaWindow : SaveEditorWindow
         NUD_Grade.ValueChanged += (_, _) => ChangeGrade();
         B_ImportParty.Click += async (_, _) => await ClickImportParty();
         B_AgentGlass.Click += async (_, _) => await ClickAgentGlasses();
+        // WinForms exposes the three Battle Agency slots through a shared right-click menu (mnu / mnuSave).
+        var mnuSave = new MenuItem { Name = "mnuSave", Header = "Save PKM" };
+        mnuSave.Click += async (_, _) => await FileDialogs.SavePKMDialog(this, p[menuIndex]);
+        mnu.Items.Add(mnuSave);
         for (int i = 0; i < PBs.Length; i++)
         {
             var index = i;
-            PBs[i].AttachClickHandled(async _ => await FileDialogs.SavePKMDialog(this, p[index]));
+            var pb = PBs[i];
+            pb.ContextMenu = mnu;
+            pb.AddHandler(PointerPressedEvent, (_, e) =>
+            {
+                if (e.GetCurrentPoint(pb).Properties.IsRightButtonPressed)
+                    menuIndex = index;
+            }, global::Avalonia.Interactivity.RoutingStrategies.Tunnel);
         }
+        // Avalonia keeps a ContextMenu out of its target's logical tree, so translate it separately.
+        Translator.TranslateControls(mnu, "SAV_FestivalPlaza", MainWindow.CurrentLanguage);
     }
 
     private void RefreshCollected()

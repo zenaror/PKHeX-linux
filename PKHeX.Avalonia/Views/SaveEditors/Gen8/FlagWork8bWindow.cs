@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -9,7 +10,10 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
+using Avalonia.Input;
 using Avalonia.Layout;
+using Avalonia.Platform.Storage;
+using Avalonia.Media;
 using Avalonia.Styling;
 using PKHeX.Avalonia.Controls;
 using PKHeX.Avalonia.Localization;
@@ -42,11 +46,11 @@ public sealed class FlagWork8bWindow : SaveEditorWindow
     private readonly TabControl TC_Work = new() { Name = "TC_Work" };
 
     private readonly NumericUpDown NUD_Flag = UiFactory.NumericUpDown("NUD_Flag", 0, FlagWork8b.COUNT_FLAG - 1, 110);
-    private readonly CheckBox CHK_CustomFlag = UiFactory.Check("CHK_CustomFlag", string.Empty);
+    private readonly CheckBox CHK_CustomFlag = UiFactory.Check("CHK_CustomFlag", "Event Flag:");
     private readonly Button B_ApplyFlag = UiFactory.Button("B_ApplyFlag", "Apply");
     private readonly NumericUpDown NUD_System = UiFactory.NumericUpDown("NUD_System", 0, FlagWork8b.COUNT_SYSTEM - 1, 110);
-    private readonly CheckBox CHK_CustomSystem = UiFactory.Check("CHK_CustomSystem", string.Empty);
-    private readonly Button B_ApplySystemFlag = UiFactory.Button("B_ApplySystemFlag", "Apply");
+    private readonly CheckBox CHK_CustomSystem = UiFactory.Check("CHK_CustomSystem", "System Flag:");
+    private readonly Button B_ApplyFlagSystem = UiFactory.Button("B_ApplyFlagSystem", "Apply");
     private readonly NumericUpDown NUD_WorkIndex = UiFactory.NumericUpDown("NUD_WorkIndex", 0, FlagWork8b.COUNT_WORK - 1, 110);
     private readonly NumericUpDown NUD_Work = UiFactory.NumericUpDown("NUD_Work", int.MinValue, int.MaxValue, 140);
     private readonly Button B_ApplyWork = UiFactory.Button("B_ApplyWork", "Apply");
@@ -84,8 +88,25 @@ public sealed class FlagWork8bWindow : SaveEditorWindow
         NUD_Flag.ValueChanged += (_, _) => CHK_CustomFlag.IsChecked = Work.GetFlag((int)(NUD_Flag.Value ?? 0));
         NUD_System.ValueChanged += (_, _) => CHK_CustomSystem.IsChecked = Work.GetSystemFlag((int)(NUD_System.Value ?? 0));
         NUD_WorkIndex.ValueChanged += (_, _) => NUD_Work.SetValueClamped(Work.GetWork((int)(NUD_WorkIndex.Value ?? 0)));
+        // WinForms accepts two save files dropped onto the window and asks which side of the diff each one is.
+        DragDrop.SetAllowDrop(this, true);
+        AddHandler(DragDrop.DragOverEvent, (_, e) =>
+        {
+            e.DragEffects = e.DataTransfer.TryGetFiles() is { Length: not 0 } ? DragDropEffects.Copy : DragDropEffects.None;
+            e.Handled = true;
+        });
+        AddHandler(DragDrop.DropEvent, (_, e) =>
+        {
+            e.Handled = true;
+            if (e.DataTransfer.TryGetFiles() is not { Length: not 0 } items)
+                return;
+            var paths = items.Select(z => z.TryGetLocalPath()).OfType<string>().ToList();
+            if (paths.Count != 0)
+                _ = DropSaves(paths);
+        });
+
         B_ApplyFlag.Click += (_, _) => ApplyFlag();
-        B_ApplySystemFlag.Click += (_, _) => ApplySystemFlag();
+        B_ApplyFlagSystem.Click += (_, _) => ApplySystemFlag();
         B_ApplyWork.Click += (_, _) => ApplyWork();
 
         Title = $"{Title} ({sav.Version})";
@@ -101,33 +122,42 @@ public sealed class FlagWork8bWindow : SaveEditorWindow
 
     private void BuildLayout()
     {
-        // Three groups of controls; wrap rather than clip when the window is narrow.
-        var status = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(4, 2) };
-        status.Children.Add(UiFactory.Row(UiFactory.Label("L_Flag", "Flag:"), NUD_Flag, CHK_CustomFlag, B_ApplyFlag));
-        status.Children.Add(UiFactory.Row(UiFactory.Label("L_System", "System:"), NUD_System, CHK_CustomSystem, B_ApplySystemFlag));
-        status.Children.Add(UiFactory.Row(UiFactory.Label("L_Work", "Work:"), NUD_WorkIndex, NUD_Work, B_ApplyWork));
-
-        TC_Features.Items.Add(new TabItem { Name = "Tab_Flags", Header = "Flags", Content = TC_Flags });
-        TC_Features.Items.Add(new TabItem { Name = "Tab_System", Header = "System", Content = TC_System });
-        TC_Features.Items.Add(new TabItem { Name = "Tab_Work", Header = "Work", Content = TC_Work });
+        TC_Features.Items.Add(new TabItem { Name = "GB_Flags", Header = "Event Flags", Content = TC_Flags });
+        TC_Features.Items.Add(new TabItem { Name = "GB_System", Header = "System Flags", Content = TC_System });
+        TC_Features.Items.Add(new TabItem { Name = "GB_Work", Header = "Work Values", Content = TC_Work });
         TC_Features.Items.Add(new TabItem { Name = "GB_Research", Header = "Research", Content = BuildResearchTab() });
 
+        var warn = UiFactory.Label("L_EventFlagWarn", "Altering Event Flags may impact other story events. Save file backups are recommended.");
+        warn.TextWrapping = TextWrapping.Wrap;
+        warn.Margin = new Thickness(4, 4, 4, 0);
+
         var body = new DockPanel();
-        DockPanel.SetDock(status, Dock.Bottom);
-        body.Children.Add(status);
+        DockPanel.SetDock(warn, Dock.Bottom);
+        body.Children.Add(warn);
         body.Children.Add(TC_Features);
         SetBody(body);
     }
 
+    /// <summary>Research tab: the by-index checker and the two-save diff, each in its own group (WinForms GB_Research).</summary>
     private Control BuildResearchTab()
     {
         B_LoadOld.Click += async (_, _) => await PickSave(TB_OldSAV);
         B_LoadNew.Click += async (_, _) => await PickSave(TB_NewSAV);
-        var body = UiFactory.Column(
+
+        // Wrap rather than clip when the window is narrow.
+        var status = new WrapPanel { Orientation = Orientation.Horizontal };
+        status.Children.Add(UiFactory.Row(CHK_CustomFlag, NUD_Flag, B_ApplyFlag));
+        status.Children.Add(UiFactory.Row(CHK_CustomSystem, NUD_System, B_ApplyFlagSystem));
+        status.Children.Add(UiFactory.Row(UiFactory.Label("L_CustomWork", "Constant:"), NUD_WorkIndex, NUD_Work, B_ApplyWork));
+
+        var diff = UiFactory.Column(
             UiFactory.Row(B_LoadOld, TB_OldSAV),
             UiFactory.Row(B_LoadNew, TB_NewSAV),
             RTB_Diff);
-        return body;
+
+        return UiFactory.Column(
+            new GroupBoxView("GB_FlagStatus", "Check Status", status),
+            new GroupBoxView("GB_Researcher", "FlagDiff Researcher", diff));
     }
 
     private async Task PickSave(TextBox target)
@@ -136,6 +166,26 @@ public sealed class FlagWork8bWindow : SaveEditorWindow
         if (path is null)
             return;
         target.Text = path;
+        await ChangeSAV();
+    }
+
+    /// <summary>Assigns each dropped file to the old or new side of the diff (WinForms <c>Main_DragDrop</c> / <c>SelectNewOld</c>).</summary>
+    private async Task DropSaves(List<string> files)
+    {
+        foreach (var file in files)
+        {
+            var options = new[] { (string)B_LoadOld.Content!, (string)B_LoadNew.Content! };
+            var index = await AppDialogs.TrySelectIndex(this, Title ?? string.Empty, Path.GetFileName(file), options);
+            if (index == 0)
+                TB_OldSAV.Text = file;
+            else if (index == 1)
+                TB_NewSAV.Text = file;
+        }
+        await ChangeSAV();
+    }
+
+    private async Task ChangeSAV()
+    {
         if ((TB_NewSAV.Text ?? string.Empty).Length != 0 && (TB_OldSAV.Text ?? string.Empty).Length != 0)
             await DiffSaves();
     }

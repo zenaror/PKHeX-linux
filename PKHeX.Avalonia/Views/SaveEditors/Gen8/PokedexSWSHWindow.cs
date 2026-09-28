@@ -15,8 +15,8 @@ namespace PKHeX.Avalonia.Views.SaveEditors.Gen8;
 /// Pokédex editor for Sword / Shield (port of the WinForms <c>SAV_PokedexSWSH</c>).
 /// </summary>
 /// <remarks>
-/// Sword/Shield records, per dex entry, which form was seen in each of four display regions, so the editor
-/// shows four 64-entry form lists. The last two slots are the Gigantamax forms; Urshifu uses both.
+/// Sword/Shield records, per dex entry, which form was seen as male, female, shiny male and shiny female, so the
+/// editor shows those four 64-entry form lists. The last two slots are the Gigantamax forms; Urshifu uses both.
 /// </remarks>
 public sealed class PokedexSWSHWindow : SaveEditorWindow
 {
@@ -38,15 +38,14 @@ public sealed class PokedexSWSHWindow : SaveEditorWindow
     private readonly ComboBox CB_Species = UiFactory.Combo("CB_Species", 190);
     private readonly ComboBox CB_Gender = UiFactory.StringCombo("CB_Gender", 120);
     private readonly NumericUpDown NUD_Form = UiFactory.NumericUpDown("NUD_Form", 0, 63, 100);
-    private readonly NumericUpDown NUD_Battled = UiFactory.NumericUpDown("NUD_Battled", 0, uint.MaxValue, 130);
-    private readonly CheckBox CHK_Caught = UiFactory.Check("CHK_Caught", "Caught");
-    private readonly CheckBox CHK_Gigantamaxed = UiFactory.Check("CHK_Gigantamaxed", "Caught Gigantamax");
-    private readonly CheckBox CHK_Gigantamaxed1 = UiFactory.Check("CHK_Gigantamaxed1", "Caught Gigantamax (Form 1)");
-    private readonly CheckBox CHK_G = UiFactory.Check("CHK_G", "Display Dynamax");
-    private readonly CheckBox CHK_S = UiFactory.Check("CHK_S", "Display Shiny");
+    private readonly NumericUpDown NUD_Battled = UiFactory.NumericUpDown("NUD_Battled", 0, int.MaxValue, 130);
+    private readonly CheckBox CHK_Caught = UiFactory.Check("CHK_Caught", "Owned");
+    private readonly CheckBox CHK_Gigantamaxed = UiFactory.Check("CHK_Gigantamaxed", "Gigantamaxed");
+    private readonly CheckBox CHK_Gigantamaxed1 = UiFactory.Check("CHK_Gigantamaxed1", "Gigantamaxed 1");
+    private readonly CheckBox CHK_G = UiFactory.Check("CHK_G", "Gigantamax");
+    private readonly CheckBox CHK_S = UiFactory.Check("CHK_S", "Shiny");
     private readonly Button B_GiveAll = UiFactory.Button("B_GiveAll", "Check All");
     private readonly Button B_Modify = UiFactory.Button("B_Modify", "Modify...");
-    private readonly Button B_AllCounts = UiFactory.Button("B_AllCounts", "Apply Count To All");
 
     public PokedexSWSHWindow(SAV8SWSH sav) : base("SAV_PokedexSWSH", "Pokédex Editor")
     {
@@ -65,10 +64,10 @@ public sealed class PokedexSWSHWindow : SaveEditorWindow
             UiFactory.Check("CHK_L9", "ChineseT"),
         ];
         CHK = [
-            new CheckedListView { Name = "CLB_1", Width = 200, Height = 220 },
-            new CheckedListView { Name = "CLB_2", Width = 200, Height = 220 },
-            new CheckedListView { Name = "CLB_3", Width = 200, Height = 220 },
-            new CheckedListView { Name = "CLB_4", Width = 200, Height = 220 },
+            new CheckedListView { Name = "CLB_1", Width = 150, Height = 300 },
+            new CheckedListView { Name = "CLB_2", Width = 150, Height = 300 },
+            new CheckedListView { Name = "CLB_3", Width = 150, Height = 300 },
+            new CheckedListView { Name = "CLB_4", Width = 150, Height = 300 },
         ];
 
         Loading = true;
@@ -96,31 +95,35 @@ public sealed class PokedexSWSHWindow : SaveEditorWindow
     private void BuildLayout()
     {
         LB_Species.ItemsSource = SpeciesItems;
-        foreach (var s in new[] { "Male", "Female", "Genderless" })
+        foreach (var s in new[] { "\u2642", "\u2640", "-" }) // WinForms CB_Gender items
             CB_Gender.Items.Add(s);
 
-        var regions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        // One list per seen-state column, headed like the WinForms table: Male / Female / *Male* / *Female*.
+        string[] headerNames = ["L_Male", "L_Female", "L_MaleShiny", "L_FemaleShiny"];
+        string[] headerText = ["Male", "Female", "*Male*", "*Female*"];
+        var lists = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2 };
         for (int i = 0; i < CHK.Length; i++)
-            regions.Children.Add(UiFactory.Column(UiFactory.Label($"L_Region{i}", $"Region {i + 1}"), CHK[i]));
+            lists.Children.Add(UiFactory.Column(UiFactory.Label(headerNames[i], headerText[i]), CHK[i]));
 
-        var flags = UiFactory.FormGrid(5);
-        UiFactory.AddFormRow(flags, 0, UiFactory.Label("L_Form", "Displayed Form:"), NUD_Form);
-        UiFactory.AddFormRow(flags, 1, UiFactory.Label("L_Gender", "Displayed Gender:"), CB_Gender);
-        UiFactory.AddFormRow(flags, 2, UiFactory.Label("L_Battled", "Battled Count:"), UiFactory.Row(NUD_Battled, B_AllCounts));
-        UiFactory.AddFormRow(flags, 3, null, UiFactory.Row(CHK_Caught, CHK_G, CHK_S));
-        UiFactory.AddFormRow(flags, 4, null, UiFactory.Row(CHK_Gigantamaxed, CHK_Gigantamaxed1));
-
+        var displayed = UiFactory.Column(CHK_G, CHK_S, CB_Gender);
         var right = UiFactory.Column(
-            UiFactory.Row(UiFactory.Label("L_goto", "goto:"), CB_Species),
-            flags,
-            new GroupBoxView("GB_Language", "Languages", UiFactory.Row(CL)),
-            regions,
-            UiFactory.Row(B_GiveAll, B_Modify));
+            new GroupBoxView("GB_Language", "Languages", UiFactory.Column(CL)),
+            UiFactory.Label("L_DisplayedForm", "Displayed Form:"),
+            NUD_Form,
+            new GroupBoxView("GB_Displayed", "Displayed", displayed),
+            UiFactory.Label("L_Battled", "Battled:"),
+            NUD_Battled);
 
-        var body = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
-        body.Children.Add(LB_Species);
-        body.Children.Add(new ScrollViewer { Content = right, MaxHeight = 620 });
-        SetBody(body);
+        var middle = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
+        middle.Children.Add(LB_Species);
+        middle.Children.Add(lists);
+        middle.Children.Add(right);
+
+        var body = UiFactory.Column(
+            UiFactory.Row(UiFactory.Label("L_goto", "goto:"), CB_Species, B_GiveAll, B_Modify),
+            UiFactory.Row(CHK_Caught, CHK_Gigantamaxed, CHK_Gigantamaxed1),
+            middle);
+        SetBody(new ScrollViewer { Content = body, MaxHeight = 620 });
 
         LB_Species.SelectionChanged += (_, _) => ChangeLBSpecies();
         CB_Species.SelectionChanged += (_, _) => ChangeCBSpecies();
@@ -130,12 +133,6 @@ public sealed class PokedexSWSHWindow : SaveEditorWindow
             Dex.SetDexEntryAll(Indexes[lastIndex].Species, mods == KeyModifiers.Shift);
             GetEntry(lastIndex);
         });
-        B_AllCounts.Click += (_, _) =>
-        {
-            SetEntry(lastIndex);
-            Dex.SetAllBattledCount((uint)(NUD_Battled.Value ?? 0));
-            GetEntry(lastIndex);
-        };
         B_Modify.Flyout = BuildModifyMenu();
     }
 
@@ -147,6 +144,7 @@ public sealed class PokedexSWSHWindow : SaveEditorWindow
         AddItem(flyout, "mnuCaughtNone", "Caught none", _ => Dex.CaughtNone());
         AddItem(flyout, "mnuCaughtAll", "Caught all", mods => Dex.CaughtAll(mods == KeyModifiers.Shift));
         AddItem(flyout, "mnuComplete", "Complete Dex", mods => Dex.CompleteDex(mods == KeyModifiers.Shift));
+        AddItem(flyout, "mnuBattleCount", "Change All Battle Count", _ => Dex.SetAllBattledCount((uint)(NUD_Battled.Value ?? 0)));
         return flyout;
     }
 

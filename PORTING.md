@@ -27,11 +27,11 @@ Development branch: `feature/linuxport`. Primary target: Linux Mint (x11/Wayland
 skin with PNG import/export, Pokédex skin, Battle Videos, Musicals, Memory Link, PWT, Pokéstar Studios), Festival
 Plaza (Generation 7, including the US/UM Battle Agency tab), Fashion/hair unlocks (S/V and Legends: Z-A), Donut pocket
 with its flavour radar chart and bulk generator (Legends: Z-A Mega Dimension), registered-team viewer for Stadium
-saves, Passerby export, and the block accessor (named blocks for Gen 5-7, the SCBlock dump for Gen 8/9, a plain property grid otherwise). Every generation now has a usable save for runtime testing. Every SAV-tab button is now wired; the few that stay disabled are games upstream's own editor does not handle either and say so in their tooltip, and the ones upstream hides outright (the Wonder Card album on Gen 8/9, which keep no cards in the save) are hidden here too |
+saves, Passerby export, and the block accessor (named blocks for Gen 5-7, the SCBlock dump for Gen 8/9, a plain property grid otherwise). Every generation now has a usable save for runtime testing. Every SAV-tab button is now wired; the few that stay disabled are games upstream's own editor does not handle either and say so in their tooltip, and the ones upstream hides outright (the Wonder Card album on Gen 8/9, which keep no cards in the save) are hidden here too A 2026-09-28 parity pass over the Generation 4 and Battle Revolution editors made the Battle Pass window non-modal again, restored its missing validators, slot menu, hover preview and upstream layout/names, translated the Pokéathlon pages built after `SetBody`, and fixed the Underground row order, the Gear and Geonet grids (see "Generation 4 and Battle Revolution parity pass") — **screen check pending** for those |
 | File dialogs (open and save) | **RUNTIME VERIFIED** — the desktop portal dialog can be driven after all: it is the active window rather than the named `xdg-desktop-portal-gtk` one, so Ctrl+A, the path and Enter drive a save, and Ctrl+L, the path and Enter drive an open. Exporting a Mystery Gift wrote a 260-byte `.pgt` (the exact card size), importing it back filled an empty album slot and the card survived reselecting it, and File → Export SAV (Ctrl+E) wrote the save, which reads back with its three cards intact |
 | Mystery Gift album, Generation 4 (PGT/PCD) | **RUNTIME VERIFIED** — no Gen 4 save with gift data was supplied, so one was generated (an HG/SS save carrying three cards written through the save's own gift storage: a Pokémon, an egg and the Manaphy egg, which is its own card type). The album opens with the Gen 4 layout — PGT 1-6, PGT 7-8, PCD 1-3 and the Lock Capsule — draws each card's sprite, and the details pane names the gift and its trainer ("Celebi @ (None) --- REON", "Manaphy @ (None) --- Egg"). Import and export were later exercised through the file dialogs (a 260-byte `.pgt` written and imported back) |
 | Generation 5 DLC editor, Black/White paths | **RUNTIME VERIFIED** — no Black/White save was supplied, so one was generated (a blank `SAV5BW` with a C-Gear background written through `CGearBackgroundBW`, which is the path that also runs the shift-format palette conversion). The editor opens on it and draws the background from the BW tile layout, and the Musical tab renders; headless checks confirm the BW musical block size (130048, against 97280 for B2/W2), the `.psk` extension, that the BW tile index maps back to itself over 0..254, and that writing the background and reading it again returns the same bytes. Import and export go through the file dialogs, which are exercised elsewhere |
-| Tools (databases, batch editor, report grid, folder list, box dump) | **RUNTIME VERIFIED** — PKM Database (load/filter/search/view), Encounter Database (filters, criteria grid, search), Mystery Gift Database, Batch Editor (20/20 entities edited, saved and re-read from the exported file), Box Data Report (sortable grid, clipboard/CSV export), Folder List, Dump Boxes / Dump Box, KChart (Shift on the PKM Database menu item), and the Troubleshooting menu (force-load a save through a chosen handler, open a file from clipboard hex, plugin list) |
+| Tools (databases, batch editor, report grid, folder list, box dump) | **RUNTIME VERIFIED** — PKM Database (load/filter/search/view), Encounter Database (filters, criteria grid, search), Mystery Gift Database, Batch Editor (20/20 entities edited, saved and re-read from the exported file), Box Data Report (sortable grid, clipboard/CSV export), Folder List, Dump Boxes / Dump Box, KChart (Shift on the PKM Database menu item), and the Troubleshooting menu (force-load a save through a chosen handler, open a file from clipboard hex, plugin list); a 2026-09-28 parity pass against `PKHeX.WinForms` corrected the Mystery Gift format comparator, the report grid's column set, the grid row-count setting, the missing hover previews, the mouse wheel and the button/menu order (see "Tools and databases parity pass") — **screen check pending** for those |
 | Other tab (daycare + extra slots) | **RUNTIME VERIFIED** — the daycare group (two slots with the occupancy/experience readout, egg flag, editable seed, and the multi-daycare switch) and the extra-slot list (GTS, Fused, PGL, Battle Box, ...) grouped by storage type, all drag/drop and context-menu enabled like the box slots |
 | Box search | **RUNTIME VERIFIED** — the Search button in the box header opens the filter popout (general filters plus the batch-instruction tab); matching slots stay lit and the rest are dimmed, and Next/Previous seek through the matches. Alt resets, Shift seeks without reopening |
 | Slot hover preview | **RUNTIME VERIFIED** — the rich hover card (ball/name/gender header, Showdown paste, moves with type icons and illegal moves in the warning colour, first legality hint, encounter summary) and the plain-text fallback. Cries are played through a command-line audio player when one is installed |
@@ -318,14 +318,22 @@ are exportable), and the Generation 5 DLC editor's BW-specific code paths — `C
 the shift-format palette conversion — are runtime-verified against it; see the status table. The B2/W2 paths are
 verified against the repository owner's save, including the real C-Gear skin it contains.
 
+**Join Avenue shop tuples do not survive a save (upstream `PKHeX.Core` bug).** `JoinAvenueVisitor5.EncodeShop` is not
+the inverse of `DecodeShop`: decode divides by `ShopMaxRank` then `ShopTypeCount`, while encode multiplies by
+`ShopVersionCount` then `ShopTypeCount`. Opening a visitor and pressing Save therefore rewrites its shop, e.g. the
+Black 2 save's visitor 0 goes from `(Version 3, Salon, Rank 4)` (raw `0xFFFF`) to `(1, Market, 8)` (raw `109`).
+The WinForms editor loads and stores the same tuple through the same Core properties, so it behaves identically;
+this is a Core defect, not a port defect, and it was left alone rather than changing save semantics in a fork
+(found with the headless Join Avenue probe, 2026-09-28).
+
 The remaining effort is packaging/CI and the developer-only translation utilities.
 
 ## Remaining work
 
 Nothing in `PKHeX.WinForms` is left unported except the item below.
 
-**Main window / Box tab parity pass (2026-09-27, BUILD VERIFIED, screen check pending).** A static comparison against
-`PKHeX.WinForms` found a set of small gaps that have now been closed: the 9 designer menu separators, the
+**Main window / Box tab parity pass (2026-09-27, BUILD VERIFIED, screen-verified 2026-09-28).** A static comparison
+against `PKHeX.WinForms` found a set of small gaps that have now been closed: the 9 designer menu separators, the
 Troubleshooting menu icons, the drag-out and slot context menu icons, clicking the legality icon (`PB_Legal`) to open
 the report, Ctrl+Alt+click on a box slot to fill the box with clones, disabling Dump Boxes / Dump Box / Box Data Report
 for box-less saves, single-instance reuse for the Report / KChart / PKM / Encounter / Mystery Gift databases, the
@@ -336,8 +344,20 @@ raw enum names such as "DeleteAll" instead of "Clear"). The slot, popout and dra
 explicitly, because Avalonia keeps a `ContextMenu` out of its target's logical tree and the window-wide translation
 pass never reached them.
 
-**Box manipulation menu invisible (2026-09-28, fixed, BUILD VERIFIED + headless probe, screen check pending).** The
-on-screen check found that right clicking the Box tab header opened a popup that painted nothing at a fixed screen
+Screen-verified 2026-09-28 side by side with the official Windows build under Wine: the 10 menu separators (9 designer
+separators plus the one added at runtime before the Troubleshooting group), the legality icon opening the report with
+the slot's real failure list, Ctrl+Alt+click filling a box with 30 clones after confirming the prompt, the Box Data
+Report window being refocused instead of duplicated on a second Ctrl+R, Box Export staying modeless (the main window
+kept switching tabs while it was open), the box popout button's Single Box / All Boxes menu, the box selector's ◀▶
+arrow icons, and the slot context menu's View/Set/Delete icons. The translation-prefix fix was confirmed separately
+(see "Box manipulation menu invisible" below), including in 日本語. Not exercised: disabling Dump Boxes / Dump Box /
+Box Data Report for a box-less save — none of the five available real saves (Crystal, Sword, Violet, Legends: Arceus,
+PBR) has `HasBox == false` (that only happens for `SAV_STADIUM`/`SAV_BEEF`/`SAV6AODemo`, none available as safe
+fixtures); this stays build-verified and code-inspected only. Single-instance reuse for KChart, the PKM/Encounter/
+Mystery Gift databases and the Folder List was not separately re-checked on screen (only Box Data Report's reuse was).
+
+**Box manipulation menu invisible (2026-09-28, fixed, BUILD VERIFIED + headless probe, screen-verified 2026-09-28).**
+The on-screen check found that right clicking the Box tab header opened a popup that painted nothing at a fixed screen
 position. Cause: `BoxManipMenu` derives from `ContextMenu`, and Avalonia matches styles by the exact style key, so the
 theme's `ContextMenu` control template never applied — the menu had no border, no `ItemsPresenter` and zero size, which
 also left the popup unsized and unanchored. Fixed by declaring `StyleKeyOverride => typeof(ContextMenu)` (the same
@@ -346,7 +366,17 @@ Avalonia probe now confirms the menu builds the four WinForms categories with tr
 `ContextRequested` on `Tab_Box`, gets the template (Border + `ItemsPresenter`, 243x134 px) and anchors its popup to
 `Tab_Box`; the box slot menu and the box popout menu were checked in the same probe and are unaffected.
 
-**Save sub-editor parity pass (2026-09-27, BUILD VERIFIED, screen check pending).** A static comparison against
+Screen-verified 2026-09-28 against the Windows build, on a fresh follow-up pass after the fix landed: right-clicking
+the Box tab header opens the menu at/under the click (re-confirmed after moving the main window ~300px, so it is not
+pinned to the old screen corner), the Delete submenu opens with its eight entries, and both English and 日本語 labels
+are correct (menu, submenu and back to English). The fix was also confirmed not to have disturbed the box slot
+context menu or the box popout menu. Ctrl+click on the tab header still sorts the box directly without opening the
+menu, matching the shortcut. Alt+click (expected: Clear directly) could not be exercised — Cinnamon's window manager
+consumes Alt+click as a window-move grab before it reaches the app, confirmed again on this attempt; this is inferred
+from the verified Ctrl+click sibling code path, not a direct observation, and is already listed under "Known
+Linux-specific issues".
+
+**Save sub-editor parity pass (2026-09-27, BUILD VERIFIED, screen-verified 2026-09-28).** A static comparison against
 `PKHeX.WinForms` found two editors with no Avalonia counterpart, which have now been ported:
 `Views/SaveEditors/Gen4/Trainer4BRWindow.cs` (`SAV_Trainer4BR`: Battle Revolution profile, self-introduction, player
 ID, battle records and colosseum unlock flags — the SAV tab used to open the generic `SimpleTrainerWindow` for PBR
@@ -355,8 +385,15 @@ new "Edit All Tasks..." button in the Legends: Arceus Pokédex editor). Both wer
 repository owner's real Battle Revolution and Legends: Arceus saves: the fields load, saving without an edit leaves
 the save byte-identical, and edited values reach the save through Core.
 
-**Trainer Info parity pass (2026-09-27, BUILD VERIFIED + headless, screen check pending).** A static comparison of
-every Trainer Info window against `PKHeX.WinForms` closed these gaps:
+Screen-verified 2026-09-28 side by side with the Wine reference build, both saves loading without error in the
+official build too: the Battle Revolution Trainer Data Editor (PBR.sav) matches closely — same groups (Profile,
+Records, Colosseums), same field labels/order/values, all ten named Colosseums and their checkboxes plus Post-Game;
+and the Legends: Arceus "Edit All Tasks..." research editor (LA.sav) matches very closely, same four tabs
+(Catch/Battle/Interact/Observe) and the same task list/values for the species checked (Rowlet), same Save/Cancel
+layout.
+
+**Trainer Info parity pass (2026-09-27, BUILD VERIFIED + headless, screen-verified 2026-09-28 for two of the five
+items below).** A static comparison of every Trainer Info window against `PKHeX.WinForms` closed these gaps:
 
 * `SimpleTrainerWindow` (Gen 1-5 and GameCube) now uses the WinForms 2x2 group grid — Trainer / Badges on top,
   Adventure / (Map *or* Options) below, with Map and Options sharing the bottom-right cell as they share a Location
@@ -392,8 +429,15 @@ pre-existing and both matching upstream: Sword rewrites the Watt total record (`
 `Record8.WattTotal` to the watt value whenever it is lower), and Ultra Sun rewrites four Battle Tree streak counters
 (it differs at `HEAD` too, before this pass; worth its own look).
 
-**Parity repair pass (2026-09-28, BUILD VERIFIED + headless, screen check pending).** A review of the passes above
-found seven real defects, now fixed:
+Screen-verified 2026-09-28 against the Wine reference: the Gen 2 `SimpleTrainerWindow` 2x2 group layout (Trainer,
+Badges, Adventure Info, Options) on a real Crystal save, and the Sword/Shield `Trainer8Window`'s renamed League Card
+labels ("League Card Name:", "League Uniform ID:", "League TrainerID:") plus the Roto Rally Score label and the
+Overview "Stats" group. Not exercised on screen: the Ctrl+click special-character editor on the trainer name, the
+trash-byte write-back into the save, `TrainerStatView`'s "Value" label, and the Save/Cancel tab-order fix — these
+remain build- and headless-verified only.
+
+**Parity repair pass (2026-09-28, BUILD VERIFIED + headless, screen-verified 2026-09-28 for three of the seven items
+below).** A review of the passes above found seven real defects, now fixed:
 
 * The four Current Moves combos showed the raw `ComboItem` record instead of the move name. Making them type-ahead
   turned them into editable combos, whose text Avalonia derives from `DisplayMemberBinding` — which the editor clears
@@ -419,6 +463,127 @@ found seven real defects, now fixed:
   translations apply to it (checked in en/de/es/ja).
 * Options -> Language showed "EspañolEspaña": the raw enum name is used as a header and Avalonia reads `_` as the
   access-key marker. The header is escaped through `Translator.ConvertAccessKeys`, so the underscore renders again.
+
+Screen-verified 2026-09-28 against the Wine reference: the Current Moves combos show real move names ("Pound",
+"(None)") with no raw `ComboItem`/internal text in any of the four combos; PID edits commit on focus loss and refresh
+the shiny star and legality icon immediately, and EC/HOME Tracker edits survive navigating away from the slot and
+reach the exported PKM's suggested filename (a full Export-SAV disk round trip for these two fields specifically was
+not completed this session — see the PKM editor entry in the status table); and the Other tab's "This tab is read
+only." note is present and localized in both English and 日本語. Not exercised on screen: the
+`AutoCompleteComboBox` double-`SelectionChanged` fix, the five additional trash-byte write-back sites (Secret Base
+Gen 3, FRLG rival name, Gen 1/3/6 Hall of Fame nicknames), the dark-mode icon inversion on the slot and drag-out
+context menus, and the Options -> Language header access-key escape ("EspañolEspaña") — these remain build- and
+headless-verified only.
+
+**Tools and databases parity pass (2026-09-28, BUILD VERIFIED + headless, screen check pending).** A static
+comparison of the tool windows that no earlier pass had covered — PKM / Encounter / Mystery Gift databases, KChart,
+Batch Editor, Box Data Report, Folder List, Box Export, the save-handler troubleshooter and the error window — against
+`PKHeX.WinForms` closed these gaps:
+
+* **Mystery Gift Database format filter, wrong results.** `CB_FormatComparator` was built as `Any, ==, >=, <=`, but the
+  search reads its *index* (upstream's designer order is `Any, >=, ==, <=`), so picking "==" filtered `Generation >=`
+  and picking ">=" filtered `Generation ==`. The item order now matches the designer.
+* **Box Data Report was missing two thirds of its columns.** The grid only generated a column per `string` property of
+  `EntitySummary`; the WinForms `DataGridView` binds with `AutoGenerateColumns`, which yields one per *public* property
+  — the IV/EV/EXP/Level/contest/PP/TSV numbers, the egg/shiny/nicknamed/fateful flags and the checksum were all absent.
+  All of them are back, in the same order, and the rows are sized to the sprite height as `Data_Sorted` does.
+  Ctrl+C now copies the grid's selection (all rows only when nothing is selected), like `GetClipboardContent`.
+* **The sprite grids ignored `ResultsGridRowCount`.** The three database windows hard-coded 11 rows; upstream reads the
+  setting (default 9, clamped to 5-20), caps it to what fits on the screen and resizes the form around the grid.
+  `PokeGrid.GetDatabaseRowCount` does the same here, and each window's height follows its grid.
+* **The database grids had no hover preview.** `SAV_Database`, `SAV_Encounters` and `SAV_MysteryGiftDB` each attach a
+  `SummaryPreviewer` to their slots (the first two gated on `HoverSlotShowText`, the gift one unconditional, as
+  upstream); the Avalonia windows showed nothing on hover. They now show the same card/text as the box grid.
+* **The mouse wheel over a database grid did nothing.** The wheel handler set `ScrollBar.Value`, but the repaint hung
+  off the `Scroll` event, which Avalonia does not raise for a programmatic value change. The repaint now follows
+  `RangeBase.ValueProperty`.
+* `SAV_Database`'s "Create Data Report" reused an open report window upstream (`OpenWindowExists<ReportGrid>`); it
+  opened a second one here. The single-instance helper moved out of `MainWindow` into `Services/WindowUtil` and both
+  callers use it. The Search Settings checkable items also keep their menu open on click (`StaysOpenOnClick`), the way
+  upstream cancels the drop-down close, and `Menu_Exit` carries Ctrl+E in all three databases.
+* The database slot menu had a third entry ("Set") that `ContextMenuSAV` does not have, and mnemonics upstream does not
+  set; it is View / Delete again (adding to the database stays Shift+click, which no window manager intercepts).
+* **KChart column headers** read "Species / Type 1 / Atk / Def / SpA / SpD / Spe / Ability H"; upstream's designer says
+  "Dex# / Type1 / ATK / DEF / SPA / SPD / SPE / Hidden Ability", and every one of them has a `KChart.DGV_*` key, so the
+  chart stayed English in every language. The headers match and are translated now, the form list follows the Unicode
+  gender setting (`Main.GenderSymbols`), and the columns are not user-resizable, as upstream.
+* **Batch Editor**: the button row is `Reset | Run | Matching | Cancel | Save` again (it was `Matching` then
+  `Run Reset Cancel Save`), and a folder dropped on the window selects it as the source, which the WinForms form
+  accepts through `AllowDrop`.
+* **None of the three database windows had menu icons.** Their designers give every menu entry one (exit, settings,
+  folder, report, export, savePKM, nocheck for the tools; other/gift/savePKM for the slot menus) and invert them in
+  dark mode. `Services/WindowUtil.SetMenuIcon` now does the same, and the Box Export button spans the window bottom
+  at the designer's 41px height instead of sitting right-aligned.
+* **Folder List** closed itself after loading a save; upstream leaves it open so another can be picked.
+* **Error window**: it was never translated (the five `ErrorWindow.*` keys exist), the "Please provide this information
+  when reporting this error:" label was missing, the copy button was named `B_Copy` so its key never matched, and the
+  three buttons sat in one right-aligned row instead of Copy on the left and Continue/Abort on the right.
+
+Verified headlessly (Avalonia's headless platform, blank Sword save): the report grid builds 85 columns plus the
+sprite one, in the WinForms order, with `IV_HP`/`EV_HP`/`Level`/`EXP`/`IsShiny`/`Checksum`/`MetYear` present, 57px
+rows and the configured hidden column hidden; KChart's headers read "Dex#|Sprite|Name|Native|BST|Catch Rate|Type1|
+Type2|HP|ATK|DEF|SPA|SPD|SPE|Ability 1|Ability 2|Hidden Ability" and become
+"Dex#|スプライト|名前|元データ|合計|被捕獲度|タイプ1|タイプ2|HP|攻撃|防御|特攻|特防|素早さ|特性1|特性2|隠れ特性"
+in Japanese; the batch editor's footer is `B_Reset, B_Run, B_Cancel, B_Save` around the count label and accepts drops;
+the error window has all six named controls including `L_ProvideInfo` and `B_CopyToClipboard`; and the PKM and Mystery
+Gift databases build a 6x9 grid (54 slots, the default `ResultsGridRowCount`) in a 626px window, with the format
+comparator as `Any, >=, ==, <=` and "<=" preselected.
+
+One item overlaps with a screen check done elsewhere: pressing Ctrl+R twice on the Box Data Report re-focused the same
+window instead of opening a second one (2026-09-28, see "Main window / Box tab parity pass" above), which exercises
+the single-instance helper this pass introduced. The rest of this list — the Mystery Gift Database format filter, the
+Box Data Report's restored columns, the sprite-grid row count, the hover previews, the mouse-wheel fix, KChart's
+headers, the Batch Editor button order, the menu icons, Folder List staying open, and the Error window strings — has
+not been screen-checked and stays build- and headless-verified only.
+
+**Legends: Z-A / Legends: Arceus / BD-SP editor parity pass (2026-09-28, BUILD VERIFIED + headless, screen check
+pending).** A static comparison of the Generation 8/9 editors reached from a Legends: Z-A, Legends: Arceus or
+Brilliant Diamond / Shining Pearl save closed these gaps:
+
+* **The three trainer editors had lost their WinForms tabs and groups.** `Trainer8aWindow`, `Trainer8bWindow` and
+  `Trainer9aWindow` each showed one long scrolling column. They now carry the designer's structure: Legends: Arceus
+  and BD/SP get Overview / Map (`Tab_Overview`, `Tab_BadgeMap`) with the "Stats" and "Adventure Info" groups, and
+  Legends: Z-A gets Overview / Misc / Images / DLC (`Tab_MiscValues` was missing entirely, so the Royale ticket
+  points, the map position group and the two collect buttons sat on the Overview page). The BD/SP badges moved to the
+  Map tab and its trainer records moved from an invented "Records" tab into the Overview "Stats" group, beside BP.
+* **Labels that carried no translation key.** The three editors replaced the WinForms `L_Hours` / `L_Minutes` /
+  `L_Seconds` rows with a single invented "Play Time:" label, and Z-A named the Royale rows `L_Royale*`. Every label
+  is back on its upstream name, so `SAV_Trainer8a|8b|9a.L_*` applies again: `$:` for money, `Hrs:/Min:/Sec:`,
+  `Satchel Upgrades:`, `Galaxy Rank:`, `Earned/Current Merit Points:`, `Game Started:`, `Current Map:` / `Zone ID:`,
+  `X/Y/Z Coordinate:`, `Rotation:`, `Height:`, `Rival Name:`, `Regular:` / `Infinite:` under the "Royale Ticket
+  Points" heading, and `+` on the five max buttons (they read "Max").
+* **Clicking a stored picture in the Z-A trainer editor saves it again** (`P_Picture1..3`, WinForms
+  `SAV_Trainer9.IMG_Save`). `Drawing/ImageExport.cs` writes the decoded DXT1 bitmap through the save-file picker.
+* **Legends: Arceus Pokédex.** The eight per-form flags were three unlabelled rows of checkboxes captioned `0`..`7`;
+  they are back in the three WinForms groups ("Seen in the Wild" / "Obtained" / "Caught in the Wild") with their own
+  captions (Male, Female, Alpha Male, ..., Shiny Alpha Female) and keys `CHK_S0..C7`. The size records are in the
+  "Statistics" group with its "Height" and "Weight" sub-groups and the `-` separators, the research summary row uses
+  `L_UpdateIndex` / `L_ResearchLevelReported` / `L_ResearchLevelUnreported` inside "Research Tasks", and `CHK_Seen`,
+  `CHK_MinAndMax` and `B_Report` read "Seen", "Has Both Min & Max" and "Report Data" as upstream does. The research
+  task rows show the `research_bonus_points` sprite again instead of a text star (the `img/Pokedex` resources are now
+  embedded).
+* **BD/SP Pokédex.** The seen group is `GB_Encountered` and the two form lists are `L_FormsSeen` ("Forms:") and
+  `L_FormDisplayed` ("Shiny Forms:"), so all three are translated. The form menu is `Seen none / Seen all / Seen all
+  shinies` in the designer's order, and "Seen all" clears the shiny column the way `ModifyAllForms` does; it only set
+  the regular column before. The form list follows the Unicode gender setting, as does the Legends: Z-A mega form
+  list.
+* **BD/SP flag/work editor.** The three pages are `GB_Flags` / `GB_System` / `GB_Work` ("Event Flags", "System Flags",
+  "Work Values") instead of unkeyed "Flags/System/Work"; the by-index checker moved off the window's bottom edge into
+  the Research page's "Check Status" group, where upstream keeps it, with `CHK_CustomFlag` / `CHK_CustomSystem` /
+  `L_CustomWork` labelling the three rows ("Event Flag:", "System Flag:", "Constant:") and `B_ApplyFlagSystem` named
+  as upstream; the diff controls are in the "FlagDiff Researcher" group.
+* **Both flag/work editors** show the `L_EventFlagWarn` warning ("Altering Event Flags may impact other story
+  events...") and accept two save files dropped on the window, asking which is the old and which the new side of the
+  diff, as `Main_DragDrop` / `SelectNewOld` do. The Z-A diff page is `GB_Research` ("Research"), not "Compare".
+* **BD/SP Misc** lays its ten unlock buttons out in the designer's two columns, and `CHK_IsNew` in the Legends: Z-A
+  Pokédex sits outside the "Seen" group, where upstream has it.
+
+Verified headlessly (Avalonia's headless platform, no display) against the owner's real Legends: Z-A and Legends:
+Arceus saves and a Brilliant Diamond blank written through Core: every window constructs and translates; the tab,
+group, label and button texts above come from `lang_en.txt`; saving without an edit leaves all three saves
+byte-identical; and edited values reach the save through Core (Z-A money and Royale points, Legends: Arceus satchel
+upgrades, BD/SP money and badge 3). The Underground (631 rows), Seal Sticker (96) and Poffin (100) grids keep their
+WinForms columns.
 
 **Scope.** This port targets Linux. Windows and macOS are deliberately neither built nor tested here — Windows users
 have upstream PKHeX — even though the frontend takes no Linux-only dependency (`dotnet publish -r win-x64
@@ -446,21 +611,65 @@ have upstream PKHeX — even though the frontend takes no Linux-only dependency 
   runner warned that all three target the deprecated Node.js 20. At `@v5` only `upload-artifact` still does — its
   newest release has not moved either, so the warning stays until upstream ships one that has.
 
-**Upstream limits, not port gaps**
+**Sword/Shield and Scarlet/Violet save editors parity pass (2026-09-28, BUILD VERIFIED + headless, screen-verified
+2026-09-28 for three of the six items below).** Every SAV-tab editor those two games open was read against its WinForms source (`SAV_Trainer9`,
+`SAV_PokedexSWSH`, `SAV_PokedexSV`, `SAV_PokedexSVKitakami`, `SAV_Raid8`, `SAV_Raid9`, `SAV_RaidSevenStar9`,
+`SAV_Fashion9`, `SAV_Inventory`, `SAV_BoxLayout`, `SAV_BlockDump8`):
 
-* Gen 8/9 Wonder Card album: those games do not keep the cards in the save at all — only Generation 4 to 7 saves
-  implement `IMysteryGiftStorageProvider`, which is the storage the album edits — so there is nothing to show and
-  upstream's `SAV_Wondercard` throws for them as well. Nothing can be matched here beyond what upstream does, which
-  is to hide the button (`SAVEditor.cs:1308` sets `B_OpenWondercards.Visible = sav is IMysteryGiftStorageProvider`);
-  the port now does exactly the same instead of disabling it with a tooltip.
-* Pokédex skin (Generation 5): upstream's `LoadPokedexSkin` is an empty method, so the tab offers raw import/export
-  of the block. Core already describes the block (`PokeDexSkin5`: 768 tiles of 8x8 at 4bpp — exactly the 256x192
-  screen — plus a 16-colour foreground palette and a 64-colour background one), so a renderer looks within reach,
-  but nothing here can confirm one: the repository owner's Black 2 save reports the skin as uninitialised, and no
-  `.pds` sample exists to check a decode against. Implementing it blind would be guesswork, so it was left alone;
-  a save with an initialised skin is all it would take. There is nothing to match by equivalence either: upstream's
-  `LoadPokedexSkin(ReadOnlySpan<byte>)` has an empty body, so the Windows editor shows two blank picture boxes and
-  offers the same raw import/export, disabling the export button when the block is uninitialised — which the port does.
+* **The Scarlet/Violet trainer editor was missing three of its four tabs and seven of its eight buttons.**
+  `SAV_Trainer9` has Overview / Misc / Images / Blueberry; the port had Overview plus a Blueberry tab, with the map
+  group and the pictures stacked into Overview. It now has the four tabs, and with them the seven unlock buttons that
+  existed nowhere in the Avalonia app — Collect All Stakes, Unlock All Bike Upgrades (including the DLC-only
+  `FSYS_RIDE_FLIGHT_ENABLE`), Unlock All TM Recipes, Unlock All Fashion, Activate Legendaries, Unlock All Coaches and
+  Unlock All Throw Styles — each disabling itself after use as upstream does. Clicking the profile photo or either
+  icon saves it to a file again (`IMG_Save`), the pictures use the WinForms sizes with Zoom scaling, and the labels
+  are back to the WinForms names, so `L_Money` ("$:"), `L_LP`, `L_Hours`/`L_Minutes`/`L_Seconds`, `L_Started`,
+  `L_X`/`L_Y`/`L_Z`/`L_R`, `GB_BBQ`, `L_BP`, `L_BBQSolo`, `L_BBQGroup` and `L_ThrowStyle` translate instead of showing
+  invented English ("Money:", "League Points:", "Play Time:", "Adventure Started:", "X:").
+* **The Sword/Shield Pokédex mislabelled its four seen lists.** They were headed "Region 1" to "Region 4"; the four
+  `CheckedListBox`es are the male, female, shiny-male and shiny-female seen flags (`L_Male`, `L_Female`, `L_MaleShiny`,
+  `L_FemaleShiny` over `CLB_1`..`CLB_4`). The "Displayed" group (`GB_Displayed`) is back around the Gigantamax/Shiny
+  boxes and the gender combo, `L_DisplayedForm` carries its key again, the gender items are the WinForms
+  male/female/genderless symbols, and "Change All Battle Count" is a Modify-menu entry (`mnuBattleCount`) instead of
+  the invented "Apply Count To All" button. The battled counter stops at `int.MaxValue`, as the WinForms NUD does.
+* **The Scarlet/Violet Pokédex used names that carry no translation key.** The seen group is `groupBox1` and the
+  displayed group `GB_Displayed` upstream (both have `lang_*.txt` entries); the port called them `GB_Seen`/`GB_Display`
+  and added a "State:" label, a "Forms Seen" label and a "Gender:" label that upstream does not have, so five strings
+  stayed English in every language. The state combo and the "New" box are on the top row where upstream puts them, the
+  form label is `L_DisplayedForm`, and the gender combo uses the symbol items.
+* **Same for the Teal Mask layout**: `GB_SeenFlags` instead of `GB_Seen`, the four list headers named `L_Seen`,
+  `L_Obtained`, `L_HeardOf` and `L_Viewed` ("Seen:", "Obtained:", "Heard Of:", "Viewed:"), the three groups reading
+  "Display: Paldea/Kitakami/Blueberry", and each group laid out gender+shiny above the form combo as in the designer.
+* Window titles came from the fallback rather than the lang file for four windows, so they were wrong wherever the key
+  is absent: "Raid Parameter Editor" (Raid8/Raid9), "7 Star Raid Parameter Editor", "Fashion Editor" and "Savedata
+  Block Dump". The Tera raid editor also shows the two seed rows below the property grid, as upstream lays them out.
+* The block dump's five export/import buttons are in the WinForms two-column order (export left, import right, with
+  the single-file options beside them), and the inventory Sort menu has the two separators that split Name / Count /
+  Index upstream.
+
+Verified headlessly on the owner's Sword (Isle of Armor revision), Scarlet (Teal Mask) and Violet (base) saves:
+all eleven windows construct, measure and arrange; the renamed controls and groups are in the tree under their
+WinForms names; the Blueberry controls appear only from save revision 2, as upstream removes that tab; the trainer
+pictures decode; and an unlock button writes to the editor's clone only, leaving the loaded save byte-identical until
+Save. The three save copies were opened read-only (md5 unchanged).
+
+Left as is, with reasons: the Avalonia block-dump window keeps its extra Close button (the WinForms form has no
+buttons at all and cannot be closed with Escape); the file-dialog titles upstream sets for "load block" and "load old
+save" are not passed (the shared `FileDialogs` helper has no title parameter and the portal dialog shows its own); and
+the play-time minute/second boxes accept two digits instead of upstream's three-digits-clamped-to-255 (both end up
+`% 60` in the save).
+
+Screen-verified 2026-09-28 against the Wine reference: the Scarlet/Violet trainer editor's Overview / Misc / Images
+tabs on a base-revision save (Violet.sav) — the Blueberry tab is correctly absent, matching Wine, and the Misc tab's
+five non-Blueberry unlock buttons (Unlock All Fly Locations, Collect All Stakes, Unlock All Bike Upgrades, Unlock All
+TM Recipes, Unlock All Fashion) are present and pixel-for-pixel matched against Wine; the Sword/Shield Pokédex's
+Male/Female/*Male*/*Female* headers, the Displayed group box, and "Change All Battle Count" as a Modify-menu entry
+rather than a button; and the Scarlet/Violet and Kitakami Pokédex windows' field-for-field layout, including the
+three Display groups correctly enabled/disabled by the save's own progress. Not exercised on screen: the Blueberry
+tab itself and its three revision-2-only unlock buttons (Activate Legendaries / Unlock All Coaches / Unlock All Throw
+Styles) — no revision-2 Scarlet/Violet save was available, only a base-revision one; the four fallback window titles
+(Raid Parameter Editor, 7-Star Raid Parameter Editor, Fashion Editor, Savedata Block Dump); the block-dump button
+layout; and the inventory Sort menu separators.
 
 ## Deliberate deviations
 
@@ -481,8 +690,23 @@ its own feedback, so the drag proceeds with the platform's normal drag indicator
 **The daycare "Egg Available" box is read-only.** The WinForms checkbox has no change handler either: it reports the
 flag rather than writing it. The Avalonia one is made non-interactive so it does not look editable.
 
+**The Wonder Card album is hidden on Generation 8/9 saves, matching upstream exactly.** Those games do not keep gift
+cards in the save at all — only Generation 4 to 7 saves implement `IMysteryGiftStorageProvider`, the storage the album
+edits — so upstream's own `SAV_Wondercard` throws if opened for them, and `SAVEditor.cs` hides the button instead
+(`B_OpenWondercards.Visible = sav is IMysteryGiftStorageProvider`). The port hides it the same way rather than
+disabling it with a tooltip; there is nothing more to port here.
+
 **The Pokédex skin is import/export only.** The WinForms editor's `LoadPokedexSkin` is an empty method upstream (the
-tile layout is not decoded), so the Avalonia tab offers the same raw import/export and says so.
+tile layout is not decoded), so the Avalonia tab offers the same raw import/export and says so. The four dead
+"Load Image"/"Save Image" buttons and the two blank picture boxes upstream still draws are not reproduced: they have
+no click handler in `SAV_DLC5.Designer.cs`, so they do nothing at all. Importing a skin also re-enables the Export
+button here; upstream leaves it disabled (its `LoadPokedexSkin(ReadOnlySpan<byte>)` never re-enables it), which means
+the data just imported cannot be written back out until the editor is reopened.
+
+**The Generation 5 Misc "Subway Flags" group has no Flag3 checkbox.** Upstream's `CHK_Subway3` exists in the designer
+but is never read or written: `ReadSubway` loads `sw.Flag3` into `CHK_Subway7` (immediately overwriting it with
+`sw.Flag7`) and `SaveSubway` writes `CHK_Subway7` into both `Flag3` and `Flag7`. The port keeps that read/write
+behaviour exactly and leaves out the checkbox that controls nothing.
 
 **Work rows use a fixed-width label column.** The WinForms editors lay the name, picker and value out in a table
 that sizes its columns to the widest row. Each Avalonia row is built independently, so the labels are given a fixed
@@ -493,6 +717,64 @@ glyph until the cell enters edit mode, so flipping one takes a double click foll
 checkbox column toggles on the first click. `DataGridUtil.CheckColumn` replaces it with a template column
 throughout, which restores the reference behaviour for the Underground, Poffin, Seal Sticker, Unity Tower, Medal,
 Pokéathlon and flag/work grids.
+
+**Generation 4 and Battle Revolution parity pass (2026-09-28, BUILD VERIFIED + headless, screen check pending).**
+Reading `PKHeX.WinForms` against the Avalonia editors for Generation 4 (D/P/Pt, HG/SS) and Battle Revolution closed
+these gaps:
+
+* **The Battle Pass editor was modal.** WinForms shows `SAV_BattlePass` non-modally and reuses the one instance, so
+  its party slots can load an entity into the main editor and read it back while it stays open; the Avalonia window
+  was opened with `ShowDialog`, which blocked the main window and made its View action pointless. It is shown with
+  `Show(Owner)` now, reused on the next click, and closed when the Battle Revolution save slot changes, as
+  `SAVEditor.UpdateSaveSlot` does.
+* **The Battle Pass party slots had no menu, no hover preview and no view marker.** Upstream attaches a
+  View / Set / Delete context menu and a `SummaryPreviewer` to each slot and marks the slot last loaded into the
+  editor with the "View" overlay. All three are in place; Ctrl/Shift/Alt+click worked already.
+* **The Battle Pass catchphrase, player-ID and language handlers were missing.** The six catchphrases and the
+  self-introduction are truncated to the in-game character budget again (line breaks and the special glyphs cost
+  two), the player ID is normalised to 16 hex digits on leaving the field, and picking Japanese raises the
+  self-introduction budget from 51 to 53, as `CB_Language_SelectedIndexChanged` does. The text boxes also carry the
+  designer's maximum lengths (11 / 11 / 4 / 25 / 27 / 51).
+* **The Battle Pass window was laid out as five invented tabs.** It is upstream's four again — `f_MAIN`, `f_PKM`,
+  `f_CATCHPHRASES`, `f_CREATOR` — with the `GB_Trainer`, `GB_Appearance`, `GB_Creator` and `GB_Records` groups, the
+  six `GB_PKM{n}` boxes under the sprites, the "Battle Passes:" label over the list, and upstream's control names and
+  wording throughout, so its 99 `SAV_BattlePass.*` translations apply (they did not before).
+* **The Pokéathlon editor's late-built pages were never translated.** Upstream translates after building; the
+  Avalonia window translated in `SetBody`, before the counter, best-score, course, event and connection rows were
+  added, so they showed raw names ("SessionsJoined"). It translates once more at the end of the constructor. The
+  participant and trainer rows also regained their `PID:` / `TID:` / `SID:` / `OT:` / `Language:` labels and the
+  "Shiny" caption, and the record rows their `L_Record` / `L_Trainer{n}` / `L_CourseParticipant{n}` names.
+* **The Underground score rows were in the wrong order and one label had the wrong name and text**
+  (`L_HelpedOthers` / "Helped Others:" instead of upstream's `L_OthersHelped` / "Others Helped:", which also meant it
+  never translated). The thirteen rows follow the WinForms group order now.
+* **The Gear editor showed the index column** that upstream hides, and put its two buttons beside the grid and the
+  shiny-outfit group to its right; the buttons are above the grid and the outfits below it, three by two, as upstream.
+* **Geonet** called its second column "Subregion" (upstream: "Region") and allowed the user to sort, which upstream
+  marks `NotSortable` on every column.
+* Smaller: the Generation 4 Pokédex gender lists use upstream's `L_Seen` / `L_NotSeen` names; the Chatter confusion
+  box is disabled rather than merely read-only, as in the designer; and the Misc and Battle Video window titles use
+  their own translation keys' wording.
+
+**Grid column headers are named with an attached property.** The WinForms translator keys a grid header off
+`DataGridViewColumn.Name` (`{Form}.DGV_{Name}`). Avalonia's `DataGridColumn` has no name, so `DataGridUtil.Named`
+attaches one and `Translator` translates the columns of every `DataGrid` it walks. Columns without a name keep the
+header they were built with.
+
+**The Pokéathlon event records are boxed and numbered.** The WinForms editor stacks the five record editors of an
+event with nothing between them, telling them apart by position alone. Each one is put in a box here so the scrolling
+page stays readable; the caption is built from the same translated "Record:" label, as "Record 1" … "Record 5".
+
+**The Generation 4 Pokédex form lists carry their own Seen / Not Seen captions.** WinForms has a single label pair
+above the gender and form columns, which share one screen position. The Avalonia page puts the gender and form lists
+in separate groups, so the form group repeats the captions, translated from the same `L_Seen` / `L_NotSeen` keys.
+
+**The Generation 4 dex mode sits on the form, not in the Modify menu.** WinForms puts a `ToolStripComboBox` under the
+"Dex Upgrade" entry of the Modify... menu. Avalonia menus take no combo box, so the picker is a row on the page,
+labelled with that menu entry's own translation.
+
+**The apricorn counts are spin boxes, not a grid.** The WinForms editor builds a two-column `DataGridView` (an
+unlabelled name column and a free-text count) for the seven apricorns. The Avalonia editor lists the same seven names
+with a 0-255 spin box each, which keeps the clamp the WinForms save path applies and needs no grid.
 
 **Type-ahead combo boxes reject text that matches no item.** The WinForms entity editor uses
 `AutoCompleteMode.SuggestAppend` combos (Species, Nature, Stat Alignment, Held Item, Ability, Ball, met/egg location,
@@ -507,6 +789,13 @@ re-complete it, and a click selects the whole entry rather than placing a caret.
 a vertical gradient behind the selected tab. The Avalonia tabs reproduce the fixed 96x40 size, the border on every tab
 and the contest-coloured pip on the selected one, and leave the selected-tab fill to the Fluent theme.
 
+**The property grid expands nested objects three levels deep.** The WinForms grid expands a nested object only when
+the user clicks it, so a cyclic object graph is harmless there. `PropertyGridView` expands inline instead, and a save
+file reaches itself again through its blocks: opening Block Data on a Generation 1 save recursed until the stack
+overflowed. It now skips an object that is already being expanded higher up the same path and stops after three
+levels; every other user of the grid (settings categories, an SCBlock, a raid, the database filters) is shallower
+than that.
+
 **Collection settings are edited in place, one entry per line.** The WinForms property grid opens a modal collection
 editor for `RecentlyLoaded`, `OtherBackupPaths`, `OtherSaveFileExtensions`, the report property lists and
 `TokenOrderCustom`. `PropertyGridView` shows a multi-line text box instead, which keeps the settings editable without a
@@ -517,9 +806,67 @@ the SAV tab disables the button and explains why, which is text upstream does no
 it. It is looked up as `Main.L_UnsupportedEditor` with an English fallback, so an external `lang_*.txt` can translate
 it; adding the key to the ten embedded files would diverge from upstream, whose own scraper regenerates them.
 
+**The error window reports the runtime, not every loaded assembly.** WinForms' `ErrorWindow` appends the full name
+and location of every assembly in the AppDomain to the details box. The Avalonia one reports the PKHeX version, the OS
+description and the .NET version instead — the same "what was running" information in three lines rather than a
+hundred — and keeps the exception dump and the user message, which is what carries the failing file path.
+
+**"Hide Column" hides the column under the caret, not every selected cell's column.** Avalonia's `DataGrid` selects
+rows, not cells, so there is no equivalent of `DataGridView.SelectedCells`; the report grid's context menu therefore
+acts on `CurrentColumn`, and hiding several columns takes one click each.
+
+**Saved pictures are written as PNG or JPEG, not BMP.** The Legends: Z-A and the Scarlet/Violet trainer editors save
+a stored picture when it is clicked, and the WinForms dialog offers `*.png;*.bmp;*.jpg`, picking the encoder from the
+chosen extension. Skia, which this port draws with, has no BMP encoder (`SKImage.Encode(SKEncodedImageFormat.Bmp, …)`
+returns `null`), so the picker offers the two formats it can actually write rather than silently writing PNG bytes
+into a `.bmp`. Both editors go through `PKHeX.Avalonia/Drawing/ImageExport.cs`, which also reports an encode or write
+failure instead of throwing inside the click handler.
+
 **Form label columns are a minimum width, not a fixed one.** The WinForms entity editor pins the label column of the
 Main tab to 120px and of OT/Misc to 136px. The same numbers are used here as a minimum, because the Linux UI font is
 wider than Segoe UI at 8.25pt and a fixed column would cut off "Encryption Constant:" and several translations.
+
+**Fields that upstream identifies only by position get a label, in English.** The WinForms designers place a few
+fields with no label at all and rely on the fixed layout to explain them; the Avalonia form grids pair every field
+with a label, so these have one: `SAV_HallOfFame3` (Species, Member), `SAV_MailBox` (the Author group's Name / TID /
+SID / Language / Version and the Gen 5 message Ending), `SAV_BoxLayout` (Background). No `lang_*.txt` key exists for
+them, so they stay English in the other languages, like `Main.L_UnsupportedEditor` above.
+
+**The Gen 2 event-flag tabs are translated.** `SAV_EventFlags2` names its flag-group tabs with the raw
+`NamedEventType` value, while its Gen 3-7 twin `SAV_EventFlags` translates the same enum; both windows are the same
+Avalonia class here (`EventFlagsWindowBase`), which translates it. The two differ only in Japanese and the other
+non-English files, where Gen 2 now shows the same words Gen 3-7 already showed.
+
+**The X/Y Pokédex reads form flags by dex index.** `SAV_PokedexXY` indexes the form check lists with the form's
+`TabIndex` instead of the dex form index it just computed, so it reads (and rewrites) the wrong flags for any species
+whose forms are not first in the table; its OR/AS and Generation 5 twins use the index. The shared Avalonia editor uses
+the index everywhere, because writing another species' form flags is a data defect, not a look-and-feel difference.
+
+**Numeric fields are capped at what the save field holds.** A few WinForms spin boxes allow more than the block stores
+and cast the surplus away (the Pokémon Link item quantities accept 65535 and are written as a byte). The Avalonia
+editors cap those boxes at the field's real maximum, so no silently truncated value can be written.
+
+**The Block Data accessor has no "Raw" page.** `SAV_Accessor` has a second tab holding a property grid that nothing
+ever fills (`propertyGrid1` is never assigned an object upstream), so the Avalonia window shows the "Blocks" page only.
+
+**The Let's Go event-work box spans the whole Int32 range.** `SAV_EventWork` leaves `NUD_Stat` at the WinForms
+`NumericUpDown` default of 0-100, so the "Check Status" box upstream cannot show — let alone set — any work value above
+100, even though the group pages next to it edit the same values over the full range. The Avalonia box uses the range
+the block actually stores.
+
+**The Generation 7 Hall of Fame save button keeps its upstream translation key by hand.** `SAV_HallOfFame7` is the one
+save sub-editor whose save button is named `B_Close` rather than `B_Save`, and Avalonia refuses to rename a control
+once it is styled, so `HallOfFame7Window` looks `SAV_HallOfFame7.B_Close` up itself instead of relying on the shared
+`B_Save` name.
+
+**"Enable GS Ball Event (Virtual Console)" is disabled for a western Mobile Adapter save.** `SAV2.EnableGSBallMobileEvent`
+writes the event flag at 0x3E3C and its backup at 0x3E44, which is where the retail Crystal keeps it. The 64 KB (MBC30)
+mobile Crystal builds give the player a longer profile with a zip code field, so their backup sits past it - and 0x3E44
+is a character of that zip code. Pressing the button on such a save would leave the real backup unset (the game copies
+it back over the flag on the next save, undoing the event) and damage the profile, so `Misc2Window` disables the button
+for a Crystal save that is not Japanese and is larger than `SaveUtil.SIZE_G2RAW_U`, and says why in its tooltip. A
+retail Japanese Crystal save is untouched by the rule: it is 64 KB by design, and 0xA000 / 0xA083 are the addresses Core
+already writes. `PKHeX.Core` is unchanged, and the check reads only the save's own shape - no plugin is referenced.
 
 ## Known cosmetic issues inherited from upstream
 
@@ -624,7 +971,7 @@ instead, but that is a deliberate deviation and has not been made.
   * Battle Revolution, on a real Pokémon Battle Revolution save: the Gear editor lists every piece with its
     character style, category and unlock flag (badge rows labelled as shared across all styles), and "Reset Gear to
     Default" clears everything but the starting cap. The Battle Pass editor lists all the passes with their type and
-    name, and its five pages read the real data back — Lance's title and full appearance, his six party members with
+    name, and its four pages read the real data back — Lance's title and full appearance, his six party members with
     sprites and their box/slot references, his six catchphrases with the multi-line and placeholder glyphs intact,
     the creator details, and the battle records. Switching passes and returning preserves every field. It runs in Debug
     now too, since the Core slot fixes; a headless pass over the same save read 858 occupied slots across the 187
@@ -687,9 +1034,24 @@ instead, but that is a deliberate deviation and has not been made.
   * Generation 5 Misc: fly destinations, key system (B2/W2), Entralink levels with Pass Powers and the Funfest mission
     records, the Entree Forest slot editor, Battle Subway streaks, Musical props and the raw record counters.
   * Generation 5 Medals: the medal grid with its state pickers, unread flags and dates, plus the Habitat tab.
-  * Generation 7 trainer editor: overview, records, Poké Finder and flags tabs, with the Alola fly destinations and
-    map reveal lists built from the localized location names and the ball throw style lists.
-  * Generation 6 Hall of Fame / roamer editors are **BUILD VERIFIED** only (those blocks are empty in the available saves).
+  * Generation 7 trainer editor: the WinForms tab set (Overview / Map / Battle Tree / Misc / Ultra), with the Alola fly
+    destinations (46 rows) and map reveal lists (48 rows) built from the localized location names, the ball throw style
+    lists and the 15 stamps.
+  * Generation 7 and Let's Go screen sweep, headless against the real Ultra Sun save, the repository `SM Project 802.main`
+    and a patched blank Let's Go save: every control name the WinForms designers use is present in the Avalonia window
+    for the trainer (S/M, US/UM and Let's Go), Pokédex (S/M, US/UM and Let's Go), capture record, Hall of Fame, Poké
+    Beans, Cells/Stickers, Festival Plaza (with the US/UM Battle Agency tab) and Let's Go event-work editors, and each
+    one saves an untouched save back byte for byte. The two that do not (Trainer 7 and Festival Plaza) were traced to
+    `JoinFesta7.FestivalPlazaName` clearing one leftover byte after the terminator, a `PKHeX.Core` write WinForms makes
+    on Save as well. Behaviour checked on top of that: the Pokédex "Seen none" bulk edit leaves the first entry alone
+    after another species was selected, the Let's Go "Complete Dex" fills the 151 + Meltan/Melmetal entries with their
+    size records and leaves species outside the game untouched, and Zygarde "Collect All" sets all 100 cells, writes
+    record 72 and leaves the stored counter alone on US/UM.
+  * Generation 6 Hall of Fame: headless against the real Alpha Sapphire save, the block is populated after all — the
+    16 clear slots, the summary text (date, six members with level, shiny state, held item, moves and OT) and the entry
+    fields of the selected member (species, gender, held item, moves, IDs, encryption constant, victory number).
+    The roamer editor is **BUILD VERIFIED** plus a headless open on a generated X/Y fixture (no X/Y save is available),
+    so its populated state is still unverified on screen.
   * Brilliant Diamond / Shining Pearl: the Misc editor (each unlock button enabled only while applicable), the Poffin
     case grid, the Seal Sticker grid, the trainer editor (badges read from the system flag block) the Pokédex editor
     and the Underground item grid (631 rows), all opened against a generated BD fixture. Block Data opens the
@@ -752,3 +1114,116 @@ instead, but that is a deliberate deviation and has not been made.
     the read-only image — appeared in the Tools menu and opened its window with the save's data decoded.
   * Test fixtures were generated from blank saves with `PKHeX.Core` (Gen 1/2/5 blank saves are exportable and re-detectable;
     Gen 3/4 blank saves throw on export and Gen 6+ blank saves are not detected — a limitation of blank saves, not of the port).
+
+### Generation 5 save-editor parity pass (2026-09-28, BUILD VERIFIED + headless probe; screen-verified 2026-09-28 for
+two of the six items below)
+
+Each Generation 5 SAV-tab editor was read side by side with its `PKHeX.WinForms` counterpart (designer + code-behind)
+and the differences below were closed. Verified with a headless Avalonia probe that builds every window against a copy
+of the owner's Black 2 save and a generated `SAV5BW` blank, dumps the whole logical tree (name, translated text,
+enabled state, grid headers) and round-trips each editor (open, Save, compare the written save):
+
+* `SAV_DLC5` → `DLC5Window`: the tab order now matches the designer (C-Gear Skin, PokéDex Skin, Battle Test, Musical,
+  Battle Videos, Pokéstar Studios, PWT, Memory Link); it used to open on PWT for B2/W2 and put Battle Test last.
+  The raw `.cgb`/`.psk` export now offers the game's own filter name ("PokeStock C-Gear Skin Background" for B/W).
+* `SAV_Misc5` → `Misc5Window`: tab order (Main, Entralink, Forest, Subway, WhiteForest/BlackCity, Musical) and the
+  upstream tab names/captions, including the `TAB_Muscial` typo that carries the `lang_*.txt` key. The record counters
+  moved back onto the Main tab (they were in an invented "Records" tab with no upstream counterpart). Fly destinations,
+  the Entralink levels and every Battle Subway block are group boxes again (`GB_FlyDest`, `GB_EntreeLevel`,
+  `GB_CurrentData`, `GB_SubwayChecks`, `GB_SubwaySets`, `GB_Singles`/`GB_Doubles`/`GB_Multi` and their Super twins).
+  The Subway tab's 32 controls had names such as `L_L_SinglePast`/`NUD_L_SinglePast` and were never translated; they
+  now carry the designer names, so the "Past"/"Record"/"Normal"/"Super" labels and the eight `CHK_*Set` captions come
+  from the language file. `L_Roamer641`/`L_Roamer642`, `L_Area18`, `L_FC`, `L_FMTopScore` and `L_FMParticipants` were
+  likewise renamed onto their upstream keys.
+* `SAV_GlobalLink5` → `GlobalLink5Window`: the Furniture tab lists the five slots first and Synchronized/Selected
+  below them, as `TLP_Furniture` does; the upload count accepts the full signed range upstream allows.
+* `SAV_UnityTower` → `UnityTowerWindow`: no sortable columns (every WinForms column is `NotSortable`), the second
+  column is "Region" again, and all five grid columns carry their `DGV_Item_*` translation keys. A no-op Save writes
+  exactly the same bytes as replaying `B_Save_Click`'s Core sequence by hand (7 bytes, all of them upstream's own
+  `ClearAll` + `SetSAVCountry` round trip).
+* `SAV_Medals5` → `Medals5Window`: grid headers are "Index"/"IsUnread" again and all eleven columns carry their
+  `DGV_*Column` keys.
+* `SAV_JoinAvenue` → `JoinAvenueWindow` and its six views: `L_PlayerIDCount`, `L_PlayerIDInsert`,
+  `L_VisitingPlayerDatabase`, `L_UnusedPosition`, `L_InteractedToday` and the visitor's ten flag labels
+  (`L_IsShopChangeAllowed`, `L_IsFlagA9_1/2`, `L_IsFlagAA`, `L_UnknownBit9`, `L_DesiredShopType`, `L_ShopType`, …)
+  now use the upstream names and row order, so their captions are translated instead of hard-coded English; the
+  visiting-player grid columns carry `DGV_Column_*`.
+* `SAV_Pokedex5` → `Pokedex5Window` (shared `DexEditorWindow`): the form list label was named `L_FormsDisplayed`
+  ("Forms Displayed") and matched no key; it is `L_FormDisplayed` ("Displayed Form:") again, which also fixes the
+  X/Y and OR/AS dex editors.
+
+Round trip (open each editor on the Black 2 save and press Save without touching anything): DLC5, Medals5 and Misc5
+write the save back byte-identical; Unity Tower (7 bytes), Global Link (19) and Join Avenue (22) differ, and each
+difference was traced to upstream behaviour — `ClearAll`/`SetSAVCountry`, `UploadDate.SetEmpty()` plus the `0xFFFF`
+string terminator the furniture-name setter writes, and the `EncodeShop` defect recorded under "Known blockers".
+The owner's `_saves/` copies were verified byte-identical (md5) before and after every run.
+
+**Screen-verified 2026-09-28** against the Wine reference, on the owner's Black 2 save: the Misc5 tab strip (Main /
+Entralink / Forest / Subway / Musical — five tabs is correct for a Black 2 save, since upstream itself removes the
+WhiteForest/BlackCity tab for any `SAV5B2W2` save, `SAV_Misc5.cs:170-191`) with the record counters on the Main tab,
+and the Subway tab's six group boxes (Singles, Doubles, Multi, Super Singles, Super Doubles, Super Multi) plus the
+"Is run active?" table, all fully visible with no clipping or scrolling at the window's default 692x462 size; and, in
+日本語, the Subway tab's renamed labels are translated (group titles シングル/ダブル/マルチ/スーパーシングル/
+スーパーダブル/スーパーマルチ, "サブウェイ フラグ", the two スーパー…? checkboxes, 記録). Not exercised on screen:
+any of this on a generated B/W blank (only the Black 2 save was used this session); the DLC5 tab strip order and
+that it opens on C-Gear Skin; the Global Link Furniture tab order; that the Unity Tower headers no longer sort when
+clicked; and the Join Avenue visitor page in a non-English language.
+
+### Parity repair pass, second round (2026-09-28, BUILD VERIFIED + headless probe; screen-verified 2026-09-28)
+
+A review of the generation batches above found three defects and four coverage overstatements. The defects:
+
+* **The Scarlet/Violet trainer editor could not save a picture as `.bmp`, and crashed trying.** `SAV_Trainer9.IMG_Save`
+  writes the clicked profile photo or icon through a save dialog; the Avalonia window kept its own copy of that code,
+  offered `*.png;*.bmp;*.jpg` and dereferenced `SKImage.Encode`'s result. Skia has no BMP encoder, so choosing `.bmp`
+  returned `null` and threw a `NullReferenceException` inside an `async` click handler — no file, no message. It now
+  calls the same `Drawing/ImageExport.SaveDialog` the Legends: Z-A editor uses, which offers only the writable formats
+  and reports an encode or write failure (see "Deliberate deviations").
+* **The QR window had no QR7 injection panel.** For a `PK7`, WinForms replaces the plain QR with an injection payload
+  and shows `Box:` / `Slot:` / `Copies:` plus `Refresh` above it (`QR.cs:39-46`, `ReloadQRData`); for anything else it
+  collapses that panel. The Avalonia window always showed the plain QR and had no controls at all, so Gen 7 QR
+  injection was unreachable. `P_QR7` (`L_Box`/`NUD_Box` 1-32, `L_Slot`/`NUD_Slot` 1-30, `L_Copies`/`NUD_Copies` 1-960,
+  `B_Refresh`) is present and visible only for a `PK7`; `Refresh` re-encodes through `QREncode.GenerateQRCode7` and
+  appends upstream's `" (Box n, Slot n, n copies)"` footer. The composed image also uses upstream's size formula
+  (`max(qr.Width, 370) × qr.Height + 50`) instead of a hard-coded 365×415, which the larger QR7 code needs.
+* **The Wonder Card Received list had no right-click Delete.** `SAV_Wondercard.Designer.cs:107` gives `LB_Received` the
+  `mnuDel` menu with the `flagDel` "Delete" item, wired to the same handler as the Delete key. Only the key was ported.
+
+The coverage overstatements, corrected here:
+
+* **Only 8 of the inventory's 13 comparison batches have run** (6-13: the per-generation save editors), plus the five
+  §4 areas of the earlier pass (main window, Box tab, PKM editor, Settings, Trainer Info). Batches **1-4 have not run**:
+  the shell dialogs (A3 drag-out menu, A6 About, A7 splash, A9 message/prompt dialogs, A11 hover card), the SAV-editor
+  frame (B2 slot menu, B4 box search popout, B5 box viewer, B6 storage viewer, B7 Party tab, B8 Other tab) and the PKM
+  editor's own tabs and sub-editors (C3/C4/C6, C8 ball browser, C9 status browser, C10-C16: ribbons, memories, medals,
+  TR flags, move shop, plus flags, trash editor). Those files are untouched since `eabab02a3`. A5 (QR) had not been
+  compared either; it was, above.
+* **E8 Mail, E9 Chatter and the other shared screens were checked by control name, not against each generation's own
+  WinForms branch.** Two batches called E8 correct while the four reorder buttons were shown for Gen 4/5 saves
+  (upstream shows them only for Gen 2/3); the defect was found by the Gen 1-3 batch. E2 items, E5 flags and E7 album
+  are in the same position and should be re-read per generation.
+* **E25 Misc4 and E31 DLC4 are NOT YET TESTED at runtime.** The Gen 4 probe skipped all three cases
+  (`[SKIP] Misc4 (Pt) / Misc4 (HGSS) / DLC4 -> ArgumentOutOfRangeException`); those two screens rest on source reading
+  plus a compile. Misc4 is the largest window in that batch.
+* **E89 Donuts and E90 the random donut generator are source-compared only.** The Z-A probe never opened either window
+  and the fixture set has no revision >= 1 Z-A save (`Tab_DLC=ABSENT`), so the Z-A DLC tab is unexercised as well.
+  Re-reading the two windows confirms the control names and captions match, but nothing was run.
+
+Verified with a headless Avalonia probe (`scratchpad/parity/batch/repair/probe`) against copies of the owner's Ultra Sun
+and Scarlet saves (md5 unchanged): the QR window shows `P_QR7` for a `PK7` and hides it for a `PK6`, the seven controls
+carry upstream's names and captions with the designer's ranges, `Refresh` regenerates the image (404×454 for the QR7
+payload against 372×422 for the plain code) and rewrites the footer to `(Box 3, Slot 7, 2 copies)`; the Wonder Card
+`LB_Received` carries `mnuDel`/`flagDel` "Delete" and invoking it removes the selected flags (2 → 1) and keeps the
+selection; the Scarlet/Violet trainer editor still decodes its three pictures (960×544, 352×352, 352×352).
+
+**Screen-verified 2026-09-28** against the Wine reference build: right-clicking the Wonder Card Received list opens a
+one-item "Delete" menu, and invoking it removes the selected flag, leaving the list empty again — the fixture's own
+save had no received gifts, so a small throwaway console tool (outside the repository, never touching `PKHeX.Core`)
+set two `MysteryGiftReceivedFlag`s directly on a scratch copy to exercise the path on real data. The Gen 9 trainer
+editor's picture-save path was exercised for PNG — clicking a stored picture opened a real save dialog and produced a
+valid 1440x864 PNG with no exception, confirming the crash this pass fixed is gone — but the filter list was not
+inspected to confirm it truly excludes `.bmp`, and JPEG export was not tried. The QR7 panel (`Box:`/`Slot:`/`Copies:`/
+`Refresh`) was confirmed laid out above the QR image exactly as the Wine reference, and `Refresh` visibly re-encodes
+both the on-screen image and the clipboard copy (a 404x454 PNG, matching the documented QR7 payload size). Not
+exercised on screen: that the QR7 panel is hidden for a non-`PK7` entity, and that a refreshed QR7 code actually
+injects in game — the latter is outside what a desktop screen check can exercise.

@@ -24,8 +24,8 @@ public sealed class UnityTowerWindow : SaveEditorWindow
 
     private readonly ObservableCollection<GeonetRow> GeonetRows = [];
     private readonly ObservableCollection<FloorRow> FloorRows = [];
-    private readonly DataGrid DGV_Geonet = new() { AutoGenerateColumns = false, CanUserSortColumns = true, HeadersVisibility = DataGridHeadersVisibility.Column, MinWidth = 420 };
-    private readonly DataGrid DGV_UnityTower = new() { AutoGenerateColumns = false, CanUserSortColumns = true, HeadersVisibility = DataGridHeadersVisibility.Column, MinWidth = 260 };
+    private readonly DataGrid DGV_Geonet = new() { Name = "DGV_Geonet", AutoGenerateColumns = false, CanUserSortColumns = false, HeadersVisibility = DataGridHeadersVisibility.Column, MinWidth = 420 };
+    private readonly DataGrid DGV_UnityTower = new() { Name = "DGV_UnityTower", AutoGenerateColumns = false, CanUserSortColumns = false, HeadersVisibility = DataGridHeadersVisibility.Column, MinWidth = 260 };
     private readonly CheckBox CHK_GlobalFlag = UiFactory.Check("CHK_GlobalFlag", "Whole Globe Visible");
     private readonly CheckBox CHK_UnityTowerFlag = UiFactory.Check("CHK_UnityTowerFlag", "Unity Tower Unlocked");
     private readonly Button B_SetAllLocations = UiFactory.Button("B_SetAllLocations", "Set All Locations");
@@ -45,13 +45,15 @@ public sealed class UnityTowerWindow : SaveEditorWindow
         subregionListDefault = Util.GetCountryRegionList("gen5_sr_default", MainWindow.CurrentLanguage);
         pointList = Util.GetGeonetPointList();
 
-        DGV_Geonet.Columns.Add(new DataGridTextColumn { Header = "Country", Binding = new Binding(nameof(GeonetRow.CountryName)), IsReadOnly = true, Width = new DataGridLength(1, DataGridLengthUnitType.Star) });
-        DGV_Geonet.Columns.Add(new DataGridTextColumn { Header = "Subregion", Binding = new Binding(nameof(GeonetRow.SubregionName)), IsReadOnly = true, Width = new DataGridLength(1, DataGridLengthUnitType.Star) });
-        DGV_Geonet.Columns.Add(DataGridUtil.ComboColumn("Point", pointList, nameof(GeonetRow.Point), 130));
+        // Headers and their translation keys follow the WinForms columns; the CountryIndex/RegionIndex
+        // columns upstream keeps hidden are not created here.
+        DGV_Geonet.Columns.Add(new DataGridTextColumn { Header = "Country", Binding = new Binding(nameof(GeonetRow.CountryName)), IsReadOnly = true, Width = new DataGridLength(1, DataGridLengthUnitType.Star) }.Named("Item_Country"));
+        DGV_Geonet.Columns.Add(new DataGridTextColumn { Header = "Region", Binding = new Binding(nameof(GeonetRow.SubregionName)), IsReadOnly = true, Width = new DataGridLength(1, DataGridLengthUnitType.Star) }.Named("Item_Region"));
+        DGV_Geonet.Columns.Add(DataGridUtil.ComboColumn("Point", pointList, nameof(GeonetRow.Point), 130).Named("Item_Point"));
         DGV_Geonet.ItemsSource = GeonetRows;
 
-        DGV_UnityTower.Columns.Add(DataGridUtil.CheckColumn("Floor", nameof(FloorRow.Unlocked), 60));
-        DGV_UnityTower.Columns.Add(new DataGridTextColumn { Header = "Country", Binding = new Binding(nameof(FloorRow.CountryName)), IsReadOnly = true, Width = new DataGridLength(1, DataGridLengthUnitType.Star) });
+        DGV_UnityTower.Columns.Add(DataGridUtil.CheckColumn("Floor", nameof(FloorRow.Unlocked), 60).Named("Item_Floor"));
+        DGV_UnityTower.Columns.Add(new DataGridTextColumn { Header = "Country", Binding = new Binding(nameof(FloorRow.CountryName)), IsReadOnly = true, Width = new DataGridLength(1, DataGridLengthUnitType.Star) }.Named("Item_UnityTower"));
         DGV_UnityTower.ItemsSource = FloorRows;
         DGV_UnityTower.IsReadOnly = false;
 

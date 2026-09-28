@@ -27,9 +27,9 @@ public sealed class PokeathlonConnection4View : StackPanel
         Children.Add(UiFactory.Row(UiFactory.Label("L_Attempts", "Attempts:"), NUD_Attempts));
         for (int i = 0; i < count; i++)
         {
-            EventRecords[i] = new PokeathlonEventRecord4View($"#{i + 1}");
-            Trainers[i] = new PokeathlonEventTrainer4View("Trainer:");
-            Children.Add(new GroupBoxView($"GB_Connection{i}", $"Record {i + 1}", UiFactory.Column(EventRecords[i], Trainers[i])));
+            EventRecords[i] = new PokeathlonEventRecord4View();
+            Trainers[i] = new PokeathlonEventTrainer4View($"L_Trainer{i}", $"Trainer {i + 1}:");
+            Children.Add(new GroupBoxView($"GB_Connection{i}", PokeathlonEventRecord4View.GetGroupCaption(i), UiFactory.Column(EventRecords[i], Trainers[i])));
         }
     }
 

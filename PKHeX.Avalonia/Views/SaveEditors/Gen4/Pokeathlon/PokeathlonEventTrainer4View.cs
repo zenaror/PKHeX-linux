@@ -17,16 +17,20 @@ public sealed class PokeathlonEventTrainer4View : StackPanel
     private readonly TextBox TB_SID16 = UiFactory.Text("TB_SID16", 5, 80);
     private readonly ComboBox CB_Language = UiFactory.Combo("CB_Language", 150);
 
-    public PokeathlonEventTrainer4View(string caption)
+    public PokeathlonEventTrainer4View(string captionName, string caption)
     {
         Orientation = Orientation.Horizontal;
         Spacing = 4;
         VerticalAlignment = VerticalAlignment.Center;
 
-        Children.Add(UiFactory.Label("L_Trainer", caption));
+        Children.Add(UiFactory.Label(captionName, caption));
+        Children.Add(UiFactory.Label("L_OT", "OT:"));
         Children.Add(TB_OT);
+        Children.Add(UiFactory.Label("L_TID16", "TID:"));
         Children.Add(TB_TID16);
+        Children.Add(UiFactory.Label("L_SID16", "SID:"));
         Children.Add(TB_SID16);
+        Children.Add(UiFactory.Label("L_Language", "Language:"));
         Children.Add(CB_Language);
 
         // The "no trainer" entry uses species index 0's blank name, as in WinForms.

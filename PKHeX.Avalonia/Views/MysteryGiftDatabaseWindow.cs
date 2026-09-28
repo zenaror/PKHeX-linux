@@ -10,6 +10,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Layout;
 using PKHeX.Avalonia.Controls;
+using PKHeX.Avalonia.Controls.Hover;
 using PKHeX.Avalonia.Drawing;
 using PKHeX.Avalonia.Localization;
 using PKHeX.Avalonia.Services;
@@ -26,7 +27,11 @@ namespace PKHeX.Avalonia.Views;
 public sealed class MysteryGiftDatabaseWindow : Window
 {
     private const int GridWidth = 6;
-    private const int GridHeight = 11;
+
+    /// <summary>Vertical space the window needs for everything except the sprite grid (menu, label, margins, chrome).</summary>
+    private const int NonGridHeight = 110;
+
+    private readonly int GridHeight;
     private const int MAXFORMAT = Latest.Generation;
 
     private readonly PKMEditorView PKME_Tabs;
@@ -41,6 +46,7 @@ public sealed class MysteryGiftDatabaseWindow : Window
     private SlotTouchType slotColor = SlotTouchType.None;
     private readonly string Counter;
     private readonly string Viewed;
+    private readonly SummaryPreviewer ShowSet = new();
 
     private readonly PokeGrid MysteryPokeGrid = new() { Name = "MysteryPokeGrid" };
     private readonly ScrollBar SCR_Box = new() { Orientation = Orientation.Vertical, Minimum = 0, Maximum = 0, Width = 18, Visibility = ScrollBarVisibility.Visible };
@@ -64,7 +70,7 @@ public sealed class MysteryGiftDatabaseWindow : Window
     private readonly TextBlock L_Move4 = UiFactory.Label("L_Move4", "Move 4:");
     private readonly ComboBox CB_Move4 = UiFactory.Combo("CB_Move4", 170);
     private readonly TextBlock L_Format = UiFactory.Label("L_Format", "Format:");
-    private readonly ComboBox CB_FormatComparator = UiFactory.StringCombo("CB_FormatComparator", 70, "Any", "==", ">=", "<=");
+    private readonly ComboBox CB_FormatComparator = UiFactory.StringCombo("CB_FormatComparator", 70, "Any", ">=", "==", "<=");
     private readonly ComboBox CB_Format = UiFactory.StringCombo("CB_Format", 130, "Any", ".wc9", ".wc8", ".wc7", ".wc6", ".pgf", ".pcd/pgt/.wc4");
     private readonly CheckBox CHK_Shiny = UiFactory.Check("CHK_Shiny", "Shiny");
     private readonly CheckBox CHK_IsEgg = UiFactory.Check("CHK_IsEgg", "Egg");
@@ -77,7 +83,8 @@ public sealed class MysteryGiftDatabaseWindow : Window
     private readonly MenuItem Menu_OpenDB = new() { Name = "Menu_OpenDB", Header = "Open Database Folder" };
     private readonly MenuItem Menu_Export = new() { Name = "Menu_Export", Header = "Export Results to Folder" };
     private readonly MenuItem Menu_Import = new() { Name = "Menu_Import", Header = "Import Results to SaveFile" };
-    private readonly MenuItem Menu_Exit = new() { Name = "Menu_Exit", Header = "_Close" };
+    // WinForms binds Ctrl+E to Close here (hidden in its menu; Avalonia menus show their gestures).
+    private readonly MenuItem Menu_Exit = new() { Name = "Menu_Exit", Header = "_Close", HotKey = global::Avalonia.Input.KeyGesture.Parse("Ctrl+E"), InputGesture = global::Avalonia.Input.KeyGesture.Parse("Ctrl+E") };
     private readonly ContextMenu SlotMenu = new();
     private SlotView? menuSlot;
 
@@ -88,7 +95,10 @@ public sealed class MysteryGiftDatabaseWindow : Window
         Icon = AppIcon.Get();
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         Width = 1030;
-        Height = 690;
+
+        // WinForms sizes the grid from the setting and then resizes the form around it.
+        GridHeight = PokeGrid.GetDatabaseRowCount(this, MainWindow.Settings.MysteryDb.ResultsGridRowCount, NonGridHeight);
+        Height = NonGridHeight + PokeGrid.GetGridSize(GridWidth, GridHeight, SpriteUtil.Spriter.Width, SpriteUtil.Spriter.Height).Height;
 
         SAV = sav.SAV;
         BoxView = sav;
@@ -104,6 +114,12 @@ public sealed class MysteryGiftDatabaseWindow : Window
         var menu = new Menu();
         menu.Items.Add(menuFile);
         menu.Items.Add(menuTools);
+
+        // Menu icons (WinForms SAV_MysteryGiftDB.Designer; inverted in dark mode as InvertToolStripIcons does).
+        WindowUtil.SetMenuIcon(Menu_Exit, "exit");
+        WindowUtil.SetMenuIcon(Menu_OpenDB, "folder");
+        WindowUtil.SetMenuIcon(Menu_Export, "export");
+        WindowUtil.SetMenuIcon(Menu_Import, "savePKM");
 
         var filters = UiFactory.FormGrid(7);
         UiFactory.AddFormRow(filters, 0, L_Format, UiFactory.Row(CB_FormatComparator, CB_Format));
@@ -166,6 +182,8 @@ public sealed class MysteryGiftDatabaseWindow : Window
                     SlotMenu.Open(slot);
                 }
             };
+            slot.PointerEntered += (_, _) => ShowHoverTextForSlot(slot);
+            slot.PointerExited += (_, _) => ShowSet.Clear();
         }
         BuildSlotMenu();
 
@@ -177,7 +195,12 @@ public sealed class MysteryGiftDatabaseWindow : Window
             SCR_Box.Value = newval;
             e.Handled = true;
         };
-        SCR_Box.Scroll += (_, _) => FillPKXBoxes((int)SCR_Box.Value);
+        // Covers both the scrollbar and the wheel handler above; Avalonia's Scroll event does not fire for a programmatic value.
+        SCR_Box.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == global::Avalonia.Controls.Primitives.RangeBase.ValueProperty)
+                FillPKXBoxes((int)SCR_Box.Value);
+        };
 
         if (!Directory.Exists(DatabasePath))
             Menu_OpenDB.IsVisible = false;
@@ -198,6 +221,8 @@ public sealed class MysteryGiftDatabaseWindow : Window
         Menu_Export.Click += async (_, _) => await Menu_Export_Click();
         Menu_Import.Click += async (_, _) => await Menu_Import_Click();
 
+        Closing += (_, _) => ShowSet.Clear();
+
         // Load Data
         B_Search.IsEnabled = false;
         L_Count.Text = "Loading...";
@@ -212,6 +237,9 @@ public sealed class MysteryGiftDatabaseWindow : Window
         mnuView.Click += async (_, _) => await ClickView(menuSlot);
         mnuSaveMG.Click += async (_, _) => await ClickSaveMG(menuSlot);
         mnuSavePK.Click += async (_, _) => await ClickSavePK(menuSlot);
+        WindowUtil.SetMenuIcon(mnuView, "other");
+        WindowUtil.SetMenuIcon(mnuSaveMG, "gift");
+        WindowUtil.SetMenuIcon(mnuSavePK, "savePKM");
         SlotMenu.Items.Add(mnuView);
         SlotMenu.Items.Add(mnuSaveMG);
         SlotMenu.Items.Add(mnuSavePK);
@@ -441,6 +469,7 @@ public sealed class MysteryGiftDatabaseWindow : Window
     private void SetResults(List<MysteryGift> res)
     {
         Results = [.. res];
+        ShowSet.Clear();
 
         SCR_Box.Maximum = (int)Math.Ceiling((decimal)Results.Count / GridWidth);
         if (SCR_Box.Maximum > 0)
@@ -483,6 +512,15 @@ public sealed class MysteryGiftDatabaseWindow : Window
         int begin = GridWidth * start;
         if (slotSelected != -1 && slotSelected >= begin && slotSelected < begin + entries.Count)
             entries[slotSelected - begin].BackgroundBitmap = SlotUtil.GetTouchTypeBackground(slotColor);
+    }
+
+    private void ShowHoverTextForSlot(SlotView pb)
+    {
+        int index = GetSenderIndex(pb);
+        if (index < 0)
+            return;
+
+        ShowSet.Show(pb, Results[index]);
     }
 
     private void ChangeFormatFilter()

@@ -296,10 +296,10 @@ public sealed class MailBoxWindow : SaveEditorWindow
         LB_PCBOX.SelectionChanged += (_, _) => EntryControl(false);
         NUD_BoxSize.ValueChanged += (_, _) => { if (!editing) MakePCList(); };
         B_Delete.Click += async (_, _) => await ClickDelete();
-        B_PartyUp.Click += async (_, _) => await SwapSlots(true, false);
-        B_PartyDown.Click += async (_, _) => await SwapSlots(true, true);
-        B_BoxUp.Click += async (_, _) => await SwapSlots(false, false);
-        B_BoxDown.Click += async (_, _) => await SwapSlots(false, true);
+        B_PartyUp.Click += (_, _) => SwapSlots(true, false);
+        B_PartyDown.Click += (_, _) => SwapSlots(true, true);
+        B_BoxUp.Click += (_, _) => SwapSlots(false, false);
+        B_BoxDown.Click += (_, _) => SwapSlots(false, true);
         for (int i = 0; i < PKMNUDs.Length; i++)
         {
             int index = i;
@@ -323,6 +323,9 @@ public sealed class MailBoxWindow : SaveEditorWindow
         MiscRow.IsVisible = Context == EntityContext.Gen5;
         GB_PKM.IsVisible = SAV is not SAV2Stadium;
         B_PartyUp.IsEnabled = B_PartyDown.IsEnabled = SAV is not SAV2Stadium;
+        // The four reorder buttons start hidden in the WinForms designer and are only shown for Gen 2 / Gen 3,
+        // where the mail slots are not tied to a party index.
+        B_PartyUp.IsVisible = B_PartyDown.IsVisible = B_BoxUp.IsVisible = B_BoxDown.IsVisible = gen2 || Context == EntityContext.Gen3;
     }
 
     #endregion
@@ -603,7 +606,7 @@ public sealed class MailBoxWindow : SaveEditorWindow
         return result;
     }
 
-    private async Task SwapSlots(bool party, bool down)
+    private void SwapSlots(bool party, bool down)
     {
         var lb = party ? LB_PartyHeld : LB_PCBOX;
         var items = party ? PartyItems : BoxItems;
@@ -613,10 +616,7 @@ public sealed class MailBoxWindow : SaveEditorWindow
         int index = lb.SelectedIndex;
         var otherIndex = index + (down ? 1 : -1);
         if ((uint)otherIndex >= items.Count)
-        {
-            await AppDialogs.Alert(this, "No adjacent slot.");
-            return;
-        }
+            return; // no adjacent slot; WinForms only plays the alert sound here
 
         if (!party)
         {

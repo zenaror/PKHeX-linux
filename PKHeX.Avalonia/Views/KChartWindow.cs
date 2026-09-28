@@ -39,6 +39,7 @@ public sealed class KChartWindow : Window
             AutoGenerateColumns = false,
             IsReadOnly = true,
             CanUserReorderColumns = true,
+            CanUserResizeColumns = false, // WinForms: DGV.AllowUserToResizeColumns = false
             CanUserSortColumns = true,
             HeadersVisibility = DataGridHeadersVisibility.Column,
             GridLinesVisibility = DataGridGridLinesVisibility.All,
@@ -51,38 +52,48 @@ public sealed class KChartWindow : Window
         Translator.TranslateInterface(this, MainWindow.CurrentLanguage);
     }
 
+    /// <remarks>
+    /// Header texts and the <c>KChart.DGV_*</c> translation keys come from the WinForms designer column names
+    /// (<c>d_Index</c>, <c>SpecName</c>, <c>New</c>, <c>Ability0</c>...). The "Alpha Move" column is added in code
+    /// upstream too and has no key, so it stays English in both apps.
+    /// </remarks>
     private static void AddColumns(DataGrid grid, SaveFile sav)
     {
-        grid.Columns.Add(Text("Species", nameof(ChartRow.Index), 96));
-        grid.Columns.Add(Sprite("Sprite", nameof(ChartRow.Sprite), Math.Max(80, SpriteUtil.Spriter.Width + 2)));
-        grid.Columns.Add(Text("Name", nameof(ChartRow.Name), 160));
-        grid.Columns.Add(Text("Native", nameof(ChartRow.Native), 80));
-        grid.Columns.Add(Colored("BST", nameof(ChartRow.BST), nameof(ChartRow.BSTColor), 76));
-        grid.Columns.Add(Text("Catch Rate", nameof(ChartRow.CatchRate), 110));
-        grid.Columns.Add(Sprite("Type 1", nameof(ChartRow.Type1), 84));
-        grid.Columns.Add(Sprite("Type 2", nameof(ChartRow.Type2), 84));
-        grid.Columns.Add(Colored("HP", nameof(ChartRow.HP), nameof(ChartRow.HPColor), 68));
-        grid.Columns.Add(Colored("Atk", nameof(ChartRow.ATK), nameof(ChartRow.ATKColor), 68));
-        grid.Columns.Add(Colored("Def", nameof(ChartRow.DEF), nameof(ChartRow.DEFColor), 68));
-        grid.Columns.Add(Colored("SpA", nameof(ChartRow.SPA), nameof(ChartRow.SPAColor), 68));
-        grid.Columns.Add(Colored("SpD", nameof(ChartRow.SPD), nameof(ChartRow.SPDColor), 68));
-        grid.Columns.Add(Colored("Spe", nameof(ChartRow.SPE), nameof(ChartRow.SPEColor), 68));
-        grid.Columns.Add(Text("Ability 1", nameof(ChartRow.Ability1), 130));
-        grid.Columns.Add(Text("Ability 2", nameof(ChartRow.Ability2), 130));
-        grid.Columns.Add(Text("Ability H", nameof(ChartRow.AbilityH), 130));
+        grid.Columns.Add(Text("d_Index", "Dex#", nameof(ChartRow.Index), 96));
+        grid.Columns.Add(Sprite("Sprite", "Sprite", nameof(ChartRow.Sprite), Math.Max(80, SpriteUtil.Spriter.Width + 2)));
+        grid.Columns.Add(Text("SpecName", "Name", nameof(ChartRow.Name), 160));
+        grid.Columns.Add(Text("New", "Native", nameof(ChartRow.Native), 80));
+        grid.Columns.Add(Colored("BST", "BST", nameof(ChartRow.BST), nameof(ChartRow.BSTColor), 76));
+        grid.Columns.Add(Text("CatchRate", "Catch Rate", nameof(ChartRow.CatchRate), 110));
+        grid.Columns.Add(Sprite("Type1", "Type1", nameof(ChartRow.Type1), 84));
+        grid.Columns.Add(Sprite("Type2", "Type2", nameof(ChartRow.Type2), 84));
+        grid.Columns.Add(Colored("HP", "HP", nameof(ChartRow.HP), nameof(ChartRow.HPColor), 68));
+        grid.Columns.Add(Colored("ATK", "ATK", nameof(ChartRow.ATK), nameof(ChartRow.ATKColor), 68));
+        grid.Columns.Add(Colored("DEF", "DEF", nameof(ChartRow.DEF), nameof(ChartRow.DEFColor), 68));
+        grid.Columns.Add(Colored("SPA", "SPA", nameof(ChartRow.SPA), nameof(ChartRow.SPAColor), 68));
+        grid.Columns.Add(Colored("SPD", "SPD", nameof(ChartRow.SPD), nameof(ChartRow.SPDColor), 68));
+        grid.Columns.Add(Colored("SPE", "SPE", nameof(ChartRow.SPE), nameof(ChartRow.SPEColor), 68));
+        grid.Columns.Add(Text("Ability0", "Ability 1", nameof(ChartRow.Ability1), 130));
+        grid.Columns.Add(Text("Ability1", "Ability 2", nameof(ChartRow.Ability2), 130));
+        grid.Columns.Add(Text("AbilityH", "Hidden Ability", nameof(ChartRow.AbilityH), 130));
         if (sav is SAV9ZA)
-            grid.Columns.Add(Text("Alpha Move", nameof(ChartRow.AlphaMove), 130));
+            grid.Columns.Add(Text(null, "Alpha Move", nameof(ChartRow.AlphaMove), 130));
     }
 
-    private static DataGridColumn Text(string header, string path, double width) => new DataGridTextColumn
+    /// <summary>Translates a column header the way WinForms does for its designer columns.</summary>
+    private static string Header(string? key, string fallback) => key is null
+        ? fallback
+        : Translator.TranslateText(Translator.GetKey("KChart", $"DGV_{key}"), fallback, MainWindow.CurrentLanguage);
+
+    private static DataGridColumn Text(string? key, string header, string path, double width) => new DataGridTextColumn
     {
-        Header = header,
+        Header = Header(key, header),
         Binding = new Binding(path),
         Width = new DataGridLength(width),
     };
 
     /// <remarks>The WinForms grid colours the stat cells with <see cref="ColorUtil"/>; the same colours are bound here.</remarks>
-    private static DataGridColumn Colored(string header, string path, string colorPath, double width)
+    private static DataGridColumn Colored(string key, string header, string path, string colorPath, double width)
     {
         var template = new global::Avalonia.Controls.Templates.FuncDataTemplate<object>((_, _) =>
         {
@@ -93,10 +104,10 @@ public sealed class KChartWindow : Window
             border.Child = text;
             return border;
         });
-        return new DataGridTemplateColumn { Header = header, CellTemplate = template, Width = new DataGridLength(width) };
+        return new DataGridTemplateColumn { Header = Header(key, header), CellTemplate = template, Width = new DataGridLength(width) };
     }
 
-    private static DataGridColumn Sprite(string header, string path, double width)
+    private static DataGridColumn Sprite(string key, string header, string path, double width)
     {
         var template = new global::Avalonia.Controls.Templates.FuncDataTemplate<object>((_, _) =>
         {
@@ -104,7 +115,7 @@ public sealed class KChartWindow : Window
             image.Bind(Image.SourceProperty, new Binding(path));
             return image;
         });
-        return new DataGridTemplateColumn { Header = header, CellTemplate = template, Width = new DataGridLength(width) };
+        return new DataGridTemplateColumn { Header = Header(key, header), CellTemplate = template, Width = new DataGridLength(width) };
     }
 
     private void Populate(SaveFile sav)
@@ -121,7 +132,7 @@ public sealed class KChartWindow : Window
             var fc = pt[s, 0].FormCount;
             var formNames = fc <= 1
                 ? []
-                : FormConverter.GetFormList(s, strings.Types, strings.forms, GameInfo.GenderSymbolUnicode, sav.Context);
+                : FormConverter.GetFormList(s, strings.Types, strings.forms, MainWindow.GenderSymbols, sav.Context);
 
             for (byte f = 0; f < fc; f++)
             {

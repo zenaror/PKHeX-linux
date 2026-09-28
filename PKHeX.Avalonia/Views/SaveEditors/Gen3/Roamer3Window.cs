@@ -60,7 +60,10 @@ public sealed class Roamer3Window : SaveEditorWindow
         UiFactory.AddFormRow(ivs, 4, Label_SPD, TB_SPDIV);
         UiFactory.AddFormRow(ivs, 5, Label_SPE, TB_SPEIV);
 
-        SetBody(UiFactory.Row(top, new GroupBoxView("GB_IVs", "IVs", ivs)));
+        // WinForms lays the IV column out on the left of the detail fields, with no group box around it.
+        var body = UiFactory.Row(ivs, top);
+        body.Spacing = 12;
+        SetBody(body);
 
         TB_PID.OnTextChanged(_ => CHK_Shiny.IsChecked = Roamer3.IsShiny(TB_PID.UIntValue, SAV));
         LoadData();

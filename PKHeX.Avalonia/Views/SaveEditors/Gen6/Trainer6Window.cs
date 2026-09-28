@@ -30,8 +30,8 @@ public sealed class Trainer6Window : SaveEditorWindow
     private readonly ComboBox CB_Game = UiFactory.StringCombo("CB_Game", 120);
     private readonly NumericTextBox MT_TID = UiFactory.Numeric("MT_TID", 5, 70);
     private readonly NumericTextBox MT_SID = UiFactory.Numeric("MT_SID", 5, 70);
-    private readonly NumericTextBox MT_Money = UiFactory.Numeric("MT_Money", 8, 100);
-    private readonly Button B_MaxCash = UiFactory.Button("B_MaxCash", "Max");
+    private readonly NumericTextBox MT_Money = UiFactory.Numeric("MT_Money", 7, 100);
+    private readonly Button B_MaxCash = UiFactory.Button("B_MaxCash", "+");
     private readonly ComboBox CB_Country = UiFactory.Combo("CB_Country", 180);
     private readonly ComboBox CB_Region = UiFactory.Combo("CB_Region", 180);
     private readonly ComboBox CB_3DSReg = UiFactory.Combo("CB_3DSReg", 180);
@@ -39,12 +39,12 @@ public sealed class Trainer6Window : SaveEditorWindow
     private readonly NumericTextBox MT_Hours = UiFactory.Numeric("MT_Hours", 5, 60);
     private readonly NumericTextBox MT_Minutes = UiFactory.Numeric("MT_Minutes", 2, 44);
     private readonly NumericTextBox MT_Seconds = UiFactory.Numeric("MT_Seconds", 2, 44);
-    private readonly NumericTextBox TB_BP = UiFactory.Numeric("TB_BP", 5, 70);
+    private readonly NumericTextBox TB_BP = UiFactory.Numeric("TB_BP", 4, 70);
     private readonly NumericTextBox TB_PM = UiFactory.Numeric("TB_PM", 7, 90);
     private readonly NumericTextBox TB_Style = UiFactory.Numeric("TB_Style", 3, 50);
     private readonly TextBlock L_Style = UiFactory.Label("L_Style", "Style:");
     private readonly CheckBox[] cba;
-    private readonly CheckBox CHK_MegaUnlocked = UiFactory.Check("CHK_MegaUnlocked", "Mega Unlocked");
+    private readonly CheckBox CHK_MegaUnlocked = UiFactory.Check("CHK_MegaUnlocked", "Mega Evolution Unlocked");
     private readonly CheckBox CHK_MegaRayquazaUnlocked = UiFactory.Check("CHK_MegaRayquazaUnlocked", "Mega Rayquaza Unlocked");
     private readonly ComboBox CB_Vivillon = UiFactory.StringCombo("CB_Vivillon", 160);
     private readonly TextBlock L_Vivillon = UiFactory.Label("L_Vivillon", "Vivillon:");
@@ -66,11 +66,20 @@ public sealed class Trainer6Window : SaveEditorWindow
     ];
 
     // Map
-    private readonly NumericUpDown NUD_M = UiFactory.NumericUpDown("NUD_M", 0, ushort.MaxValue, 110);
-    private readonly NumericUpDown NUD_X = UiFactory.NumericUpDown("NUD_X", -1000, 1000, 110);
-    private readonly NumericUpDown NUD_Z = UiFactory.NumericUpDown("NUD_Z", -1000, 1000, 110);
-    private readonly NumericUpDown NUD_Y = UiFactory.NumericUpDown("NUD_Y", -1000, 1000, 110);
-    private readonly NumericUpDown NUD_R = UiFactory.NumericUpDown("NUD_R", 0, ushort.MaxValue, 110);
+    // Ranges from the WinForms designer: map id 0-1000, rotation 0-7, coordinates +/-65535 with six decimals.
+    private readonly NumericUpDown NUD_M = UiFactory.NumericUpDown("NUD_M", 0, 1000, 110);
+    private readonly NumericUpDown NUD_X = Coordinate("NUD_X");
+    private readonly NumericUpDown NUD_Z = Coordinate("NUD_Z");
+    private readonly NumericUpDown NUD_Y = Coordinate("NUD_Y");
+    private readonly NumericUpDown NUD_R = UiFactory.NumericUpDown("NUD_R", 0, 7, 110);
+
+    private static NumericUpDown Coordinate(string name)
+    {
+        var nud = UiFactory.NumericUpDown(name, -65535, 65535, 130);
+        nud.FormatString = "0.000000";
+        nud.Increment = 1;
+        return nud;
+    }
     private GroupBoxView GB_Map = null!;
 
     // Records / Maison
@@ -84,10 +93,10 @@ public sealed class Trainer6Window : SaveEditorWindow
 
     // X/Y only
     private readonly ComboBox CB_BattleChateauRank = UiFactory.StringCombo("CB_BattleChateauRank", 160);
-    private readonly NumericUpDown NUD_BattleChateauPoints = UiFactory.NumericUpDown("NUD_BattleChateauPoints", 0, ushort.MaxValue, 110);
+    private readonly NumericUpDown NUD_BattleChateauPoints = UiFactory.NumericUpDown("NUD_BattleChateauPoints", 0, 4095, 110);
     private readonly PropertyGridView PG_CurrentAppearance = new() { Name = "PG_CurrentAppearance" };
     private readonly RenderedString TB_TRNick = UiFactory.Name("TB_TRNick", 12, 140);
-    private readonly Button B_GiveAllAccessories = UiFactory.Button("B_GiveAllAccessories", "Unlock all Accessories");
+    private readonly Button B_GiveAccessories = UiFactory.Button("B_GiveAccessories", "Give All Accessories");
 
     private readonly bool editing;
     private bool MapUpdated;
@@ -107,7 +116,7 @@ public sealed class Trainer6Window : SaveEditorWindow
             "TB_MCTN","TB_MCTS","TB_MBTN","TB_MBTS",
             "TB_MCRN","TB_MCRS","TB_MBRN","TB_MBRS",
             "TB_MCMN","TB_MCMS","TB_MBMN","TB_MBMS",
-        }.Select(n => UiFactory.Numeric(n, 5, 70))];
+        }.Select(n => UiFactory.Numeric(n, 4, 70))];
 
         CB_Gender.Items.Clear();
         foreach (var s in MainWindow.GenderSymbols.Take(2)) // m/f depending on unicode selection
@@ -138,7 +147,7 @@ public sealed class Trainer6Window : SaveEditorWindow
         CB_MultiplayerSprite.SelectionChanged += (_, _) => ChangeMultiplayerSprite();
         foreach (var nud in new[] { NUD_M, NUD_X, NUD_Z, NUD_Y, NUD_R })
             nud.ValueChanged += (_, _) => { if (!editing) MapUpdated = true; };
-        B_GiveAllAccessories.Click += (_, _) =>
+        B_GiveAccessories.Click += (_, _) =>
         {
             if (SAV is SAV6XY xy)
                 xy.Blocks.Fashion.UnlockAllAccessories();
@@ -157,82 +166,14 @@ public sealed class Trainer6Window : SaveEditorWindow
     private TabControl BuildTabs()
     {
         var tabs = new TabControl { Name = "TC_Editor" };
-
-        // Overview
-        var main = UiFactory.FormGrid(12);
-        UiFactory.AddFormRow(main, 0, UiFactory.Label("L_TrainerName", "Trainer Name:"), UiFactory.Row(TB_OTName, CB_Gender));
-        UiFactory.AddFormRow(main, 1, UiFactory.Label("L_Game", "Game:"), CB_Game);
-        UiFactory.AddFormRow(main, 2, UiFactory.Label("L_TrainerID", "TID/SID:"), UiFactory.Row(MT_TID, MT_SID));
-        UiFactory.AddFormRow(main, 3, UiFactory.Label("L_Money", "Money:"), UiFactory.Row(MT_Money, B_MaxCash));
-        UiFactory.AddFormRow(main, 4, UiFactory.Label("L_Language", "Language:"), CB_Language);
-        UiFactory.AddFormRow(main, 5, UiFactory.Label("L_Country", "Country:"), CB_Country);
-        UiFactory.AddFormRow(main, 6, UiFactory.Label("L_Region", "Region:"), CB_Region);
-        UiFactory.AddFormRow(main, 7, UiFactory.Label("L_3DSReg", "3DS Region:"), CB_3DSReg);
-        UiFactory.AddFormRow(main, 8, UiFactory.Label("L_PlayTime", "Play Time:"), UiFactory.Row(MT_Hours, MT_Minutes, MT_Seconds));
-        UiFactory.AddFormRow(main, 9, UiFactory.Label("L_BP", "BP / PokéMiles:"), UiFactory.Row(TB_BP, TB_PM));
-        UiFactory.AddFormRow(main, 10, L_Style, TB_Style);
-        UiFactory.AddFormRow(main, 11, L_Vivillon, CB_Vivillon);
-
-        var badges = new GroupBoxView("GB_Badges", "Badges", UiFactory.Row(cba));
-        var megas = UiFactory.Column(CHK_MegaUnlocked, CHK_MegaRayquazaUnlocked);
-
-        var dates = UiFactory.FormGrid(3);
-        UiFactory.AddFormRow(dates, 0, UiFactory.Label("L_AdventureStart", "Adventure Started:"), UiFactory.Row(CAL_AdventureStartDate, CAL_AdventureStartTime));
-        UiFactory.AddFormRow(dates, 1, UiFactory.Label("L_HoF", "Hall of Fame:"), UiFactory.Row(CAL_HoFDate, CAL_HoFTime));
-        UiFactory.AddFormRow(dates, 2, L_LastSaved, UiFactory.Row(CAL_LastSavedDate, CAL_LastSavedTime));
-
-        GB_Map = new GroupBoxView("GB_Map", "Map Position", UiFactory.Row(
-            UiFactory.Label("L_M", "M:"), NUD_M,
-            UiFactory.Label("L_X", "X:"), NUD_X,
-            UiFactory.Label("L_Z", "Z:"), NUD_Z,
-            UiFactory.Label("L_Y", "Y:"), NUD_Y,
-            UiFactory.Label("L_R", "R:"), NUD_R));
-
-        var sayings = new GroupBoxView("GB_Sayings", "Sayings", UiFactory.Column(Sayings));
-
-        var overview = UiFactory.Column(main, badges, megas, dates, GB_Map, sayings);
-        tabs.Items.Add(new TabItem { Name = "Tab_Overview", Header = "Overview", Content = new ScrollViewer { Content = overview, MaxHeight = 560 } });
-
-        // Records
-        tabs.Items.Add(new TabItem { Name = "Tab_Records", Header = "Records", Content = TrainerStats });
-
-        // Battle Maison
-        var maison = new Grid { ColumnSpacing = 6, RowSpacing = 4 };
-        for (int i = 0; i < 5; i++)
-            maison.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
-        string[] modes = ["Single", "Double", "Triple", "Rotation", "Multi"];
-        for (int row = 0; row < 5; row++)
-        {
-            maison.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
-            var label = UiFactory.Label($"L_Maison{row}", modes[row]);
-            UiFactory.SetRowCol(label, row, 0);
-            maison.Children.Add(label);
-            for (int col = 0; col < 4; col++)
-            {
-                var box = MaisonRecords[(row * 4) + col];
-                UiFactory.SetRowCol(box, row, col + 1);
-                maison.Children.Add(box);
-            }
-        }
-        tabs.Items.Add(new TabItem { Name = "Tab_Maison", Header = "Maison", Content = maison });
-
-        // Multiplayer
-        var multi = UiFactory.Column(UiFactory.Row(L_MultiplayerSprite, CB_MultiplayerSprite), PB_Sprite);
-        tabs.Items.Add(new TabItem { Name = "Tab_Multiplayer", Header = "Multiplayer", Content = multi });
-
-        // X/Y only tabs
+        tabs.Items.Add(BuildOverview());
+        tabs.Items.Add(BuildBadgeMap());
+        tabs.Items.Add(BuildMultiplayer());
+        tabs.Items.Add(BuildMaison());
         if (SAV is SAV6XY)
         {
-            var appearance = UiFactory.Column(
-                UiFactory.Row(UiFactory.Label("L_TRNick", "Nickname:"), TB_TRNick),
-                B_GiveAllAccessories,
-                PG_CurrentAppearance);
-            tabs.Items.Add(new TabItem { Name = "Tab_Appearance", Header = "Appearance", Content = new ScrollViewer { Content = appearance, MaxHeight = 520 } });
-
-            var chateau = UiFactory.FormGrid(2);
-            UiFactory.AddFormRow(chateau, 0, UiFactory.Label("L_ChateauRank", "Rank:"), CB_BattleChateauRank);
-            UiFactory.AddFormRow(chateau, 1, UiFactory.Label("L_ChateauPoints", "Points:"), NUD_BattleChateauPoints);
-            tabs.Items.Add(new TabItem { Name = "Tab_BattleChateau", Header = "Battle Chateau", Content = chateau });
+            tabs.Items.Add(BuildChateau());
+            tabs.Items.Add(BuildAppearance());
         }
 
         // Visibility rules, matching the WinForms constructor.
@@ -241,6 +182,7 @@ public sealed class Trainer6Window : SaveEditorWindow
         L_MultiplayerSprite.IsVisible = CB_MultiplayerSprite.IsVisible = PB_Sprite.IsVisible = notDemo;
         CHK_MegaRayquazaUnlocked.IsVisible = SAV is SAV6AO;
         L_Style.IsVisible = TB_Style.IsVisible = SAV is SAV6XY;
+        CB_Game.IsEnabled = false; // the designer disables it; the version is shown, not edited
         if (SAV is SAV6AODemo)
         {
             foreach (var name in new[] { "Tab_Multiplayer", "Tab_Maison" })
@@ -251,6 +193,156 @@ public sealed class Trainer6Window : SaveEditorWindow
             }
         }
         return tabs;
+    }
+
+    /// <summary>Overview page: identity on the left, console data on the right, then the two group boxes.</summary>
+    private TabItem BuildOverview()
+    {
+        var left = UiFactory.FormGrid(5);
+        UiFactory.AddFormRow(left, 0, UiFactory.Label("L_TrainerName", "Trainer Name:"), TB_OTName);
+        UiFactory.AddFormRow(left, 1, UiFactory.Label("L_TID", "TID:"), MT_TID);
+        UiFactory.AddFormRow(left, 2, UiFactory.Label("L_SID", "SID:"), UiFactory.Row(MT_SID, CB_Gender, CB_Game));
+        UiFactory.AddFormRow(left, 3, UiFactory.Label("L_Money", "$:"), UiFactory.Row(MT_Money, B_MaxCash));
+        UiFactory.AddFormRow(left, 4, UiFactory.Label("L_Language", "Language:"), CB_Language);
+
+        var right = UiFactory.FormGrid(4);
+        UiFactory.AddFormRow(right, 0, UiFactory.Label("L_Country", "Country:"), CB_Country);
+        UiFactory.AddFormRow(right, 1, UiFactory.Label("L_Region", "Sub Region:"), CB_Region);
+        UiFactory.AddFormRow(right, 2, UiFactory.Label("L_3DSReg", "3DS Region:"), CB_3DSReg);
+        UiFactory.AddFormRow(right, 3, L_Vivillon, CB_Vivillon);
+
+        var top = UiFactory.Row(left, right);
+        top.Spacing = 16;
+
+        var play = UiFactory.Row(
+            UiFactory.Label("L_Hours", "Hrs:"), MT_Hours,
+            UiFactory.Label("L_Minutes", "Min:"), MT_Minutes,
+            UiFactory.Label("L_Seconds", "Sec:"), MT_Seconds);
+
+        var dates = UiFactory.FormGrid(3);
+        UiFactory.AddFormRow(dates, 0, UiFactory.Label("L_Started", "Game Started:"), UiFactory.Row(CAL_AdventureStartDate, CAL_AdventureStartTime));
+        UiFactory.AddFormRow(dates, 1, UiFactory.Label("L_Fame", "HoF Entered:"), UiFactory.Row(CAL_HoFDate, CAL_HoFTime));
+        UiFactory.AddFormRow(dates, 2, L_LastSaved, UiFactory.Row(CAL_LastSavedDate, CAL_LastSavedTime));
+        var adventure = new GroupBoxView("GB_Adventure", "Adventure Info", UiFactory.Column(play, dates));
+
+        var statGrid = UiFactory.FormGrid(3);
+        UiFactory.AddFormRow(statGrid, 0, UiFactory.Label("L_BP", "BP:"), TB_BP);
+        UiFactory.AddFormRow(statGrid, 1, UiFactory.Label("L_PM", "PokéMiles:"), TB_PM);
+        UiFactory.AddFormRow(statGrid, 2, L_Style, TB_Style);
+        var stats = new GroupBoxView("GB_Stats", "Stats", UiFactory.Column(statGrid, TrainerStats));
+
+        var groups = UiFactory.Row(adventure, stats);
+        groups.Spacing = 12;
+
+        var overview = UiFactory.Column(top, groups);
+        return new TabItem { Name = "Tab_Overview", Header = "Overview", Content = new ScrollViewer { Content = overview, MaxHeight = 560 } };
+    }
+
+    /// <summary>Badges and map position, as in the WinForms "Badges/Map" page.</summary>
+    private TabItem BuildBadgeMap()
+    {
+        var map = UiFactory.FormGrid(5);
+        UiFactory.AddFormRow(map, 0, UiFactory.Label("L_CurrentMap", "Current Map:"), NUD_M);
+        UiFactory.AddFormRow(map, 1, UiFactory.Label("L_X", "X Coordinate:"), NUD_X);
+        UiFactory.AddFormRow(map, 2, UiFactory.Label("L_Z", "Z Coordinate:"), NUD_Z);
+        UiFactory.AddFormRow(map, 3, UiFactory.Label("L_Y", "Y Coordinate:"), NUD_Y);
+        UiFactory.AddFormRow(map, 4, UiFactory.Label("L_R", "Rotation:"), NUD_R);
+        GB_Map = new GroupBoxView("GB_Map", "Map Position", map);
+
+        var badges = new Grid { ColumnSpacing = 12, RowSpacing = 4 };
+        badges.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+        badges.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+        for (int i = 0; i < 4; i++)
+            badges.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        for (int i = 0; i < cba.Length; i++)
+        {
+            UiFactory.SetRowCol(cba[i], i % 4, i / 4);
+            badges.Children.Add(cba[i]);
+        }
+
+        var body = UiFactory.Row(GB_Map, badges);
+        body.Spacing = 16;
+        return new TabItem { Name = "Tab_BadgeMap", Header = "Badges/Map", Content = body };
+    }
+
+    /// <summary>Multiplayer page: PSS sprite, the five saved sayings, and the Mega unlock flags.</summary>
+    private TabItem BuildMultiplayer()
+    {
+        var sayingGrid = UiFactory.FormGrid(Sayings.Length);
+        for (int i = 0; i < Sayings.Length; i++)
+            UiFactory.AddFormRow(sayingGrid, i, UiFactory.Label($"L_Saying{i + 1}", $"{i + 1}:"), Sayings[i]);
+        var sayings = new GroupBoxView("GB_Sayings", "Saved Sayings", sayingGrid);
+
+        var body = UiFactory.Column(
+            UiFactory.Row(UiFactory.Column(L_MultiplayerSprite, CB_MultiplayerSprite), PB_Sprite),
+            sayings,
+            CHK_MegaUnlocked,
+            CHK_MegaRayquazaUnlocked);
+        return new TabItem { Name = "Tab_Multiplayer", Header = "Multiplayer", Content = body };
+    }
+
+    /// <summary>Battle Maison streaks: current and best, each with a normal and a super column.</summary>
+    private TabItem BuildMaison()
+    {
+        var body = UiFactory.Row(BuildMaisonGroup(current: true), BuildMaisonGroup(current: false));
+        body.Spacing = 12;
+        return new TabItem { Name = "Tab_Maison", Header = "Maison", Content = body };
+    }
+
+    private GroupBoxView BuildMaisonGroup(bool current)
+    {
+        // MaisonRecords is ordered per battle mode: current-normal, current-super, best-normal, best-super.
+        var suffix = current ? "C" : "B";
+        string[] modes = ["Singles", "Doubles", "Triples", "Rotation", "Multi"];
+        var grid = new Grid { ColumnSpacing = 6, RowSpacing = 3 };
+        for (int i = 0; i < 3; i++)
+            grid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+        for (int i = 0; i < modes.Length + 1; i++)
+            grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+
+        var normal = UiFactory.Label($"L_Normal{suffix}", "Normal");
+        var super = UiFactory.Label($"L_Super{suffix}", "Super");
+        UiFactory.SetRowCol(normal, 0, 1);
+        UiFactory.SetRowCol(super, 0, 2);
+        grid.Children.Add(normal);
+        grid.Children.Add(super);
+
+        for (int row = 0; row < modes.Length; row++)
+        {
+            var label = UiFactory.Label($"L_{modes[row]}{suffix}", $"{modes[row]}:");
+            label.HorizontalAlignment = HorizontalAlignment.Right;
+            UiFactory.SetRowCol(label, row + 1, 0);
+            grid.Children.Add(label);
+
+            var offset = (row * 4) + (current ? 0 : 2);
+            for (int col = 0; col < 2; col++)
+            {
+                var box = MaisonRecords[offset + col];
+                UiFactory.SetRowCol(box, row + 1, col + 1);
+                grid.Children.Add(box);
+            }
+        }
+
+        return current
+            ? new GroupBoxView("GB_MaisonCurrent", "Maison Streaks (Current)", grid)
+            : new GroupBoxView("GB_MaisonBest", "Maison Streaks (Best)", grid);
+    }
+
+    private TabItem BuildChateau()
+    {
+        var chateau = UiFactory.FormGrid(2);
+        UiFactory.AddFormRow(chateau, 0, UiFactory.Label("L_BattleChateauRank", "Rank:"), CB_BattleChateauRank);
+        UiFactory.AddFormRow(chateau, 1, UiFactory.Label("L_BattleChateauPoints", "Points:"), NUD_BattleChateauPoints);
+        return new TabItem { Name = "Tab_BattleChateau", Header = "Chateau", Content = chateau };
+    }
+
+    private TabItem BuildAppearance()
+    {
+        var appearance = UiFactory.Column(
+            UiFactory.Row(UiFactory.Label("L_TRNick", "Trainer Nickname:"), TB_TRNick),
+            B_GiveAccessories,
+            PG_CurrentAppearance);
+        return new TabItem { Name = "Tab_Appearance", Header = "Current Appearance (X/Y)", Content = new ScrollViewer { Content = appearance, MaxHeight = 520 } };
     }
 
     #endregion
@@ -312,13 +404,13 @@ public sealed class Trainer6Window : SaveEditorWindow
         }
 
         var sit = SAV.Situation;
-        NUD_M.Value = sit.M;
+        NUD_M.SetValueClamped(sit.M);
         try
         {
             NUD_X.Value = (decimal)(sit.X / 18.0);
             NUD_Z.Value = (decimal)(sit.Z / 18.0);
             NUD_Y.Value = (decimal)(sit.Y / 18.0);
-            NUD_R.Value = sit.R;
+            NUD_R.SetValueClamped(sit.R);
         }
         catch (OverflowException)
         {

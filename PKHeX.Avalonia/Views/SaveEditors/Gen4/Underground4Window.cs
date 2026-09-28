@@ -16,7 +16,6 @@ namespace PKHeX.Avalonia.Views.SaveEditors.Gen4;
 /// <remarks>
 /// Four 40-slot pouches (goods, spheres, traps, treasures) plus the Underground score counters. The
 /// pouches are stored compacted, so saving skips empty slots and rewrites the list from the top.
-/// The WinForms form has no label for the "helped others" counter; one is added here.
 /// </remarks>
 public sealed class Underground4Window : SaveEditorWindow
 {
@@ -129,27 +128,28 @@ public sealed class Underground4Window : SaveEditorWindow
 
     private void BuildLayout()
     {
+        // Row order and label texts follow the WinForms score group.
         var scores = UiFactory.FormGrid(13);
         AddScore(scores, 0, "L_PeopleMet", "People Met:", NUD_PlayersMet);
         AddScore(scores, 1, "L_Gifts", "Gifts Given:", NUD_GiftsGiven);
-        AddScore(scores, 2, "L_GiftsReceived", "Gifts Received:", NUD_GiftsReceived);
+        AddScore(scores, 2, "L_FlagsObtained", "Flags Obtained:", NUD_FlagsObtained);
         AddScore(scores, 3, "L_Spheres", "Spheres Dug:", NUD_Spheres);
         AddScore(scores, 4, "L_Fossils", "Fossils Dug:", NUD_Fossils);
         AddScore(scores, 5, "L_TrapOthers", "Trap Hits (Players):", NUD_TrapPlayers);
         AddScore(scores, 6, "L_TrapSelf", "Trap Hits (Self):", NUD_TrapSelf);
-        AddScore(scores, 7, "L_MyBaseMoved", "Moved My Base:", NUD_MyBaseMoved);
-        AddScore(scores, 8, "L_FlagsObtained", "Flags Obtained:", NUD_FlagsObtained);
+        AddScore(scores, 7, "L_OthersHelped", "Others Helped:", NUD_HelpedOthers);
+        AddScore(scores, 8, "L_GiftsReceived", "Gifts Received:", NUD_GiftsReceived);
         AddScore(scores, 9, "L_MyFlagTaken", "My Flag Taken:", NUD_MyFlagTaken);
         AddScore(scores, 10, "L_MyFlagRecovered", "Recovered Flags:", NUD_MyFlagRecovered);
-        AddScore(scores, 11, "L_FlagsCaptured", "Captured Flags:", NUD_FlagsCaptured);
-        AddScore(scores, 12, "L_HelpedOthers", "Helped Others:", NUD_HelpedOthers);
+        AddScore(scores, 11, "L_MyBaseMoved", "Moved My Base:", NUD_MyBaseMoved);
+        AddScore(scores, 12, "L_FlagsCaptured", "Captured Flags:", NUD_FlagsCaptured);
         var gbScores = new GroupBoxView("GB_UScores", "Scores", scores);
 
-        var tabs = new TabControl { Name = "TC_Underground" };
-        tabs.Items.Add(new TabItem { Name = "TB_UGGoods", Header = "Goods", Content = NameGrid("DGV_UGGoods", GoodsRows, ugGoodsSorted) });
+        var tabs = new TabControl { Name = "TC_UGItems" };
+        tabs.Items.Add(new TabItem { Name = "TB_UGGoods", Header = "Goods", Content = NameGrid("DGV_UGGoods", "Item_Goods", GoodsRows, ugGoodsSorted) });
         tabs.Items.Add(new TabItem { Name = "TB_UGSpheres", Header = "Spheres", Content = SphereGrid() });
-        tabs.Items.Add(new TabItem { Name = "TB_UGTraps", Header = "Traps", Content = NameGrid("DGV_UGTraps", TrapRows, ugTrapsSorted) });
-        tabs.Items.Add(new TabItem { Name = "TB_UGTreasures", Header = "Treasures", Content = NameGrid("DGV_UGTreasures", TreasureRows, ugTreasuresSorted) });
+        tabs.Items.Add(new TabItem { Name = "TB_UGTraps", Header = "Traps", Content = NameGrid("DGV_UGTraps", "Item_Traps", TrapRows, ugTrapsSorted) });
+        tabs.Items.Add(new TabItem { Name = "TB_UGTreasures", Header = "Treasures", Content = NameGrid("DGV_UGTreasures", "Item_Treasures", TreasureRows, ugTreasuresSorted) });
 
         var body = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
         body.Children.Add(gbScores);
@@ -175,18 +175,18 @@ public sealed class Underground4Window : SaveEditorWindow
             HorizontalAlignment = HorizontalAlignment.Left,
         };
 
-    private static DataGrid NameGrid(string name, ObservableCollection<NameRow> rows, string[] options)
+    private static DataGrid NameGrid(string name, string columnName, ObservableCollection<NameRow> rows, string[] options)
     {
         var grid = MakeGrid(name, rows, 260);
-        grid.Columns.Add(DataGridUtil.StringComboColumn("Item", options, nameof(NameRow.Name), 230));
+        grid.Columns.Add(DataGridUtil.StringComboColumn("Item", options, nameof(NameRow.Name), 230).Named(columnName));
         return grid;
     }
 
     private DataGrid SphereGrid()
     {
         var grid = MakeGrid("DGV_UGSpheres", SphereRows, 330);
-        grid.Columns.Add(DataGridUtil.StringComboColumn("Sphere", ugSpheres, nameof(CountedRow.Name), 220));
-        grid.Columns.Add(new DataGridTextColumn { Header = "Size", Binding = new Binding(nameof(CountedRow.Count)) { Mode = BindingMode.TwoWay }, Width = new DataGridLength(80) });
+        grid.Columns.Add(DataGridUtil.StringComboColumn("Sphere", ugSpheres, nameof(CountedRow.Name), 220).Named("Item_Spheres"));
+        grid.Columns.Add(new DataGridTextColumn { Header = "Size", Binding = new Binding(nameof(CountedRow.Count)) { Mode = BindingMode.TwoWay }, Width = new DataGridLength(80) }.Named("Size_Spheres"));
         return grid;
     }
 

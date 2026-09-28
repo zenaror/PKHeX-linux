@@ -88,4 +88,24 @@ public static class DataGridUtil
             Width = new DataGridLength(width),
         };
     }
+
+    /// <summary>
+    /// Name of a column, used as the translation key suffix (<c>{Form}.DGV_{name}</c>).
+    /// </summary>
+    /// <remarks>
+    /// The WinForms translator keys a grid header off <c>DataGridViewColumn.Name</c>; Avalonia's
+    /// <see cref="DataGridColumn"/> has no name, so it is attached here instead.
+    /// </remarks>
+    public static readonly AttachedProperty<string?> ColumnNameProperty =
+        AvaloniaProperty.RegisterAttached<DataGrid, DataGridColumn, string?>("ColumnName");
+
+    /// <summary>Gives <paramref name="column"/> the name its WinForms counterpart has, for translation.</summary>
+    public static T Named<T>(this T column, string name) where T : DataGridColumn
+    {
+        column.SetValue(ColumnNameProperty, name);
+        return column;
+    }
+
+    /// <summary>Gets the name set by <see cref="Named{T}"/>, or <see langword="null"/> if the column has none.</summary>
+    public static string? GetColumnName(DataGridColumn column) => column.GetValue(ColumnNameProperty);
 }

@@ -73,9 +73,9 @@ public sealed class Pokeathlon4Window : SaveEditorWindow
             UiFactory.NumericUpDown("NUD_CourseScoreMax", 0, ushort.MaxValue, 120),
         ];
         CourseParticipantEditors = [
-            new PokeathlonParticipant4View("Participant 1:"),
-            new PokeathlonParticipant4View("Participant 2:"),
-            new PokeathlonParticipant4View("Participant 3:"),
+            new PokeathlonParticipant4View("L_CourseParticipant0", "Participant 1:"),
+            new PokeathlonParticipant4View("L_CourseParticipant1", "Participant 2:"),
+            new PokeathlonParticipant4View("L_CourseParticipant2", "Participant 3:"),
         ];
 
         BuildLayout();
@@ -85,6 +85,10 @@ public sealed class Pokeathlon4Window : SaveEditorWindow
         InitializeBestScores();
         InitializeIndexes();
         LoadData();
+
+        // The counter, best-score, course, event and connection rows are built after SetBody, so they were not
+        // reached by its translation pass; translate the finished window once more.
+        Translator.TranslateInterface(this, MainWindow.CurrentLanguage);
     }
 
     #region Layout
@@ -136,7 +140,7 @@ public sealed class Pokeathlon4Window : SaveEditorWindow
             RowHeight = 40,
             HorizontalAlignment = HorizontalAlignment.Left,
         };
-        grid.Columns.Add(new DataGridTextColumn { Header = "Species", Binding = new Binding(nameof(MedalRow.Species)), IsReadOnly = true, Width = new DataGridLength(80) });
+        grid.Columns.Add(new DataGridTextColumn { Header = "Species", Binding = new Binding(nameof(MedalRow.Species)), IsReadOnly = true, Width = new DataGridLength(80) }.Named("Species"));
         grid.Columns.Add(new DataGridTemplateColumn
         {
             Header = "Sprite",
@@ -148,13 +152,11 @@ public sealed class Pokeathlon4Window : SaveEditorWindow
                 img.Bind(Image.SourceProperty, new Binding(nameof(MedalRow.Sprite)));
                 return img;
             }),
-        });
+        }.Named("Sprite"));
 
         var names = Enum.GetNames<PokeathlonStat4>().Take((int)PokeathlonStat4.Count).ToArray();
         for (int i = 0; i < names.Length; i++)
-        {
-            grid.Columns.Add(DataGridUtil.CheckColumn(names[i], $"M{i}", 80));
-        }
+            grid.Columns.Add(DataGridUtil.CheckColumn(names[i], $"M{i}", 80).Named(names[i]));
 
         var giveAll = UiFactory.Button("B_MedalsGiveAll", "Give All");
         var clearAll = UiFactory.Button("B_MedalsClearAll", "Clear All");

@@ -22,7 +22,7 @@ public sealed class Geonet4Window : SaveEditorWindow
     private readonly List<ComboItem> pointList;
 
     private readonly ObservableCollection<GeonetRow> Rows = [];
-    private readonly DataGrid DGV_Geonet = new() { AutoGenerateColumns = false, HeadersVisibility = DataGridHeadersVisibility.Column, CanUserSortColumns = true, IsReadOnly = false };
+    private readonly DataGrid DGV_Geonet = new() { Name = "DGV_Geonet", AutoGenerateColumns = false, HeadersVisibility = DataGridHeadersVisibility.Column, CanUserSortColumns = false, IsReadOnly = false }; // every WinForms column is NotSortable
     private readonly CheckBox CHK_GlobalFlag = UiFactory.Check("CHK_GlobalFlag", "Whole Globe Visible");
     private readonly Button B_SetAllLocations = UiFactory.Button("B_SetAllLocations", "Set All Locations");
     private readonly Button B_SetAllLegalLocations = UiFactory.Button("B_SetAllLegalLocations", "Set All Legal Locations");
@@ -41,9 +41,9 @@ public sealed class Geonet4Window : SaveEditorWindow
         subregionListDefault = Util.GetCountryRegionList("gen4_sr_default", MainWindow.CurrentLanguage);
         pointList = Util.GetGeonetPointList();
 
-        DGV_Geonet.Columns.Add(new DataGridTextColumn { Header = "Country", Binding = new Binding(nameof(GeonetRow.CountryName)), IsReadOnly = true, Width = new DataGridLength(1, DataGridLengthUnitType.Star) });
-        DGV_Geonet.Columns.Add(new DataGridTextColumn { Header = "Subregion", Binding = new Binding(nameof(GeonetRow.SubregionName)), IsReadOnly = true, Width = new DataGridLength(1, DataGridLengthUnitType.Star) });
-        DGV_Geonet.Columns.Add(DataGridUtil.ComboColumn("Point", pointList, nameof(GeonetRow.Point), 130));
+        DGV_Geonet.Columns.Add(new DataGridTextColumn { Header = "Country", Binding = new Binding(nameof(GeonetRow.CountryName)), IsReadOnly = true, Width = new DataGridLength(1, DataGridLengthUnitType.Star) }.Named("Item_Country"));
+        DGV_Geonet.Columns.Add(new DataGridTextColumn { Header = "Region", Binding = new Binding(nameof(GeonetRow.SubregionName)), IsReadOnly = true, Width = new DataGridLength(1, DataGridLengthUnitType.Star) }.Named("Item_Region"));
+        DGV_Geonet.Columns.Add(DataGridUtil.ComboColumn("Point", pointList, nameof(GeonetRow.Point), 130).Named("Item_Point"));
         DGV_Geonet.ItemsSource = Rows;
 
         var body = new DockPanel();

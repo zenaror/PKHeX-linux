@@ -35,12 +35,12 @@ public sealed class EventWork7bWindow : SaveEditorWindow
     private readonly TabControl TC_Features = new() { Name = "TC_Features" };
     private readonly TabControl TC_Flag = new() { Name = "TC_Flag" };
     private readonly TabControl TC_Work = new() { Name = "TC_Work" };
-    private readonly TabItem GB_Constants = new() { Name = "GB_Constants", Header = "Work" };
+    private readonly TabItem GB_Constants = new() { Name = "GB_Constants", Header = "Event Constants" };
 
     private readonly NumericUpDown NUD_Flag = UiFactory.NumericUpDown("NUD_Flag", 0, ushort.MaxValue, 110);
     private readonly CheckBox c_CustomFlag = UiFactory.Check("c_CustomFlag", string.Empty);
     private readonly Button B_ApplyFlag = UiFactory.Button("B_ApplyFlag", "Apply");
-    private readonly TextBlock L_Stats = UiFactory.Label("L_Stats", "Work:");
+    private readonly TextBlock L_Stats = UiFactory.Label("L_Stats", "Constant:");
     private readonly ComboBox CB_Stats = UiFactory.StringCombo("CB_Stats", 110);
     private readonly NumericUpDown NUD_Stat = UiFactory.NumericUpDown("NUD_Stat", int.MinValue, int.MaxValue, 140);
     private readonly Button B_ApplyWork = UiFactory.Button("B_ApplyWork", "Apply");
@@ -107,30 +107,39 @@ public sealed class EventWork7bWindow : SaveEditorWindow
 
     private void BuildLayout()
     {
-        var status = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(4, 2) };
-        status.Children.Add(UiFactory.Row(UiFactory.Label("L_Flag", "Flag:"), NUD_Flag, c_CustomFlag, B_ApplyFlag));
+        var status = new WrapPanel { Orientation = Orientation.Horizontal };
+        status.Children.Add(UiFactory.Row(UiFactory.Label("CHK_CustomFlag", "Flag:"), NUD_Flag, c_CustomFlag, B_ApplyFlag));
         status.Children.Add(UiFactory.Row(L_Stats, CB_Stats, NUD_Stat, B_ApplyWork));
+        var gbStatus = new GroupBoxView("GB_FlagStatus", "Check Status", status);
+        gbStatus.Margin = new Thickness(4, 2);
 
-        TC_Features.Items.Add(new TabItem { Name = "GB_Flags", Header = "Flags", Content = TC_Flag });
+        var warn = UiFactory.Label("L_EventFlagWarn", "Altering Event Flags may impact other story events. Save file backups are recommended.");
+        warn.Margin = new Thickness(4, 2);
+        warn.TextWrapping = global::Avalonia.Media.TextWrapping.Wrap;
+
+        TC_Features.Items.Add(new TabItem { Name = "GB_Flags", Header = "Event Flags", Content = TC_Flag });
         GB_Constants.Content = TC_Work;
         TC_Features.Items.Add(GB_Constants);
         TC_Features.Items.Add(new TabItem { Name = "GB_Research", Header = "Research", Content = BuildResearchTab() });
 
         var body = new DockPanel();
-        DockPanel.SetDock(status, Dock.Bottom);
-        body.Children.Add(status);
+        DockPanel.SetDock(warn, Dock.Top);
+        body.Children.Add(warn);
+        DockPanel.SetDock(gbStatus, Dock.Bottom);
+        body.Children.Add(gbStatus);
         body.Children.Add(TC_Features);
         SetBody(body);
+        TC_Features.SelectedIndex = 0;
     }
 
     private Control BuildResearchTab()
     {
         B_LoadOld.Click += async (_, _) => await PickSave(TB_OldSAV);
         B_LoadNew.Click += async (_, _) => await PickSave(TB_NewSAV);
-        return UiFactory.Column(
+        return new GroupBoxView("GB_Researcher", "FlagDiff Researcher", UiFactory.Column(
             UiFactory.Row(B_LoadOld, TB_OldSAV),
             UiFactory.Row(B_LoadNew, TB_NewSAV),
-            RTB_Diff);
+            RTB_Diff));
     }
 
     private async Task PickSave(TextBox target)

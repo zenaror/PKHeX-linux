@@ -395,19 +395,7 @@ public sealed partial class MainWindow : Window
     /// Activates the already-open window of the requested type, if there is one.
     /// </summary>
     /// <remarks>Port of <c>WinFormsUtil.OpenWindowExists</c>; these tool windows are single-instance upstream.</remarks>
-    private static bool OpenWindowExists<T>() where T : Window
-    {
-        if (global::Avalonia.Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
-            return false;
-        foreach (var window in desktop.Windows)
-        {
-            if (window is not T)
-                continue;
-            window.Activate();
-            return true;
-        }
-        return false;
-    }
+    private static bool OpenWindowExists<T>() where T : Window => WindowUtil.OpenWindowExists<T>();
 
     // Sub Menu Options
     private void MainMenuBoxReport(object? sender, RoutedEventArgs e)

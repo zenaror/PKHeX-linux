@@ -34,7 +34,7 @@ public sealed class HallOfFame6Window : SaveEditorWindow
     private readonly ListBox LB_DataEntry = new() { Name = "LB_DataEntry", Width = 90, Height = 380 };
     private readonly ObservableCollection<string> Entries = [];
     private readonly TextBox RTB = new() { Name = "RTB", Width = 300, Height = 380, AcceptsReturn = true, IsReadOnly = true, FontFamily = new global::Avalonia.Media.FontFamily("monospace") };
-    private readonly Button B_CopyText = UiFactory.Button("B_CopyText", "Copy Text");
+    private readonly Button B_CopyText = UiFactory.Button("B_CopyText", "Copy txt");
     private readonly Button B_Delete = UiFactory.Button("B_Delete", "Delete");
 
     private readonly NumericUpDown NUP_PartyIndex = UiFactory.NumericUpDown("NUP_PartyIndex", 1, 6, 90);
@@ -53,8 +53,8 @@ public sealed class HallOfFame6Window : SaveEditorWindow
     private readonly NumericTextBox TB_VN = UiFactory.Numeric("TB_VN", 3, 60);
     private readonly TextBox TB_Nickname = UiFactory.Text("TB_Nickname", 12, 160);
     private readonly TextBox TB_OT = UiFactory.Text("TB_OT", 12, 160);
-    private readonly CheckBox CHK_Shiny = UiFactory.Check("CHK_Shiny", "Shiny");
-    private readonly CheckBox CHK_Nicknamed = UiFactory.Check("CHK_Nicknamed", "Nicknamed");
+    private readonly CheckBox CHK_Shiny = UiFactory.Check("CHK_Shiny", string.Empty); // labelled by L_Shiny, as in WinForms
+    private readonly CheckBox CHK_Nicknamed = UiFactory.Check("CHK_Nicknamed", "Nickname:");
     private readonly TextBlock Label_Gender = UiFactory.Label("Label_Gender", "-", clickable: true);
     private readonly TextBlock Label_OTGender = UiFactory.Label("Label_OTGender", "-", clickable: true);
     private readonly DatePicker CAL_MetDate = new() { Name = "CAL_MetDate" };
@@ -70,7 +70,7 @@ public sealed class HallOfFame6Window : SaveEditorWindow
         Setup();
 
         LB_DataEntry.SelectedIndex = 0;
-        ChangePartyIndex(initial: true);
+        ChangePartyIndex();
         editing = true;
     }
 
@@ -81,18 +81,29 @@ public sealed class HallOfFame6Window : SaveEditorWindow
         for (int i = 1; i < HallOfFame6.Entries; i++)
             Entries.Add($"{i:00}");
 
-        var detail = UiFactory.FormGrid(11);
-        UiFactory.AddFormRow(detail, 0, UiFactory.Label("L_PartyIndex", "Party Index:"), NUP_PartyIndex);
-        UiFactory.AddFormRow(detail, 1, UiFactory.Label("L_Species", "Species:"), UiFactory.Row(CB_Species, Label_Gender, bpkx));
-        UiFactory.AddFormRow(detail, 2, UiFactory.Label("L_Form", "Form:"), CB_Form);
-        UiFactory.AddFormRow(detail, 3, UiFactory.Label("L_HeldItem", "Held Item:"), CB_HeldItem);
-        UiFactory.AddFormRow(detail, 4, UiFactory.Label("L_Moves", "Moves:"), UiFactory.Column(CB_Moves));
-        UiFactory.AddFormRow(detail, 5, UiFactory.Label("L_Level", "Level:"), UiFactory.Row(TB_Level, CHK_Shiny));
-        UiFactory.AddFormRow(detail, 6, CHK_Nicknamed, TB_Nickname);
-        UiFactory.AddFormRow(detail, 7, UiFactory.Label("L_OT", "OT:"), UiFactory.Row(TB_OT, Label_OTGender));
-        UiFactory.AddFormRow(detail, 8, UiFactory.Label("L_TrainerID", "TID/SID:"), UiFactory.Row(TB_TID, TB_SID));
-        UiFactory.AddFormRow(detail, 9, UiFactory.Label("L_EC", "EC:"), TB_EC);
-        UiFactory.AddFormRow(detail, 10, UiFactory.Label("L_MetDate", "Date:"), UiFactory.Row(CAL_MetDate, TB_VN));
+        // Control names and grouping follow SAV_HallOfFame.Designer.cs so the SAV_HallOfFame.* keys translate them.
+        var moves = UiFactory.FormGrid(4);
+        for (int i = 0; i < CB_Moves.Length; i++)
+            UiFactory.AddFormRow(moves, i, null, CB_Moves[i]);
+        var gbMoves = new GroupBoxView("GB_CurrentMoves", "Current Moves", moves);
+
+        var trainer = UiFactory.FormGrid(3);
+        UiFactory.AddFormRow(trainer, 0, UiFactory.Label("Label_OT", "OT:"), UiFactory.Row(TB_OT, Label_OTGender));
+        UiFactory.AddFormRow(trainer, 1, UiFactory.Label("Label_TID", "TID16:"), TB_TID);
+        UiFactory.AddFormRow(trainer, 2, UiFactory.Label("Label_SID", "SID16:"), TB_SID);
+        var gbOT = new GroupBoxView("GB_OT", "Trainer Information", trainer);
+
+        var detail = UiFactory.FormGrid(10);
+        UiFactory.AddFormRow(detail, 0, UiFactory.Label("L_PartyNum", "Party Index:"), UiFactory.Row(NUP_PartyIndex, bpkx));
+        UiFactory.AddFormRow(detail, 1, UiFactory.Label("Label_Species", "Species:"), UiFactory.Row(CB_Species, Label_Gender));
+        UiFactory.AddFormRow(detail, 2, UiFactory.Label("Label_Form", "Form:"), CB_Form);
+        UiFactory.AddFormRow(detail, 3, UiFactory.Label("Label_HeldItem", "Held Item:"), CB_HeldItem);
+        UiFactory.AddFormRow(detail, 4, UiFactory.Label("L_Level", "Level:"), UiFactory.Row(TB_Level, UiFactory.Label("L_Shiny", "Shiny:"), CHK_Shiny));
+        UiFactory.AddFormRow(detail, 5, CHK_Nicknamed, TB_Nickname);
+        UiFactory.AddFormRow(detail, 6, UiFactory.Label("Label_EncryptionConstant", "Encryption Constant:"), TB_EC);
+        UiFactory.AddFormRow(detail, 7, UiFactory.Label("Label_MetDate", "Date:"), CAL_MetDate);
+        UiFactory.AddFormRow(detail, 8, UiFactory.Label("L_Victory", "Victory Number:"), TB_VN);
+        UiFactory.AddFormRow(detail, 9, null, UiFactory.Row(gbMoves, gbOT));
         groupBox1 = new GroupBoxView("groupBox1", "Entry", detail);
 
         var body = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
@@ -102,7 +113,7 @@ public sealed class HallOfFame6Window : SaveEditorWindow
         SetBody(body);
 
         LB_DataEntry.SelectionChanged += (_, _) => DisplayEntry(refreshParty: true);
-        NUP_PartyIndex.ValueChanged += (_, _) => ChangePartyIndex(initial: false);
+        NUP_PartyIndex.ValueChanged += (_, _) => ChangePartyIndex();
         CB_Species.SelectionChanged += (_, _) => { SetForms(); UpdateNickname(); };
         CB_HeldItem.SelectionChanged += (_, _) => WriteEntry();
         foreach (var cb in CB_Moves)
@@ -154,7 +165,7 @@ public sealed class HallOfFame6Window : SaveEditorWindow
             lines.Add("No records in this slot.");
             groupBox1.IsEnabled = false;
             editing = false;
-            ChangePartyIndex(initial: true);
+            ChangePartyIndex();
         }
         else
         {
@@ -164,7 +175,7 @@ public sealed class HallOfFame6Window : SaveEditorWindow
             {
                 NUP_PartyIndex.Maximum = count == 0 ? 1 : count;
                 NUP_PartyIndex.Value = 1;
-                ChangePartyIndex(initial: false);
+                ChangePartyIndex();
             }
             else
             {
@@ -214,7 +225,7 @@ public sealed class HallOfFame6Window : SaveEditorWindow
         s.Add(string.Empty);
     }
 
-    private void ChangePartyIndex(bool initial)
+    private void ChangePartyIndex()
     {
         editing = false;
         int index = LB_DataEntry.SelectedIndex;
@@ -246,8 +257,7 @@ public sealed class HallOfFame6Window : SaveEditorWindow
         Label_OTGender.Text = gendersymbols[(int)entry.OriginalTrainerGender];
         UpdateNickname();
         SetSprite(entry.Species, entry.Form, (byte)entry.Gender, entry.HeldItem, entry.IsShiny);
-        editing = !initial || editing;
-        editing = true;
+        editing = true; // WinForms re-enables writing at the end of NUP_PartyIndex_ValueChanged
     }
 
     private void SetSprite(ushort species, byte form, byte gender, int item, bool isShiny)

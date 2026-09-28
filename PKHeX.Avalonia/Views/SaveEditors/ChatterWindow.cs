@@ -33,7 +33,7 @@ public sealed class ChatterWindow : SaveEditorWindow
         SAV = (Origin = sav).Clone();
         Chatter = SAV is SAV5 s5 ? s5.Chatter : ((SAV4)SAV).Chatter;
 
-        MT_Confusion.IsReadOnly = true;
+        MT_Confusion.IsEnabled = false; // WinForms shows the computed chance in a disabled box
         var grid = UiFactory.FormGrid(2);
         UiFactory.AddFormRow(grid, 0, null, CHK_Initialized);
         UiFactory.AddFormRow(grid, 1, L_Confusion, MT_Confusion);

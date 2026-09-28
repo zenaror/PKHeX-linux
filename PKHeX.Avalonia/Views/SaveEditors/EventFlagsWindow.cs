@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -11,8 +12,10 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
+using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using PKHeX.Avalonia.Controls;
 using PKHeX.Avalonia.Localization;
@@ -45,7 +48,8 @@ public abstract class EventFlagsWindowBase<TSave, TWork> : SaveEditorWindow
     private readonly TabControl TC_Const = new() { Name = "TC_Const" };
 
     private readonly TextBlock L_EventFlagWarn = UiFactory.Label("L_EventFlagWarn", "Altering Event Flags may impact other story events.\nSave file backups are recommended.");
-    private readonly CheckBox CHK_CustomFlag = UiFactory.Check("CHK_CustomFlag", "Flag:");
+    // WinForms names this label CHK_CustomFlag (a Label, not a check box); the check box beside it is c_CustomFlag.
+    private readonly TextBlock CHK_CustomFlag = UiFactory.Label("CHK_CustomFlag", "Flag:");
     private readonly NumericUpDown NUD_Flag = UiFactory.NumericUpDown("NUD_Flag", 0, ushort.MaxValue, 110);
     private readonly CheckBox c_CustomFlag = UiFactory.Check("c_CustomFlag", string.Empty);
     private readonly TextBlock L_Stats = UiFactory.Label("L_Stats", "Constant:");
@@ -71,8 +75,8 @@ public abstract class EventFlagsWindowBase<TSave, TWork> : SaveEditorWindow
 
         var editor = Editor = new EventWorkspace<TSave, TWork>(sav, version);
 
-        var status = UiFactory.Row(CHK_CustomFlag, NUD_Flag, c_CustomFlag, L_Stats, CB_Stats, MT_Stat);
-        CHK_CustomFlag.IsHitTestVisible = false; // label-like, matching the WinForms group header
+        var status = new GroupBoxView("GB_FlagStatus", "Check Status",
+            UiFactory.Row(CHK_CustomFlag, NUD_Flag, c_CustomFlag, L_Stats, CB_Stats, MT_Stat));
 
         GB_Flags.Content = TC_Flags;
         GB_Constants.Content = TC_Const;
@@ -113,6 +117,23 @@ public abstract class EventFlagsWindowBase<TSave, TWork> : SaveEditorWindow
         c_CustomFlag.IsChecked = editor.Flags[0];
         editing = false;
 
+        // WinForms accepts two save files dropped onto the window and asks which side of the diff each one is.
+        DragDrop.SetAllowDrop(this, true);
+        AddHandler(DragDrop.DragOverEvent, (_, e) =>
+        {
+            e.DragEffects = e.DataTransfer.TryGetFiles() is { Length: not 0 } ? DragDropEffects.Copy : DragDropEffects.None;
+            e.Handled = true;
+        });
+        AddHandler(DragDrop.DropEvent, (_, e) =>
+        {
+            e.Handled = true;
+            if (e.DataTransfer.TryGetFiles() is not { Length: not 0 } items)
+                return;
+            var paths = items.Select(z => z.TryGetLocalPath()).OfType<string>().ToList();
+            if (paths.Count != 0)
+                _ = DropSaves(paths);
+        });
+
         NUD_Flag.ValueChanged += (_, _) => ChangeCustomFlag();
         c_CustomFlag.IsCheckedChanged += (_, _) => ChangeCustomBool();
         CB_Stats.SelectionChanged += (_, _) => ChangeConstantIndex();
@@ -134,7 +155,32 @@ public abstract class EventFlagsWindowBase<TSave, TWork> : SaveEditorWindow
         UiFactory.AddFormRow(grid, 3, L_UnSet, TB_UnSet);
         B_LoadOld.Click += async (_, _) => await OpenSAV(TB_OldSAV);
         B_LoadNew.Click += async (_, _) => await OpenSAV(TB_NewSAV);
-        return grid;
+        return new GroupBoxView("GB_Researcher", "FlagDiff Researcher", grid) { VerticalAlignment = VerticalAlignment.Top };
+    }
+
+    /// <summary>
+    /// Assigns each dropped file to the old or new side of the diff (port of <c>Main_DragDrop</c> / <c>SelectNewOld</c>).
+    /// </summary>
+    private async Task DropSaves(List<string> files)
+    {
+        try
+        {
+            foreach (var file in files)
+            {
+                var options = new[] { (string)B_LoadOld.Content!, (string)B_LoadNew.Content! };
+                var index = await AppDialogs.TrySelectIndex(this, Title ?? string.Empty, Path.GetFileName(file), options);
+                if (index == 0)
+                    TB_OldSAV.Text = file;
+                else if (index == 1)
+                    TB_NewSAV.Text = file;
+            }
+            await ChangeSAV();
+        }
+        catch (Exception ex)
+        {
+            // Nothing awaits this task, so report the failure instead of losing it.
+            await AppDialogs.Error(this, ex.Message, ex);
+        }
     }
 
     private async Task OpenSAV(TextBox dest)

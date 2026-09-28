@@ -10,6 +10,7 @@ using PKHeX.Avalonia.Services;
 using PKHeX.Avalonia.Views.EntityEditors;
 using PKHeX.Core;
 using PKHeX.Drawing;
+using SkiaSharp;
 using static PKHeX.Core.SaveBlockAccessor9ZA;
 
 namespace PKHeX.Avalonia.Views.SaveEditors.Gen9;
@@ -33,7 +34,7 @@ public sealed class Trainer9aWindow : SaveEditorWindow
     private readonly ComboBox CB_Language = UiFactory.Combo("CB_Language", 140);
     private readonly TrainerIDView trainerID1 = new() { Name = "trainerID1" };
     private readonly NumericTextBox MT_Money = UiFactory.Numeric("MT_Money", 8, 110);
-    private readonly Button B_MaxCash = UiFactory.Button("B_MaxCash", "Max");
+    private readonly Button B_MaxCash = UiFactory.Button("B_MaxCash", "+");
     private readonly NumericTextBox MT_Hours = UiFactory.Numeric("MT_Hours", 5, 60);
     private readonly NumericTextBox MT_Minutes = UiFactory.Numeric("MT_Minutes", 2, 44);
     private readonly NumericTextBox MT_Seconds = UiFactory.Numeric("MT_Seconds", 2, 44);
@@ -41,9 +42,9 @@ public sealed class Trainer9aWindow : SaveEditorWindow
     private readonly TimePicker CAL_LastSavedTime = new() { Name = "CAL_LastSavedTime" };
 
     private readonly NumericTextBox MT_RoyaleRegular = UiFactory.Numeric("MT_RoyaleRegular", 7, 110);
-    private readonly Button B_RoyaleRegularMax = UiFactory.Button("B_RoyaleRegularMax", "Max");
+    private readonly Button B_RoyaleRegularMax = UiFactory.Button("B_RoyaleRegularMax", "+");
     private readonly NumericTextBox MT_RoyaleInfinite = UiFactory.Numeric("MT_RoyaleInfinite", 7, 110);
-    private readonly Button B_RoyaleInfiniteMax = UiFactory.Button("B_RoyaleInfiniteMax", "Max");
+    private readonly Button B_RoyaleInfiniteMax = UiFactory.Button("B_RoyaleInfiniteMax", "+");
 
     private readonly TextBox TB_Map = UiFactory.Text("TB_Map", 40, 200);
     private readonly NumericUpDown NUD_X = UiFactory.NumericUpDown("NUD_X", -100000, 100000, 110);
@@ -55,13 +56,14 @@ public sealed class Trainer9aWindow : SaveEditorWindow
     private readonly Image P_Picture1 = UiFactory.Picture("P_Picture1", 160);
     private readonly Image P_Picture2 = UiFactory.Picture("P_Picture2", 160);
     private readonly Image P_Picture3 = UiFactory.Picture("P_Picture3", 160);
+    private readonly SKBitmap?[] PictureData = new SKBitmap?[3];
 
     private readonly NumericTextBox MT_HyperspaceSurveyPoints = UiFactory.Numeric("MT_HyperspaceSurveyPoints", 7, 110);
-    private readonly Button B_HyperspaceSurveyPoints = UiFactory.Button("B_HyperspaceSurveyPoints", "Max");
+    private readonly Button B_HyperspaceSurveyPoints = UiFactory.Button("B_HyperspaceSurveyPoints", "+");
     private readonly RenderedString TB_StreetName = UiFactory.Name("TB_StreetName", 18, 220);
 
-    private readonly Button B_CollectTechnicalMachines = UiFactory.Button("B_CollectTechnicalMachines", "Collect all TMs");
-    private readonly Button B_CollectScrews = UiFactory.Button("B_CollectScrews", "Collect all Screws");
+    private readonly Button B_CollectTechnicalMachines = UiFactory.Button("B_CollectTechnicalMachines", "Collect All Technical Machines");
+    private readonly Button B_CollectScrews = UiFactory.Button("B_CollectScrews", "Collect All Colorful Screws");
 
     public Trainer9aWindow(SAV9ZA sav) : base("SAV_Trainer9a", "Trainer Data Editor")
     {
@@ -86,6 +88,10 @@ public sealed class Trainer9aWindow : SaveEditorWindow
         B_HyperspaceSurveyPoints.Click += (_, _) => MT_HyperspaceSurveyPoints.Text = 100_000.ToString();
         B_CollectTechnicalMachines.Click += async (_, _) => await CollectTechnicalMachines();
         B_CollectScrews.Click += async (_, _) => await CollectScrews();
+        // Clicking a picture saves it, with the same suggested names WinForms uses (SAV_Trainer9a.cs:223-225).
+        P_Picture1.AttachClick(async _ => await SavePicture(0, nameof(KPictureSBCData)));
+        P_Picture2.AttachClick(async _ => await SavePicture(1, nameof(KPictureInitialData)));
+        P_Picture3.AttachClick(async _ => await SavePicture(2, nameof(KPictureCurrentData)));
         foreach (var nud in new[] { NUD_X, NUD_Y, NUD_Z, NUD_R })
             nud.ValueChanged += (_, _) => { if (!Loading) MapUpdated = true; };
         TB_Map.OnTextChanged(_ => { if (!Loading) MapUpdated = true; });
@@ -103,34 +109,58 @@ public sealed class Trainer9aWindow : SaveEditorWindow
 
     private void BuildLayout()
     {
+        // Overview: the WinForms table, one control per row (SAV_Trainer9a.Designer.cs:669-685).
         var main = UiFactory.FormGrid(8);
         UiFactory.AddFormRow(main, 0, UiFactory.Label("L_TrainerName", "Trainer Name:"), UiFactory.Row(TB_OTName, CB_Gender));
-        UiFactory.AddFormRow(main, 1, UiFactory.Label("L_TrainerID", "Trainer ID:"), trainerID1);
-        UiFactory.AddFormRow(main, 2, UiFactory.Label("L_Money", "Money:"), UiFactory.Row(MT_Money, B_MaxCash));
+        UiFactory.AddFormRow(main, 1, trainerID1, UiFactory.Row());
+        UiFactory.AddFormRow(main, 2, UiFactory.Label("L_Money", "$:"), UiFactory.Row(MT_Money, B_MaxCash));
         UiFactory.AddFormRow(main, 3, UiFactory.Label("L_Language", "Language:"), CB_Language);
-        UiFactory.AddFormRow(main, 4, UiFactory.Label("L_PlayTime", "Play Time:"), UiFactory.Row(MT_Hours, MT_Minutes, MT_Seconds));
-        UiFactory.AddFormRow(main, 5, UiFactory.Label("L_LastSaved", "Last Saved:"), UiFactory.Row(CAL_LastSavedDate, CAL_LastSavedTime));
-        UiFactory.AddFormRow(main, 6, UiFactory.Label("L_RoyaleRegular", "Royale Points:"), UiFactory.Row(MT_RoyaleRegular, B_RoyaleRegularMax));
-        UiFactory.AddFormRow(main, 7, UiFactory.Label("L_RoyaleInfinite", "Royale (Infinite):"), UiFactory.Row(MT_RoyaleInfinite, B_RoyaleInfiniteMax));
+        UiFactory.AddFormRow(main, 4, UiFactory.Label("L_LastSaved", "Last Saved:"), UiFactory.Row(CAL_LastSavedDate, CAL_LastSavedTime));
+        UiFactory.AddFormRow(main, 5, UiFactory.Label("L_Hours", "Hrs:"), MT_Hours);
+        UiFactory.AddFormRow(main, 6, UiFactory.Label("L_Minutes", "Min:"), MT_Minutes);
+        UiFactory.AddFormRow(main, 7, UiFactory.Label("L_Seconds", "Sec:"), MT_Seconds);
 
-        GB_Map = new GroupBoxView("GB_Map", "Map Position", UiFactory.Column(
-            UiFactory.Row(UiFactory.Label("L_Map", "Map:"), TB_Map),
-            UiFactory.Row(UiFactory.Label("L_X", "X:"), NUD_X, UiFactory.Label("L_Y", "Y:"), NUD_Y),
-            UiFactory.Row(UiFactory.Label("L_Z", "Z:"), NUD_Z, UiFactory.Label("L_R", "R:"), NUD_R)));
+        // Misc tab: the map group on the left, the Royale points and the two collect buttons on the right.
+        var mapGrid = UiFactory.FormGrid(5); // WinForms order: X, Z, Y, rotation, then the map name
+        UiFactory.AddFormRow(mapGrid, 0, UiFactory.Label("L_X", "X Coordinate:"), NUD_X);
+        UiFactory.AddFormRow(mapGrid, 1, UiFactory.Label("L_Z", "Z Coordinate:"), NUD_Z);
+        UiFactory.AddFormRow(mapGrid, 2, UiFactory.Label("L_Y", "Y Coordinate:"), NUD_Y);
+        UiFactory.AddFormRow(mapGrid, 3, UiFactory.Label("L_R", "Rotation:"), NUD_R);
+        UiFactory.AddFormRow(mapGrid, 4, UiFactory.Label("L_Map", "Map:"), TB_Map);
+        GB_Map = new GroupBoxView("GB_Map", "Map Position", mapGrid);
+        GB_Map.VerticalAlignment = VerticalAlignment.Top;
 
-        var overview = UiFactory.Column(main, GB_Map, UiFactory.Row(B_CollectTechnicalMachines, B_CollectScrews));
+        var royale = UiFactory.FormGrid(2);
+        UiFactory.AddFormRow(royale, 0, UiFactory.Label("L_RoyaleRegularTicketPoints", "Regular:"), UiFactory.Row(MT_RoyaleRegular, B_RoyaleRegularMax));
+        UiFactory.AddFormRow(royale, 1, UiFactory.Label("L_RoyaleTicketPointsInfinite", "Infinite:"), UiFactory.Row(MT_RoyaleInfinite, B_RoyaleInfiniteMax));
 
-        var images = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+        var miscRight = UiFactory.Column(
+            UiFactory.Header("label3", "Royale Ticket Points"),
+            royale,
+            B_CollectScrews,
+            B_CollectTechnicalMachines);
+        miscRight.VerticalAlignment = VerticalAlignment.Top;
+        foreach (var b in new[] { B_CollectScrews, B_CollectTechnicalMachines })
+        {
+            b.MinWidth = 220;
+            b.HorizontalAlignment = HorizontalAlignment.Left;
+        }
+
+        var misc = UiFactory.Row(GB_Map, miscRight);
+        misc.Spacing = 16;
+
+        var images = new StackPanel { Name = "FLP_Images", Orientation = Orientation.Horizontal, Spacing = 10 };
         images.Children.Add(P_Picture1);
         images.Children.Add(P_Picture2);
         images.Children.Add(P_Picture3);
 
         var dlc = UiFactory.FormGrid(2);
-        UiFactory.AddFormRow(dlc, 0, UiFactory.Label("L_HyperspaceSurveyPoints", "Survey Points:"), UiFactory.Row(MT_HyperspaceSurveyPoints, B_HyperspaceSurveyPoints));
+        UiFactory.AddFormRow(dlc, 0, UiFactory.Label("L_HyperspaceSurveyPoints", "Hyperspace Survey Points:"), UiFactory.Row(MT_HyperspaceSurveyPoints, B_HyperspaceSurveyPoints));
         UiFactory.AddFormRow(dlc, 1, UiFactory.Label("L_StreetName", "Street Name:"), TB_StreetName);
 
         var tabs = new TabControl { Name = "TC_Editor" };
-        tabs.Items.Add(new TabItem { Name = "Tab_Overview", Header = "Overview", Content = new ScrollViewer { Content = overview, MaxHeight = 540 } });
+        tabs.Items.Add(new TabItem { Name = "Tab_Overview", Header = "Overview", Content = new ScrollViewer { Content = main, MaxHeight = 540 } });
+        tabs.Items.Add(new TabItem { Name = "Tab_MiscValues", Header = "Misc", Content = new ScrollViewer { Content = misc, MaxHeight = 540 } });
         tabs.Items.Add(new TabItem { Name = "Tab_Images", Header = "Images", Content = images });
         tabs.Items.Add(new TabItem { Name = "Tab_DLC", Header = "DLC", Content = dlc });
         SetBody(tabs);
@@ -154,14 +184,14 @@ public sealed class Trainer9aWindow : SaveEditorWindow
     {
         var blocks = SAV.Blocks;
         var any = false;
-        any |= SetImage(P_Picture1, Decode(blocks, KPictureCurrentData, KPictureCurrentWidth, KPictureCurrentHeight));
-        any |= SetImage(P_Picture2, Decode(blocks, KPictureSBCData, KPictureSBCWidth, KPictureSBCHeight));
-        any |= SetImage(P_Picture3, Decode(blocks, KPictureInitialData, KPictureInitialWidth, KPictureInitialHeight));
+        any |= SetImage(0, P_Picture1, Decode(blocks, KPictureCurrentData, KPictureCurrentWidth, KPictureCurrentHeight));
+        any |= SetImage(1, P_Picture2, Decode(blocks, KPictureSBCData, KPictureSBCWidth, KPictureSBCHeight));
+        any |= SetImage(2, P_Picture3, Decode(blocks, KPictureInitialData, KPictureInitialWidth, KPictureInitialHeight));
         if (!any)
             RemoveTab("Tab_Images");
         return;
 
-        static global::Avalonia.Media.Imaging.Bitmap? Decode(SCBlockAccessor blocks, uint kd, uint kw, uint kh)
+        static SKBitmap? Decode(SCBlockAccessor blocks, uint kd, uint kw, uint kh)
         {
             var width = (int)blocks.GetBlockValue<uint>(kw);
             var height = (int)blocks.GetBlockValue<uint>(kh);
@@ -169,19 +199,20 @@ public sealed class Trainer9aWindow : SaveEditorWindow
                 return null; // no picture stored
             var data = blocks.GetBlock(kd).Data;
             var pixels = DXT1.Decompress(data, width, height);
-            return ImageUtil.GetBitmap(pixels, width, height).ToAvaloniaBitmapAndDispose();
+            return ImageUtil.GetBitmap(pixels, width, height);
         }
 
-        static bool SetImage(Image pb, global::Avalonia.Media.Imaging.Bitmap? img)
+        bool SetImage(int index, Image pb, SKBitmap? img)
         {
             if (img is null)
             {
                 pb.IsVisible = false;
                 return false;
             }
-            pb.Width = img.PixelSize.Width;
-            pb.Height = img.PixelSize.Height;
-            pb.Source = img;
+            PictureData[index] = img; // kept for the click-to-save handler
+            pb.Width = img.Width;
+            pb.Height = img.Height;
+            pb.Source = img.ToAvaloniaBitmap();
             return true;
         }
     }
@@ -236,6 +267,12 @@ public sealed class Trainer9aWindow : SaveEditorWindow
     #endregion
 
     #region Commands
+
+    private async Task SavePicture(int index, string suggestedName)
+    {
+        if (PictureData[index] is { } img)
+            await ImageExport.SaveDialog(this, img, suggestedName);
+    }
 
     private async Task CollectTechnicalMachines()
     {

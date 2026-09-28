@@ -31,7 +31,8 @@ public sealed class SuperTrainWindow : SaveEditorWindow
     private readonly NumericTextBox MTB_Form2 = UiFactory.Numeric("MTB_Form2", 2, 44);
     private readonly TextBox TB_Time1 = UiFactory.Text("TB_Time1", 12, 90);
     private readonly TextBox TB_Time2 = UiFactory.Text("TB_Time2", 12, 90);
-    private readonly DataGrid dataGridView1 = new() { Name = "dataGridView1", AutoGenerateColumns = false, HeadersVisibility = DataGridHeadersVisibility.Column, CanUserSortColumns = false, Height = 320, Width = 230 };
+    // WinForms hides the column headers of the bag grid (they carry no translation).
+    private readonly DataGrid dataGridView1 = new() { Name = "dataGridView1", AutoGenerateColumns = false, HeadersVisibility = DataGridHeadersVisibility.None, CanUserSortColumns = false, Height = 320, Width = 230 };
     private readonly ObservableCollection<BagRow> BagRows = [];
 
     private bool loading = true;
@@ -72,7 +73,8 @@ public sealed class SuperTrainWindow : SaveEditorWindow
     {
         var holders = UiFactory.FormGrid(3);
         UiFactory.AddFormRow(holders, 0, UiFactory.Label("L_Species", "Species:"), UiFactory.Row(CB_Species1, MTB_Gender1, MTB_Form1));
-        UiFactory.AddFormRow(holders, 1, UiFactory.Label("L_Species2", "Species:"), UiFactory.Row(CB_Species2, MTB_Gender2, MTB_Form2));
+        // Both rows carry the WinForms label name, so both are translated by the SAV_SuperTrain.L_Species key.
+        UiFactory.AddFormRow(holders, 1, UiFactory.Label("L_Species", "Species:"), UiFactory.Row(CB_Species2, MTB_Gender2, MTB_Form2));
         UiFactory.AddFormRow(holders, 2, UiFactory.Label("L_Time0", "Time:"), UiFactory.Row(TB_Time1, TB_Time2));
 
         dataGridView1.Columns.Add(new DataGridTextColumn

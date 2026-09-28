@@ -22,9 +22,9 @@ public sealed class Link6Window : SaveEditorWindow
     private readonly ISaveBlock6Main SAV;
     private readonly PL6 Gifts;
 
-    private readonly TextBox RTB_LinkSource = new() { Name = "RTB_LinkSource", Width = 320, Height = 60, AcceptsReturn = true };
+    private readonly TextBox RTB_LinkSource = new() { Name = "RTB_LinkSource", Width = 320, Height = 60, AcceptsReturn = true, MaxLength = 54 };
     private readonly CheckBox CHK_LinkAvailable = UiFactory.Check("CHK_LinkAvailable", "Pokémon Link Enabled");
-    private readonly NumericUpDown NUD_BP = UiFactory.NumericUpDown("NUD_BP", 0, ushort.MaxValue, 110);
+    private readonly NumericUpDown NUD_BP = UiFactory.NumericUpDown("NUD_BP", 0, 9999, 110);
     private readonly NumericUpDown NUD_Pokemiles = UiFactory.NumericUpDown("NUD_Pokemiles", 0, ushort.MaxValue, 110);
     private readonly ComboBox[] CB_Items = new ComboBox[6];
     private readonly NumericUpDown[] NUD_Items = new NumericUpDown[6];
@@ -47,11 +47,14 @@ public sealed class Link6Window : SaveEditorWindow
             TB_PKM[i].IsReadOnly = true;
         }
 
-        var main = UiFactory.FormGrid(3);
-        UiFactory.AddFormRow(main, 0, null, CHK_LinkAvailable);
-        UiFactory.AddFormRow(main, 1, UiFactory.Label("L_BP", "Battle Points:"), NUD_BP);
-        UiFactory.AddFormRow(main, 2, UiFactory.Label("L_Pokemiles", "PokéMiles:"), NUD_Pokemiles);
-        var TAB_Main = new TabItem { Name = "TAB_Main", Header = "Main", Content = UiFactory.Column(RTB_LinkSource, main) };
+        // Main tab, as in WinForms: the source text on top, the two counters at the left with Import/Export to their
+        // right, and the (read-only) "Pokémon Link Enabled" box underneath.
+        var counters = UiFactory.FormGrid(2);
+        UiFactory.AddFormRow(counters, 0, UiFactory.Label("L_BP", "Battle Points:"), NUD_BP);
+        UiFactory.AddFormRow(counters, 1, UiFactory.Label("L_Pokemiles", "PokéMiles:"), NUD_Pokemiles);
+        var middle = UiFactory.Row(counters, UiFactory.Column(B_Import, B_Export));
+        middle.Spacing = 12;
+        var TAB_Main = new TabItem { Name = "TAB_Main", Header = "Main", Content = UiFactory.Column(RTB_LinkSource, middle, CHK_LinkAvailable) };
 
         var pkmGrid = UiFactory.FormGrid(6);
         for (int i = 0; i < 6; i++)
@@ -68,9 +71,16 @@ public sealed class Link6Window : SaveEditorWindow
         tabs.Items.Add(TAB_PKM);
         tabs.Items.Add(TAB_Items);
 
-        ButtonBar.Children.Insert(0, B_Import);
-        ButtonBar.Children.Insert(1, B_Export);
         SetBody(tabs);
+
+        // The WinForms form offers the block read-only except for the two counters of an enabled Link block:
+        // every other field is disabled in the designer and never re-enabled.
+        RTB_LinkSource.IsEnabled = CHK_LinkAvailable.IsEnabled = false;
+        NUD_BP.IsEnabled = NUD_Pokemiles.IsEnabled = B_Export.IsEnabled = false;
+        foreach (var cb in CB_Items)
+            cb.IsEnabled = false;
+        foreach (var nud in NUD_Items)
+            nud.IsEnabled = false;
 
         B_Import.Click += async (_, _) => await ClickImport();
         B_Export.Click += async (_, _) => await ClickExport();

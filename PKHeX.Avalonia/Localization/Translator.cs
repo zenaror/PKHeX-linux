@@ -5,6 +5,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.LogicalTree;
+using PKHeX.Avalonia.Controls;
 using PKHeX.Avalonia.Startup;
 
 namespace PKHeX.Avalonia.Localization;
@@ -92,9 +93,28 @@ public static class Translator
     {
         foreach (var child in root.GetLogicalDescendants())
         {
+            if (child is DataGrid grid)
+                TranslateColumns(grid, formName, context);
             if (child is not StyledElement { Name: { Length: > 0 } name } element)
                 continue;
             TranslateControl(element, name, formName, context);
+        }
+    }
+
+    /// <summary>
+    /// Translates the column headers of a <see cref="DataGrid"/>.
+    /// </summary>
+    /// <remarks>
+    /// Keyed <c>{FormName}.DGV_{ColumnName}</c>, the same convention the WinForms translator uses for
+    /// <c>DataGridViewColumn</c>; columns are not part of the logical tree, so they are visited here.
+    /// </remarks>
+    private static void TranslateColumns(DataGrid grid, string formName, TranslationContext context)
+    {
+        foreach (var column in grid.Columns)
+        {
+            if (DataGridUtil.GetColumnName(column) is not { Length: > 0 } name || column.Header is not string current)
+                continue;
+            column.Header = Translate(context, GetKey(formName, $"DGV_{name}"), current, false);
         }
     }
 

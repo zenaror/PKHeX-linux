@@ -20,7 +20,7 @@ public sealed class JoinAvenueVisitorSpecificView : StackPanel, IJoinAvenueSpeci
     private static readonly List<ComboItem> ShopTypeList = [new("None", -1), .. Util.GetCBList<JoinAvenueShopType5>()];
     private static readonly List<ComboItem> OriginList = [new("NPC", 0), new("Human Player", 1)];
 
-    private readonly CheckBox CHK_IsFlag2C = UiFactory.Check("CHK_IsFlag2C", "0x2C flag");
+    private readonly CheckBox CHK_IsFlag2C = UiFactory.Check("CHK_IsFlag2C", string.Empty);
     private readonly NumericUpDown NUD_AvenueLevel = Byte("NUD_AvenueLevel");
     private readonly NumericUpDown NUD_Unused2D = Byte("NUD_Unused2D");
     private readonly TextBox TB_ShopCounts = Text("TB_ShopCounts");
@@ -40,11 +40,11 @@ public sealed class JoinAvenueVisitorSpecificView : StackPanel, IJoinAvenueSpeci
     private readonly NumericUpDown NUD_MetHour = Byte("NUD_MetHour");
     private readonly NumericUpDown NUD_MetMinute = Byte("NUD_MetMinute");
     private readonly NumericUpDown NUD_UnknownA8 = Byte("NUD_UnknownA8");
-    private readonly CheckBox CHK_IsShopChangeAllowed = UiFactory.Check("CHK_IsShopChangeAllowed", "Shop Change Allowed");
-    private readonly CheckBox CHK_IsFlagA9_1 = UiFactory.Check("CHK_IsFlagA9_1", "0xA9.1");
-    private readonly CheckBox CHK_IsFlagA9_2 = UiFactory.Check("CHK_IsFlagA9_2", "0xA9.2");
-    private readonly CheckBox CHK_InteractedToday = UiFactory.Check("CHK_InteractedToday", "Interacted Today");
-    private readonly CheckBox CHK_IsFlagAA = UiFactory.Check("CHK_IsFlagAA", "0xAA");
+    private readonly CheckBox CHK_IsShopChangeAllowed = UiFactory.Check("CHK_IsShopChangeAllowed", string.Empty);
+    private readonly CheckBox CHK_IsFlagA9_1 = UiFactory.Check("CHK_IsFlagA9_1", string.Empty);
+    private readonly CheckBox CHK_IsFlagA9_2 = UiFactory.Check("CHK_IsFlagA9_2", string.Empty);
+    private readonly CheckBox CHK_InteractedToday = UiFactory.Check("CHK_InteractedToday", string.Empty);
+    private readonly CheckBox CHK_IsFlagAA = UiFactory.Check("CHK_IsFlagAA", string.Empty);
     private readonly NumericUpDown NUD_JoinAvenueRank = Byte("NUD_JoinAvenueRank");
     private readonly NumericUpDown NUD_UnknownAC = Byte("NUD_UnknownAC");
     private readonly NumericUpDown NUD_ShopRank = Byte("NUD_ShopRank");
@@ -53,7 +53,7 @@ public sealed class JoinAvenueVisitorSpecificView : StackPanel, IJoinAvenueSpeci
     private readonly NumericUpDown NUD_ShopWork = Word("NUD_ShopWork");
     private readonly NumericUpDown NUD_UnusedB8 = Dword("NUD_UnusedB8");
     private readonly NumericUpDown NUD_UnknownBits0_8 = Word("NUD_UnknownBits0_8");
-    private readonly CheckBox CHK_UnknownBit9 = UiFactory.Check("CHK_UnknownBit9", "bit 9");
+    private readonly CheckBox CHK_UnknownBit9 = UiFactory.Check("CHK_UnknownBit9", string.Empty);
     private readonly NumericUpDown NUD_UnknownBits10 = Byte("NUD_UnknownBits10");
     private readonly NumericUpDown NUD_UnknownBits13_20 = Byte("NUD_UnknownBits13_20");
     private readonly NumericUpDown NUD_UnknownBits21_27 = Byte("NUD_UnknownBits21_27");
@@ -81,18 +81,20 @@ public sealed class JoinAvenueVisitorSpecificView : StackPanel, IJoinAvenueSpeci
         CB_Origin.SetItems(OriginList);
         CB_ShopType.SetItems(ShopTypeList);
 
-        var grid = UiFactory.FormGrid(34);
+        // Row order, label names and label texts follow the WinForms TLP_Main (rows 0-39).
+        var grid = UiFactory.FormGrid(40);
         int r = 0;
-        Row(grid, r++, "L_IsFlag2C", string.Empty, CHK_IsFlag2C);
+        Row(grid, r++, "L_IsFlag2C", "0x2C:", CHK_IsFlag2C);
         Row(grid, r++, "L_AvenueLevel", "Avenue Level:", NUD_AvenueLevel);
         Row(grid, r++, "L_Unused2D", "0x2D:", NUD_Unused2D);
+        Row(grid, r++, "L_DesiredShopType", "Desired Shop:", UiFactory.Row(CB_DesiredShopType, NUD_DesiredShopLevel, NUD_DesiredShopVersion));
         Row(grid, r++, "L_ShopCounts", "Shop Counts:", TB_ShopCounts);
         Row(grid, r++, "L_DexSeen", "Dex Seen:", NUD_DexSeen);
-        Row(grid, r++, "L_FavoriteSpecies", "Favorite Species:", CB_FavoriteSpecies);
+        Row(grid, r++, "L_FavoriteSpecies", "Starter:", CB_FavoriteSpecies);
         Row(grid, r++, "L_MedalRank", "Medal Rank:", NUD_MedalRank);
         Row(grid, r++, "L_MedalHint", "Medal Hint:", NUD_MedalHint);
         Row(grid, r++, "L_MedalCount", "Medal Count:", NUD_MedalCount);
-        Row(grid, r++, "L_Date1", "Date:", TB_Date1);
+        Row(grid, r++, "L_Date1", "Date1:", TB_Date1);
         Row(grid, r++, "L_DateStart", "Adventure Start:", TB_DateStart);
         Row(grid, r++, "L_DateHall", "Hall of Fame:", TB_DateHall);
         Row(grid, r++, "L_Records", "Records:", TB_Records);
@@ -103,26 +105,26 @@ public sealed class JoinAvenueVisitorSpecificView : StackPanel, IJoinAvenueSpeci
         Row(grid, r++, "L_MetHour", "Met Hour:", NUD_MetHour);
         Row(grid, r++, "L_MetMinute", "Met Minute:", NUD_MetMinute);
         Row(grid, r++, "L_UnknownA8", "0xA8:", NUD_UnknownA8);
-        Row(grid, r++, "L_Flags", string.Empty, UiFactory.Row(CHK_IsShopChangeAllowed, CHK_IsFlagA9_1, CHK_IsFlagA9_2));
-        Row(grid, r++, "L_Flags2", string.Empty, UiFactory.Row(CHK_InteractedToday, CHK_IsFlagAA));
+        Row(grid, r++, "L_IsShopChangeAllowed", "Can Change Shop:", CHK_IsShopChangeAllowed);
+        Row(grid, r++, "L_IsFlagA9_1", "0xA9 Bit1:", CHK_IsFlagA9_1);
+        Row(grid, r++, "L_IsFlagA9_2", "0xA9 Bit2:", CHK_IsFlagA9_2);
+        Row(grid, r++, "L_InteractedToday", "Interacted Today:", CHK_InteractedToday);
+        Row(grid, r++, "L_IsFlagAA", "0xAA:", CHK_IsFlagAA);
         Row(grid, r++, "L_JoinAvenueRank", "Avenue Rank:", NUD_JoinAvenueRank);
         Row(grid, r++, "L_UnknownAC", "0xAC:", NUD_UnknownAC);
         Row(grid, r++, "L_ShopRank", "Shop Rank:", NUD_ShopRank);
-        Row(grid, r++, "L_ShopExperience", "Shop Experience:", NUD_ShopExperience);
-        Row(grid, r++, "L_IsInventory", "Inventory:", NUD_IsInventory);
+        Row(grid, r++, "L_ShopExperience", "Experience:", NUD_ShopExperience);
+        Row(grid, r++, "L_IsInventory", "Is Inventory:", NUD_IsInventory);
+        Row(grid, r++, "L_ShopType", "Shop Type:", UiFactory.Row(CB_ShopType, NUD_ShopTypeLevel, NUD_ShopTypeVersion));
         Row(grid, r++, "L_ShopWork", "Shop Work:", NUD_ShopWork);
-        Row(grid, r++, "L_UnusedB8", "0xB8:", NUD_UnusedB8);
-        Row(grid, r++, "L_UnknownBits0_8", "bits 0-8:", UiFactory.Row(NUD_UnknownBits0_8, CHK_UnknownBit9));
-        Row(grid, r++, "L_UnknownBits10", "bits 10-12:", NUD_UnknownBits10);
-        Row(grid, r++, "L_UnknownBits13_20", "bits 13-20:", NUD_UnknownBits13_20);
-        Row(grid, r++, "L_UnknownBits21_27", "bits 21-27:", NUD_UnknownBits21_27);
-        Row(grid, r, "L_UnknownBits28_31", "bits 28-31:", NUD_UnknownBits28_31);
+        Row(grid, r++, "L_UnusedB8", "0xB8", NUD_UnusedB8);
+        Row(grid, r++, "L_UnknownBits0_8", "0xBit0", NUD_UnknownBits0_8);
+        Row(grid, r++, "L_UnknownBit9", "Unk9:", CHK_UnknownBit9);
+        Row(grid, r++, "L_UnknownBits10", "Unk10:", NUD_UnknownBits10);
+        Row(grid, r++, "L_UnknownBits13_20", "Unk13_20:", NUD_UnknownBits13_20);
+        Row(grid, r++, "L_UnknownBits21_27", "Unk21_27:", NUD_UnknownBits21_27);
+        Row(grid, r, "L_UnknownBits28_31", "Unk28_31:", NUD_UnknownBits28_31);
         Children.Add(grid);
-
-        Children.Add(new GroupBoxView("GB_DesiredShop", "Desired Shop",
-            UiFactory.Row(CB_DesiredShopType, NUD_DesiredShopLevel, NUD_DesiredShopVersion)));
-        Children.Add(new GroupBoxView("GB_Shop", "Shop",
-            UiFactory.Row(CB_ShopType, NUD_ShopTypeLevel, NUD_ShopTypeVersion)));
         return;
 
         static void Row(Grid g, int row, string name, string text, Control editor)

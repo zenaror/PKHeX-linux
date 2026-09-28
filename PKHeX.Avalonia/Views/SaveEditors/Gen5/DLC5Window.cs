@@ -104,25 +104,22 @@ public sealed class DLC5Window : SaveEditorWindow
 
     private void BuildTabs()
     {
-        if (SAV is SAV5B2W2 b2w2)
+        // Same order as the WinForms designer adds the pages (SAV_DLC5.Designer.cs:171-178).
+        TC_Tabs.Items.Add(new TabItem { Name = "Tab_CGear", Header = "C-Gear Skin", Content = BuildCGear() });
+        TC_Tabs.Items.Add(new TabItem { Name = "Tab_PokeDex", Header = "PokéDex Skin", Content = BuildPokeDex() });
+        TC_Tabs.Items.Add(new TabItem { Name = "Tab_BattleTest", Header = "Battle Test", Content = BuildBattleTest() });
+        TC_Tabs.Items.Add(new TabItem { Name = "Tab_Musical", Header = "Musical", Content = BuildButtons(B_MusicalImport, B_MusicalExport) });
+        TC_Tabs.Items.Add(new TabItem { Name = "Tab_BattleVideo", Header = "Battle Videos", Content = BuildList(LB_BattleVideo, B_BattleVideoImport, B_BattleVideoExport, B_BattleVideoExportDecrypted) });
+
+        if (SAV is SAV5B2W2 b2w2) // Pokéstar Studios and the PWT only exist in B2/W2.
         {
+            LoadPokestar(b2w2);
+            TC_Tabs.Items.Add(new TabItem { Name = "Tab_Pokestar", Header = "Pokéstar Studios", Content = BuildList(LB_Pokestar, B_PokestarImport, B_PokestarExport) });
             LoadPWT(b2w2);
             TC_Tabs.Items.Add(new TabItem { Name = "Tab_PWT", Header = "PWT", Content = BuildList(LB_PWT, B_PWTImport, B_PWTExport) });
         }
 
-        TC_Tabs.Items.Add(new TabItem { Name = "Tab_CGear", Header = "C-Gear Skin", Content = BuildCGear() });
-        TC_Tabs.Items.Add(new TabItem { Name = "Tab_PokeDex", Header = "PokéDex Skin", Content = BuildPokeDex() });
-        TC_Tabs.Items.Add(new TabItem { Name = "Tab_BattleVideo", Header = "Battle Videos", Content = BuildList(LB_BattleVideo, B_BattleVideoImport, B_BattleVideoExport, B_BattleVideoExportDecrypted) });
-        TC_Tabs.Items.Add(new TabItem { Name = "Tab_Musical", Header = "Musical", Content = BuildButtons(B_MusicalImport, B_MusicalExport) });
-
-        if (SAV is SAV5B2W2 b2 )
-        {
-            LoadPokestar(b2);
-            TC_Tabs.Items.Add(new TabItem { Name = "Tab_Pokestar", Header = "Pokéstar Studios", Content = BuildList(LB_Pokestar, B_PokestarImport, B_PokestarExport) });
-        }
-
         TC_Tabs.Items.Add(new TabItem { Name = "Tab_MemoryLink", Header = "Memory Link", Content = BuildButtons(B_Memory1Import, B_Memory1Export, B_Memory2Import, B_Memory2Export) });
-        TC_Tabs.Items.Add(new TabItem { Name = "Tab_BattleTest", Header = "Battle Test", Content = BuildBattleTest() });
         TC_Tabs.SelectedIndex = 0;
     }
 
@@ -324,7 +321,7 @@ public sealed class DLC5Window : SaveEditorWindow
         B_ImportPNG.Click += async (_, _) => await ClickImportPNG();
         B_ExportPNG.Click += async (_, _) => await ClickExportPNG();
         B_ImportCGB.Click += async (_, _) => await ClickImportCGB();
-        B_ExportCGB.Click += async (_, _) => await ExportFile(SAV is SAV5BW ? CGearBackgroundBW.Extension : CGearBackgroundB2W2.Extension, "C-Gear Background", bg.Data.ToArray());
+        B_ExportCGB.Click += async (_, _) => await ClickExportCGB();
 
         B_PokeDexSkinSave.Click += async (_, _) => await ExportFile(PokeDexSkin5.Extension, PokeDexFileName, SAV.PokedexSkinData.ToArray());
         B_PokeDexSkinLoad.Click += async (_, _) => await ClickImportPokeDexSkin();
@@ -409,6 +406,18 @@ public sealed class DLC5Window : SaveEditorWindow
             return;
         using var img = CGearImage.GetBitmap(bg);
         File.WriteAllBytes(path, CGearImage.EncodePng(img));
+    }
+
+    /// <summary>Writes the raw skin with the same game-specific filter the WinForms editor offers.</summary>
+    private async Task ClickExportCGB()
+    {
+        var isBW = SAV is SAV5BW;
+        var filter = isBW ? CGearFilterBW : CGearFilterB2W2;
+        var extension = isBW ? CGearBackgroundBW.Extension : CGearBackgroundB2W2.Extension;
+        var path = await FileDialogs.SaveFileDialog(this, filter, $"Background.{extension}");
+        if (path is null)
+            return;
+        File.WriteAllBytes(path, bg.Data.ToArray());
     }
 
     private async Task ClickImportCGB()

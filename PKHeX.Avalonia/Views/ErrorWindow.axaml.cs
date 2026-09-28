@@ -18,13 +18,16 @@ public sealed partial class ErrorWindow : Window
     {
         InitializeComponent();
         Icon = AppIcon.Get();
+        // No Name is set: Avalonia refuses to name an already-styled element, and the translator falls back to the
+        // type name, which is the WinForms form name ("ErrorWindow") the lang_*.txt keys use.
+        Localization.Translator.TranslateInterface(this, MainWindow.CurrentLanguage);
     }
 
     public static async Task<DialogResult> ShowErrorDialog(Window? owner, string friendlyMessage, Exception ex, bool allowContinue)
     {
         var dialog = new ErrorWindow();
         dialog.FindControl<TextBlock>("L_Message")!.Text = friendlyMessage;
-        dialog.FindControl<TextBox>("T_ExceptionDetails")!.Text = GetExceptionDetails(ex);
+        dialog.FindControl<TextBox>("T_ExceptionDetails")!.Text = GetExceptionDetails(ex, friendlyMessage);
         dialog.FindControl<Button>("B_Continue")!.IsVisible = allowContinue;
         if (owner is not null)
         {
@@ -40,7 +43,12 @@ public sealed partial class ErrorWindow : Window
         return dialog.Result;
     }
 
-    private static string GetExceptionDetails(Exception ex)
+    /// <remarks>
+    /// WinForms dumps every loaded assembly here; the version/OS/runtime lines carry the same "what was running"
+    /// information in three lines instead of a hundred. The user message is included for the same reason WinForms
+    /// includes it: it often carries the file path that failed.
+    /// </remarks>
+    private static string GetExceptionDetails(Exception ex, string friendlyMessage)
     {
         var sb = new StringBuilder();
         sb.AppendLine($"Exception Details: {DateTime.Now}");
@@ -49,6 +57,9 @@ public sealed partial class ErrorWindow : Window
         sb.AppendLine($"PKHeX Version: {Program.CurrentVersion}");
         sb.AppendLine($"OS: {Environment.OSVersion} ({System.Runtime.InteropServices.RuntimeInformation.OSDescription})");
         sb.AppendLine($".NET: {Environment.Version}");
+        sb.AppendLine();
+        sb.AppendLine("User Message:");
+        sb.AppendLine(friendlyMessage);
         return sb.ToString();
     }
 
