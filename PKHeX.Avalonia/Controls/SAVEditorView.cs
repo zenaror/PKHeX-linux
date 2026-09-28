@@ -149,7 +149,7 @@ public sealed partial class SAVEditorView : UserControl, ISaveHost, ISaveFilePro
                     OpenBoxViewer();
                 return;
             }
-            if (e.KeyModifiers.HasFlag(KeyModifiers.Alt))
+            if (e.KeyModifiers.IsAltGesture())
                 _ = SortMenu.Clear();
             else if (e.KeyModifiers.HasFlag(KeyModifiers.Control))
                 _ = SortMenu.Sort();
@@ -594,7 +594,7 @@ public sealed partial class SAVEditorView : UserControl, ISaveHost, ISaveFilePro
     {
         if (SearchForm is not null)
         {
-            if (mods == KeyModifiers.Alt)
+            if (mods.Normalize() == KeyModifiers.Alt)
             {
                 SearchForm.ForceReset();
                 SearchForm.Hide();
@@ -684,7 +684,7 @@ public sealed partial class SAVEditorView : UserControl, ISaveHost, ISaveFilePro
 
     private async Task OmniClick(SlotViewInfo<SlotView> info, KeyModifiers z)
     {
-        switch (z)
+        switch (z.Normalize()) // Ctrl+Shift reads as Alt: a window manager may hold Alt+click (ModifierAlias)
         {
             // WinForms: SAVEditor.ClickSlot handles this before forwarding to the context menu's OmniClick.
             case KeyModifiers.Control | KeyModifiers.Alt: await ClickClone(info); break;

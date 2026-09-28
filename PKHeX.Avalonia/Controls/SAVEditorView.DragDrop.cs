@@ -72,7 +72,7 @@ public sealed partial class SAVEditorView
             return;
         if (!e.GetCurrentPoint(Tab_Box).Properties.IsLeftButtonPressed)
             return;
-        if (e.KeyModifiers is KeyModifiers.Alt or KeyModifiers.Shift)
+        if (e.KeyModifiers is KeyModifiers.Alt or KeyModifiers.Shift or (KeyModifiers.Control | KeyModifiers.Shift))
             return;
         if (!SAV.HasBox)
             return;
@@ -352,7 +352,8 @@ public sealed partial class SAVEditorView
     private static DropModifier GetDropModifier() => MainWindow.CurrentModifiers switch
     {
         KeyModifiers.Shift => DropModifier.Clone,
-        KeyModifiers.Alt => DropModifier.Overwrite,
+        KeyModifiers.Alt or KeyModifiers.Control | KeyModifiers.Shift => DropModifier.Overwrite, // see ModifierAlias
+
         _ => DropModifier.None,
     };
 }
