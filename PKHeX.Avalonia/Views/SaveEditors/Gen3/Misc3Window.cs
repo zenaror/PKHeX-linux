@@ -281,6 +281,7 @@ public sealed class Misc3Window : SaveEditorWindow
         AddTab("Tab_Decorations", "Decorations", BuildDecorations());
         AddTab("Tab_Paintings", "Paintings", BuildPaintings());
         AddTab("Tab_Other", "Other", UiFactory.Column(B_ForceMirageIsland));
+        B_ForceMirageIsland.Click += (_, _) => ClickForceMirageIsland();
 
         SetBody(TC_Misc);
     }
@@ -357,6 +358,9 @@ public sealed class Misc3Window : SaveEditorWindow
 
         var pass = new GroupBoxView("GB_FrontierPass", "Frontier Pass", UiFactory.Column(
             CHK_ActivatePass, new GroupBoxView("GB_Icons", "Symbol Icons", icons)));
+
+        // WinForms labels this checkbox with a separate "L_Continue" label; reuse that translation key.
+        CHK_Continue.Content = Translator.TranslateText("SAV_Misc3.L_Continue", "Continue", MainWindow.CurrentLanguage);
 
         var statGrid = UiFactory.FormGrid(4);
         for (int i = 0; i < StatNUDA.Length; i++)

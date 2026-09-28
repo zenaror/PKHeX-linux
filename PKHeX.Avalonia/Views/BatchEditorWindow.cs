@@ -7,7 +7,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Layout;
+using Avalonia.Platform.Storage;
 using PKHeX.Avalonia.Controls;
 using PKHeX.Avalonia.Localization;
 using PKHeX.Avalonia.Services;
@@ -76,16 +78,21 @@ public sealed class BatchEditorWindow : Window
         DockPanel.SetDock(B_Add, Dock.Right);
         builderRow.Children.Add(B_Add);
         builderRow.Children.Add(_builder);
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, HorizontalAlignment = HorizontalAlignment.Right };
-        foreach (var b in new[] { B_Run, B_Reset, B_Cancel, B_Save })
+        foreach (var b in new[] { B_Reset, B_Run, B_Cancel, B_Save })
         {
             b.MinWidth = 80;
             b.Padding = new Thickness(8, 4);
-            buttons.Children.Add(b);
         }
+        // WinForms button row (TLP_Bottom row 3): Reset | Run | count | Cancel | Save
+        var leftButtons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { B_Reset, B_Run } };
+        var rightButtons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { B_Cancel, B_Save } };
+        L_Count.HorizontalAlignment = HorizontalAlignment.Center;
+        L_Count.VerticalAlignment = VerticalAlignment.Center;
         var footer = new DockPanel();
-        DockPanel.SetDock(buttons, Dock.Right);
-        footer.Children.Add(buttons);
+        DockPanel.SetDock(leftButtons, Dock.Left);
+        DockPanel.SetDock(rightButtons, Dock.Right);
+        footer.Children.Add(leftButtons);
+        footer.Children.Add(rightButtons);
         footer.Children.Add(L_Count);
         bottom.Children.Add(builderRow);
         bottom.Children.Add(footer);
@@ -118,6 +125,30 @@ public sealed class BatchEditorWindow : Window
 
         RTB_Instructions.Text = _lastUsedCommands;
         Closing += (_, _) => _lastUsedCommands = RTB_Instructions.Text ?? string.Empty;
+
+        // WinForms accepts a folder dropped anywhere on the form as the "Folder..." source.
+        DragDrop.SetAllowDrop(this, true);
+        AddHandler(DragDrop.DragOverEvent, (_, e) =>
+        {
+            e.DragEffects = e.DataTransfer.TryGetFiles() is { Length: not 0 } ? DragDropEffects.Copy : DragDropEffects.None;
+            e.Handled = true;
+        });
+        AddHandler(DragDrop.DropEvent, (_, e) =>
+        {
+            e.Handled = true;
+            if (e.DataTransfer.TryGetFiles() is not { Length: not 0 } files)
+                return;
+            if (files[0].TryGetLocalPath() is not { } path || !Directory.Exists(path))
+                return;
+
+            TB_Folder.Text = path;
+            TB_Folder.IsVisible = true;
+            RB_Path.IsChecked = true;
+            _folder = null;
+            _folderPaths.Clear();
+            UpdateFilterCountDebounced();
+            UpdateButtons();
+        });
     }
 
     public IReadOnlyList<ISlotInfo> GetModifiedSlots() => [.. _modifiedSlots];

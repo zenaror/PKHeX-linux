@@ -20,11 +20,13 @@ public sealed class PokeathlonEventData4View : StackPanel
 
         EventRecords = new PokeathlonEventRecord4View[PokeathlonEventData4.MaxRecord];
         for (int i = 0; i < EventRecords.Length; i++)
-            EventRecords[i] = new PokeathlonEventRecord4View($"#{i + 1}");
+            EventRecords[i] = new PokeathlonEventRecord4View();
 
         Children.Add(UiFactory.Row(UiFactory.Label("L_Attempts", "Attempts:"), NUD_Attempts));
-        foreach (var r in EventRecords)
-            Children.Add(new GroupBoxView($"GB_Record{System.Array.IndexOf(EventRecords, r)}", $"Record {System.Array.IndexOf(EventRecords, r) + 1}", r));
+        // WinForms stacks the five record editors unlabelled; they are boxed and numbered here so the
+        // scrolling list stays readable. The caption reuses the translated "Record:" wording.
+        for (int i = 0; i < EventRecords.Length; i++)
+            Children.Add(new GroupBoxView($"GB_Record{i}", PokeathlonEventRecord4View.GetGroupCaption(i), EventRecords[i]));
     }
 
     public void LoadObject(PokeathlonEventData4 entity)

@@ -60,14 +60,15 @@ public sealed class OPowerWindow : SaveEditorWindow
             UiFactory.AddFormRow(battle, i, UiFactory.Label($"L_B{i}", nameBattle[i]), UiFactory.Row(NUDBattle_A[i], NUDBattle_B[i]));
         }
 
+        // WinForms arrangement: unlock list, Field group and Battle group side by side, with the points box and the
+        // two bulk buttons under the Battle group.
         var right = UiFactory.Column(
-            new GroupBoxView("GB_Field", "Field", field),
             new GroupBoxView("GB_Battle", "Battle", battle),
-            UiFactory.Row(L_Points, NUD_Points));
-        var left = UiFactory.Column(CLB_Unlock, UiFactory.Row(B_GiveAll, B_ClearAll));
-        var body = UiFactory.Row(left, new ScrollViewer { Content = right, MaxHeight = 520 });
+            UiFactory.Row(L_Points, NUD_Points),
+            UiFactory.Row(B_ClearAll, B_GiveAll));
+        var body = UiFactory.Row(CLB_Unlock, new GroupBoxView("GB_Field", "Field", field), right);
         body.Spacing = 12;
-        SetBody(body);
+        SetBody(new ScrollViewer { Content = body, MaxHeight = 620 });
 
         B_ClearAll.Click += (_, _) => { Block.ClearAll(); LoadCurrent(); };
         B_GiveAll.Click += (_, _) => { Block.UnlockAll(); LoadCurrent(); };

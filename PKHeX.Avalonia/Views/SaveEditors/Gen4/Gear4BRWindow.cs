@@ -85,24 +85,35 @@ public sealed class Gear4BRWindow : SaveEditorWindow
             MaxHeight = 520,
             HorizontalAlignment = HorizontalAlignment.Left,
         };
-        dgv.Columns.Add(new DataGridTextColumn { Header = "Index", Binding = new Binding(nameof(GearRow.Index)), IsReadOnly = true, Width = new DataGridLength(85) });
-        dgv.Columns.Add(new DataGridTextColumn { Header = "Character Style", Binding = new Binding(nameof(GearRow.CharacterStyle)), IsReadOnly = true, Width = new DataGridLength(160) });
-        dgv.Columns.Add(new DataGridTextColumn { Header = "Category", Binding = new Binding(nameof(GearRow.Category)), IsReadOnly = true, Width = new DataGridLength(120) });
-        dgv.Columns.Add(new DataGridTextColumn { Header = "Gear", Binding = new Binding(nameof(GearRow.Gear)), IsReadOnly = true, Width = new DataGridLength(1, DataGridLengthUnitType.Star) });
-        dgv.Columns.Add(DataGridUtil.CheckColumn("Obtained", nameof(GearRow.Obtained), 100));
+        // The WinForms grid carries the index in a hidden column; here it lives on the row object instead.
+        dgv.Columns.Add(new DataGridTextColumn { Header = "Character Style", Binding = new Binding(nameof(GearRow.CharacterStyle)), IsReadOnly = true, Width = new DataGridLength(160) }.Named("Model"));
+        dgv.Columns.Add(new DataGridTextColumn { Header = "Category", Binding = new Binding(nameof(GearRow.Category)), IsReadOnly = true, Width = new DataGridLength(120) }.Named("Category"));
+        dgv.Columns.Add(new DataGridTextColumn { Header = "Gear", Binding = new Binding(nameof(GearRow.Gear)), IsReadOnly = true, Width = new DataGridLength(1, DataGridLengthUnitType.Star) }.Named("Gear"));
+        dgv.Columns.Add(DataGridUtil.CheckColumn("Obtained", nameof(GearRow.Obtained), 100).Named("Obtained"));
 
         var unlockAll = UiFactory.Button("B_UnlockAll", "Unlock All Gear");
         var clear = UiFactory.Button("B_Clear", "Reset Gear to Default");
         unlockAll.Click += (_, _) => { SAV.GearUnlock.UnlockAll(); RefreshRows(); };
         clear.Click += (_, _) => { SAV.GearUnlock.Clear(); RefreshRows(); };
 
-        var outfits = new GroupBoxView("GB_ShinyOutfits", "Shiny Outfits", UiFactory.Column(
-            CHK_Groudon, CHK_Lucario, CHK_Electivire, CHK_Kyogre, CHK_Roserade, CHK_Pachirisu));
+        // WinForms lays the outfit checkboxes out in three columns of two, under the grid.
+        var outfitGrid = new Grid
+        {
+            ColumnDefinitions = [new ColumnDefinition(GridLength.Auto), new ColumnDefinition(GridLength.Auto), new ColumnDefinition(GridLength.Auto)],
+            RowDefinitions = [new RowDefinition(GridLength.Auto), new RowDefinition(GridLength.Auto)],
+            ColumnSpacing = 20,
+            RowSpacing = 2,
+        };
+        CheckBox[] outfitChecks = [CHK_Groudon, CHK_Lucario, CHK_Electivire, CHK_Kyogre, CHK_Roserade, CHK_Pachirisu];
+        for (int i = 0; i < outfitChecks.Length; i++)
+        {
+            UiFactory.SetRowCol(outfitChecks[i], i / 3, i % 3);
+            outfitGrid.Children.Add(outfitChecks[i]);
+        }
+        var outfits = new GroupBoxView("GB_ShinyOutfits", "Shiny Outfits", outfitGrid) { HorizontalAlignment = HorizontalAlignment.Left };
 
-        var body = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
-        body.Children.Add(UiFactory.Column(dgv, UiFactory.Row(unlockAll, clear)));
-        body.Children.Add(outfits);
-        SetBody(body);
+        // Button row on top, grid, then the outfit group, as the WinForms form arranges them.
+        SetBody(UiFactory.Column(UiFactory.Row(unlockAll, clear), dgv, outfits));
     }
 
     private void InitializeRows()

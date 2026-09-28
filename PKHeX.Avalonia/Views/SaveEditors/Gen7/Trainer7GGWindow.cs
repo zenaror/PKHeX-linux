@@ -36,7 +36,7 @@ public sealed class Trainer7GGWindow : SaveEditorWindow
     private readonly ComboBox CB_Language = UiFactory.Combo("CB_Language", 140);
     private readonly TrainerIDView trainerID1 = new() { Name = "trainerID1" };
     private readonly NumericTextBox MT_Money = UiFactory.Numeric("MT_Money", 8, 110);
-    private readonly Button B_MaxCash = UiFactory.Button("B_MaxCash", "Max");
+    private readonly Button B_MaxCash = UiFactory.Button("B_MaxCash", "+");
     private readonly NumericTextBox MT_Hours = UiFactory.Numeric("MT_Hours", 5, 60);
     private readonly NumericTextBox MT_Minutes = UiFactory.Numeric("MT_Minutes", 2, 44);
     private readonly NumericTextBox MT_Seconds = UiFactory.Numeric("MT_Seconds", 2, 44);
@@ -47,27 +47,27 @@ public sealed class Trainer7GGWindow : SaveEditorWindow
     private readonly TimePicker CAL_LastSavedTime = new() { Name = "CAL_LastSavedTime" };
 
     private readonly NumericUpDown NUD_M = UiFactory.NumericUpDown("NUD_M", 0, uint.MaxValue, 110);
-    private readonly NumericUpDown NUD_X = UiFactory.NumericUpDown("NUD_X", -100000, 100000, 100);
-    private readonly NumericUpDown NUD_Z = UiFactory.NumericUpDown("NUD_Z", -100000, 100000, 100);
-    private readonly NumericUpDown NUD_Y = UiFactory.NumericUpDown("NUD_Y", -100000, 100000, 100);
-    private readonly NumericUpDown NUD_SX = UiFactory.NumericUpDown("NUD_SX", -100000, 100000, 100);
-    private readonly NumericUpDown NUD_SZ = UiFactory.NumericUpDown("NUD_SZ", -100000, 100000, 100);
-    private readonly NumericUpDown NUD_SY = UiFactory.NumericUpDown("NUD_SY", -100000, 100000, 100);
-    private readonly NumericUpDown NUD_R = UiFactory.NumericUpDown("NUD_R", -360, 360, 100);
+    private readonly NumericUpDown NUD_X = UiFactory.NumericUpDown("NUD_X", -99999999, 99999999, 100);
+    private readonly NumericUpDown NUD_Z = UiFactory.NumericUpDown("NUD_Z", -99999999, 99999999, 100);
+    private readonly NumericUpDown NUD_Y = UiFactory.NumericUpDown("NUD_Y", -99999999, 99999999, 100);
+    private readonly NumericUpDown NUD_SX = UiFactory.NumericUpDown("NUD_SX", -99999999, 99999999, 100);
+    private readonly NumericUpDown NUD_SZ = UiFactory.NumericUpDown("NUD_SZ", -99999999, 99999999, 100);
+    private readonly NumericUpDown NUD_SY = UiFactory.NumericUpDown("NUD_SY", -99999999, 99999999, 100);
+    private readonly NumericUpDown NUD_R = UiFactory.NumericUpDown("NUD_R", -99999999, 99999999, 100);
     private GroupBoxView GB_Map = null!;
 
     private readonly NumericUpDown NUD_GoIndex = UiFactory.NumericUpDown("NUD_GoIndex", 0, GoParkStorage.Count - 1, 120);
-    private readonly TextBlock L_GoSlotSummary = UiFactory.Label("L_GoSlotSummary", string.Empty);
-    private readonly Button B_Import = UiFactory.Button("B_Import", "Import Slot");
-    private readonly Button B_Export = UiFactory.Button("B_Export", "Export Slot");
-    private readonly Button B_ImportGoFiles = UiFactory.Button("B_ImportGoFiles", "Import Folder");
-    private readonly Button B_ExportGoFiles = UiFactory.Button("B_ExportGoFiles", "Export Folder");
-    private readonly Button B_ExportGoSummary = UiFactory.Button("B_ExportGoSummary", "Copy Summary");
-    private readonly Button B_DeleteGo = UiFactory.Button("B_DeleteGo", "Delete Slot");
+    private readonly TextBlock L_GoSlotSummary = UiFactory.Label("L_GoSlotSummary", "Summary");
+    private readonly Button B_Import = UiFactory.Button("B_Import", "Import");
+    private readonly Button B_Export = UiFactory.Button("B_Export", "Export");
+    private readonly Button B_ImportGoFiles = UiFactory.Button("B_ImportGoFiles", "Import from Folder (start at current slot)");
+    private readonly Button B_ExportGoFiles = UiFactory.Button("B_ExportGoFiles", "Export all to Folder");
+    private readonly Button B_ExportGoSummary = UiFactory.Button("B_ExportGoSummary", "Dump Text Summary of Go Park Entities");
+    private readonly Button B_DeleteGo = UiFactory.Button("B_DeleteGo", "Delete");
     private readonly Button B_DeleteAll = UiFactory.Button("B_DeleteAll", "Delete All");
 
-    private readonly Button B_AllTrainerTitles = UiFactory.Button("B_AllTrainerTitles", "Unlock all Titles");
-    private readonly Button B_AllFashionItems = UiFactory.Button("B_AllFashionItems", "Unlock all Fashion");
+    private readonly Button B_AllTrainerTitles = UiFactory.Button("B_AllTrainerTitles", "Unlock all Trainer Titles");
+    private readonly Button B_AllFashionItems = UiFactory.Button("B_AllFashionItems", "Unlock all Fashion Items");
 
     public Trainer7GGWindow(SAV7b sav) : base("SAV_Trainer7GG", "Trainer Data Editor")
     {
@@ -119,37 +119,47 @@ public sealed class Trainer7GGWindow : SaveEditorWindow
 
     private void BuildLayout()
     {
-        var main = UiFactory.FormGrid(8);
-        UiFactory.AddFormRow(main, 0, UiFactory.Label("L_TrainerName", "Trainer Name:"), UiFactory.Row(TB_OTName, CB_Gender));
+        var main = UiFactory.FormGrid(5);
+        UiFactory.AddFormRow(main, 0, UiFactory.Label("L_TrainerName", "Trainer Name:"), UiFactory.Row(TB_OTName, CB_Gender, CB_Game));
         UiFactory.AddFormRow(main, 1, UiFactory.Label("L_RivalName", "Rival Name:"), TB_RivalName);
-        UiFactory.AddFormRow(main, 2, UiFactory.Label("L_Game", "Game:"), CB_Game);
-        UiFactory.AddFormRow(main, 3, UiFactory.Label("L_TrainerID", "Trainer ID:"), trainerID1);
-        UiFactory.AddFormRow(main, 4, UiFactory.Label("L_Money", "Money:"), UiFactory.Row(MT_Money, B_MaxCash));
-        UiFactory.AddFormRow(main, 5, UiFactory.Label("L_Language", "Language:"), CB_Language);
-        UiFactory.AddFormRow(main, 6, UiFactory.Label("L_PlayTime", "Play Time:"), UiFactory.Row(MT_Hours, MT_Minutes, MT_Seconds));
-        UiFactory.AddFormRow(main, 7, UiFactory.Label("L_AdventureBegin", "Adventure Began:"), UiFactory.Row(CAL_AdventureBeginDate, CAL_AdventureBeginTime));
+        UiFactory.AddFormRow(main, 2, null, trainerID1);
+        UiFactory.AddFormRow(main, 3, UiFactory.Label("L_Money", "$:"), UiFactory.Row(MT_Money, B_MaxCash));
+        UiFactory.AddFormRow(main, 4, UiFactory.Label("L_Language", "Language:"), CB_Language);
 
-        var dates = UiFactory.FormGrid(1);
-        UiFactory.AddFormRow(dates, 0, UiFactory.Label("L_LastSaved", "Last Saved:"), UiFactory.Row(CAL_LastSavedDate, CAL_LastSavedTime));
+        var adventure = UiFactory.FormGrid(3);
+        UiFactory.AddFormRow(adventure, 0, UiFactory.Label("L_Started", "Game Started:"), UiFactory.Row(CAL_AdventureBeginDate, CAL_AdventureBeginTime));
+        UiFactory.AddFormRow(adventure, 1, UiFactory.Label("L_LastSaved", "Last Saved:"), UiFactory.Row(CAL_LastSavedDate, CAL_LastSavedTime));
+        UiFactory.AddFormRow(adventure, 2, null, UiFactory.Row(
+            UiFactory.Label("L_Hours", "Hrs:"), MT_Hours,
+            UiFactory.Label("L_Minutes", "Min:"), MT_Minutes,
+            UiFactory.Label("L_Seconds", "Sec:"), MT_Seconds));
+        var gbAdventure = new GroupBoxView("GB_Adventure", "Adventure Info", adventure);
 
-        GB_Map = new GroupBoxView("GB_Map", "Map Position", UiFactory.Column(
-            UiFactory.Row(UiFactory.Label("L_M", "M:"), NUD_M, UiFactory.Label("L_R", "R:"), NUD_R),
-            UiFactory.Row(UiFactory.Label("L_X", "X:"), NUD_X, UiFactory.Label("L_Z", "Z:"), NUD_Z, UiFactory.Label("L_Y", "Y:"), NUD_Y),
-            UiFactory.Row(UiFactory.Label("L_SX", "SX:"), NUD_SX, UiFactory.Label("L_SZ", "SZ:"), NUD_SZ, UiFactory.Label("L_SY", "SY:"), NUD_SY)));
+        var overview = UiFactory.Column(main, gbAdventure, UiFactory.Row(B_AllTrainerTitles, B_AllFashionItems));
 
-        var overview = UiFactory.Column(main, dates, GB_Map, UiFactory.Row(B_AllTrainerTitles, B_AllFashionItems));
+        var map = UiFactory.FormGrid(8);
+        UiFactory.AddFormRow(map, 0, UiFactory.Label("L_CurrentMap", "Current Map:"), NUD_M);
+        UiFactory.AddFormRow(map, 1, UiFactory.Label("L_X", "X Coordinate:"), NUD_X);
+        UiFactory.AddFormRow(map, 2, UiFactory.Label("L_Z", "Z Coordinate:"), NUD_Z);
+        UiFactory.AddFormRow(map, 3, UiFactory.Label("L_Y", "Y Coordinate:"), NUD_Y);
+        UiFactory.AddFormRow(map, 4, UiFactory.Label("L_SX", "X Scale:"), NUD_SX);
+        UiFactory.AddFormRow(map, 5, UiFactory.Label("L_SZ", "Z Scale:"), NUD_SZ);
+        UiFactory.AddFormRow(map, 6, UiFactory.Label("L_SY", "Y Scale:"), NUD_SY);
+        UiFactory.AddFormRow(map, 7, UiFactory.Label("L_R", "Rotation:"), NUD_R);
+        GB_Map = new GroupBoxView("GB_Map", "Map Position", map);
 
         L_GoSlotSummary.MinWidth = 380;
         var park = UiFactory.Column(
-            UiFactory.Row(UiFactory.Label("L_GoIndex", "Slot:"), NUD_GoIndex),
+            UiFactory.Row(UiFactory.Label("L_GoSlot", "Slot:"), NUD_GoIndex),
             L_GoSlotSummary,
             UiFactory.Row(B_Import, B_Export),
             UiFactory.Row(B_ImportGoFiles, B_ExportGoFiles),
             UiFactory.Row(B_ExportGoSummary, B_DeleteGo, B_DeleteAll));
 
-        var tabs = new TabControl();
+        var tabs = new TabControl { Name = "TC_Editor" };
         tabs.Items.Add(new TabItem { Name = "Tab_Overview", Header = "Overview", Content = new ScrollViewer { Content = overview, MaxHeight = 540 } });
-        tabs.Items.Add(new TabItem { Name = "Tab_GoPark", Header = "Go Park", Content = park });
+        tabs.Items.Add(new TabItem { Name = "Tab_BadgeMap", Header = "Map", Content = new ScrollViewer { Content = GB_Map, MaxHeight = 540 } });
+        tabs.Items.Add(new TabItem { Name = "Tab_Complex", Header = "GO Complex", Content = park });
         SetBody(tabs);
     }
 

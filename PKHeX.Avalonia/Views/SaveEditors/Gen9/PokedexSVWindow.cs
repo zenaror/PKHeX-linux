@@ -46,11 +46,11 @@ public sealed class PokedexSVWindow : SaveEditorWindow
     private readonly CheckBox CHK_SeenFemale = UiFactory.Check("CHK_SeenFemale", "Female");
     private readonly CheckBox CHK_SeenGenderless = UiFactory.Check("CHK_SeenGenderless", "Genderless");
     private readonly CheckBox CHK_SeenShiny = UiFactory.Check("CHK_SeenShiny", "Shiny");
-    private readonly CheckBox CHK_DisplayShiny = UiFactory.Check("CHK_DisplayShiny", "Display Shiny");
-    private readonly CheckBox CHK_G = UiFactory.Check("CHK_G", "Display Other Gender");
+    private readonly CheckBox CHK_DisplayShiny = UiFactory.Check("CHK_DisplayShiny", "Shiny");
+    private readonly CheckBox CHK_G = UiFactory.Check("CHK_G", "Gender Different");
     private readonly CheckedListView CLB_FormSeen = new() { Name = "CLB_FormSeen", Width = 220, Height = 200 };
     private readonly Button B_GiveAll = UiFactory.Button("B_GiveAll", "Check All");
-    private readonly Button B_Modify = UiFactory.Button("B_Modify", "Modify...");
+    private readonly Button B_Modify = UiFactory.Button("B_Modify", "Modify All...");
 
     public PokedexSVWindow(SAV9SV sav) : base("SAV_PokedexSV", "Pokédex Editor")
     {
@@ -97,31 +97,25 @@ public sealed class PokedexSVWindow : SaveEditorWindow
         LB_Species.ItemsSource = SpeciesItems;
         foreach (var s in new[] { "None", "Heard Of", "Seen", "Captured" })
             CB_State.Items.Add(s);
-        foreach (var s in new[] { "Male", "Female", "Genderless" })
+        foreach (var s in new[] { "\u2642", "\u2640", "-" }) // WinForms CB_Gender items
             CB_Gender.Items.Add(s);
 
-        var seen = new GroupBoxView("GB_Seen", "Seen", UiFactory.Column(CHK_SeenMale, CHK_SeenFemale, CHK_SeenGenderless, CHK_SeenShiny));
-        var display = new GroupBoxView("GB_Display", "Displayed", UiFactory.Column(
-            UiFactory.Row(UiFactory.Label("L_DisplayForm", "Form:"), CB_DisplayForm),
-            UiFactory.Row(UiFactory.Label("L_Gender", "Gender:"), CB_Gender),
-            CHK_DisplayShiny, CHK_G, CHK_IsNew));
+        // WinForms names: the Seen box is groupBox1 and the displayed box GB_Displayed; the translation keys follow them.
+        var seen = new GroupBoxView("groupBox1", "Seen", UiFactory.Column(CHK_SeenMale, CHK_SeenFemale, CHK_SeenGenderless, CHK_SeenShiny));
+        var display = new GroupBoxView("GB_Displayed", "Displayed", UiFactory.Column(
+            UiFactory.Row(CB_Gender, CHK_DisplayShiny),
+            CHK_G,
+            UiFactory.Label("L_DisplayedForm", "Displayed Form:"),
+            CB_DisplayForm));
 
-        var top = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        top.Children.Add(seen);
-        top.Children.Add(display);
+        var middle = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        middle.Children.Add(UiFactory.Column(seen, CLB_FormSeen));
+        middle.Children.Add(UiFactory.Column(display, new GroupBoxView("GB_Language", "Languages", UiFactory.Column(CL))));
 
-        var right = UiFactory.Column(
-            UiFactory.Row(UiFactory.Label("L_goto", "goto:"), CB_Species),
-            UiFactory.Row(UiFactory.Label("L_State", "State:"), CB_State),
-            top,
-            UiFactory.Column(UiFactory.Label("L_FormSeen", "Forms Seen"), CLB_FormSeen),
-            new GroupBoxView("GB_Language", "Languages", UiFactory.Row(CL)),
-            UiFactory.Row(B_GiveAll, B_Modify));
-
-        var body = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
-        body.Children.Add(LB_Species);
-        body.Children.Add(new ScrollViewer { Content = right, MaxHeight = 620 });
-        SetBody(body);
+        var body = UiFactory.Column(
+            UiFactory.Row(UiFactory.Label("L_goto", "goto:"), CB_Species, B_GiveAll, CB_State, CHK_IsNew, B_Modify),
+            UiFactory.Row(LB_Species, middle));
+        SetBody(new ScrollViewer { Content = body, MaxHeight = 640 });
 
         LB_Species.SelectionChanged += (_, _) => ChangeLBSpecies();
         CB_Species.SelectionChanged += (_, _) => ChangeCBSpecies();

@@ -27,7 +27,7 @@ public sealed class Fashion9Window : SaveEditorWindow
     private readonly TabControl TC_Features = new() { Name = "TC_Features" };
     private readonly Button B_SetAllOwned = UiFactory.Button("B_SetAllOwned", "Set All Owned");
 
-    public Fashion9Window(SaveFile sav) : base("SAV_Fashion9", "Fashion")
+    public Fashion9Window(SaveFile sav) : base("SAV_Fashion9", "Fashion Editor")
     {
         SAV = (Origin = sav).Clone();
 

@@ -41,7 +41,10 @@ public sealed class BoxExporterWindow : Window
         Settings = settings;
 
         var top = UiFactory.Row(L_Namer, CB_Namer);
-        B_Export.HorizontalAlignment = HorizontalAlignment.Right;
+        // WinForms: B_Export is docked to the bottom of the form, full width and 41px tall.
+        B_Export.HorizontalAlignment = HorizontalAlignment.Stretch;
+        B_Export.HorizontalContentAlignment = HorizontalAlignment.Center;
+        B_Export.Height = 41;
         B_Export.Padding = new Thickness(12, 4);
         var root = new DockPanel { Margin = new Thickness(10) };
         DockPanel.SetDock(top, Dock.Top);

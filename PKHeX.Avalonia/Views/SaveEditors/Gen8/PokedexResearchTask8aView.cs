@@ -21,9 +21,11 @@ public sealed class PokedexResearchTask8aView : StackPanel
 
     private readonly TextBlock Label_Task = UiFactory.Label("Label_Task", string.Empty);
     private readonly NumericUpDown NUP_CurrentValue = UiFactory.NumericUpDown("NUP_CurrentValue", 0, ushort.MaxValue, 110);
-    private readonly TextBlock PB_Bonus = UiFactory.Label("PB_Bonus", string.Empty);
+    private readonly Image PB_Bonus = new() { Name = "PB_Bonus", Stretch = global::Avalonia.Media.Stretch.None, VerticalAlignment = VerticalAlignment.Center };
     private readonly TextBox[] ThresholdBoxes = new TextBox[ThresholdCount];
     private readonly StackPanel FLP_T1Right = new() { Orientation = Orientation.Horizontal, Spacing = 3, VerticalAlignment = VerticalAlignment.Center };
+
+    private static readonly global::Avalonia.Media.Imaging.Bitmap? BonusIcon = PKHeX.Avalonia.Localization.AppResources.GetImage("research_bonus_points");
 
     private string[] TaskDescriptions = [];
     private string[] SpeciesQuests = [];
@@ -76,7 +78,7 @@ public sealed class PokedexResearchTask8aView : StackPanel
         Task = task;
         ReportedCount = reportedLevel - 1;
 
-        PB_Bonus.Text = task.PointsBonus != 0 ? "★" : string.Empty;
+        PB_Bonus.Source = task.PointsBonus != 0 ? BonusIcon : null; // WinForms shows the research_bonus_points sprite
         Label_Task.Text = $"{Task.GetTaskLabelString(TaskDescriptions, TimeTaskDescriptions, SpeciesQuests)}:";
         NUP_CurrentValue.IsEnabled = CanSetCurrentValue;
 

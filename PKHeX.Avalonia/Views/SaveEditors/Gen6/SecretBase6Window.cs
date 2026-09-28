@@ -115,22 +115,30 @@ public sealed class SecretBase6Window : SaveEditorWindow
         UiFactory.AddFormRow(placement, 4, UiFactory.Label("L_Rotation", "Rotation Val:"), NUD_FRot);
         var gbObject = new GroupBoxView("GB_Object", "Object Layout", placement);
 
-        var main = UiFactory.Column(
-            PG_Base,
-            gbObject,
-            UiFactory.Row(UiFactory.Label("L_FlagsCaptured", "Flags Captured: "), NUD_CapturedRecord),
-            UiFactory.Row(B_GiveDecor, B_Import, B_Export, B_FDelete));
+        var main = UiFactory.Column(PG_Base, gbObject);
 
         PAN_PKM = BuildParticipant();
 
-        var tabs = new TabControl { Name = "TC_SecretBase" };
+        var tabs = new TabControl { Name = "Tab_Base" };
         tabs.Items.Add(new TabItem { Name = "f_MAIN", Header = "Main", Content = new ScrollViewer { Content = main, MaxHeight = 600 } });
         tabs.Items.Add(new TabItem { Name = "f_PKM", Header = "Pokemon", Content = new ScrollViewer { Content = PAN_PKM, MaxHeight = 600 } });
 
+        // Import/Export sit above the tab control in WinForms, and the delete button next to the base list;
+        // neither belongs to a tab page, so both stay visible while the Pokémon page is open.
+        B_FDelete.MinWidth = 28;
+        B_FDelete.VerticalAlignment = VerticalAlignment.Top;
+        var io = UiFactory.Row(B_Import, B_Export);
+        io.HorizontalAlignment = HorizontalAlignment.Right;
+
         var body = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
-        body.Children.Add(UiFactory.Column(UiFactory.Label("L_Favorite", "Favorites:"), LB_Bases));
-        body.Children.Add(tabs);
-        SetBody(body);
+        body.Children.Add(UiFactory.Column(UiFactory.Label("L_Favorite", "Favorites:"), UiFactory.Row(LB_Bases, B_FDelete)));
+        body.Children.Add(UiFactory.Column(io, tabs));
+
+        // Bottom row, left to right as in WinForms: captured-flag count, Give All Decorations, then Cancel/Save.
+        ButtonBar.Children.Insert(0, UiFactory.Label("L_FlagsCaptured", "Flags Captured: "));
+        ButtonBar.Children.Insert(1, NUD_CapturedRecord);
+        ButtonBar.Children.Insert(2, B_GiveDecor);
+        SetBody(body); // translates the window, including the controls added to the button bar
 
         LB_Bases.SelectionChanged += (_, _) => ChangeIndexBase();
         NUD_FObject.ValueChanged += (_, _) => ChangeIndexPlacement();

@@ -29,15 +29,19 @@ public sealed class PokeBlockORASWindow : SaveEditorWindow
         SAV = (SAV6AO)(Origin = sav).Clone();
 
         var contest = SAV.Contest;
-        var grid = UiFactory.FormGrid(Count);
+        // WinForms lays the plain blocks out in a left column and the "+" blocks in a right column.
+        var plain = UiFactory.FormGrid(Count / 2);
+        var plus = UiFactory.FormGrid(Count / 2);
         for (int i = 0; i < Count; i++)
         {
             nup_spec[i] = UiFactory.NumericUpDown($"NUP_{Names[i][2..]}", 0, 999, 110);
-            nup_spec[i].Value = contest.GetBlockCount(i);
+            nup_spec[i].SetValueClamped(contest.GetBlockCount(i));
             var label = UiFactory.Label(Names[i], $"{GameInfo.Strings.pokeblocks[94 + i]}:");
-            UiFactory.AddFormRow(grid, i, label, nup_spec[i]);
+            UiFactory.AddFormRow(i < Count / 2 ? plain : plus, i % (Count / 2), label, nup_spec[i]);
         }
-        SetBody(UiFactory.Column(grid, UiFactory.Row(B_GiveAllBlocks, B_RandomizeBerries)));
+        var columns = UiFactory.Row(plain, plus);
+        columns.Spacing = 16;
+        SetBody(UiFactory.Column(columns, UiFactory.Row(B_RandomizeBerries, B_GiveAllBlocks)));
 
         B_GiveAllBlocks.AttachClick(mods =>
         {

@@ -263,8 +263,8 @@ public sealed class FolderListWindow : Window
             return;
         }
 
+        // WinForms leaves the list open after loading, so another save can be picked right away.
         OpenSaveFile(sav.Save);
-        Close();
     }
 
     private async Task ClickDeleteFile(DataGrid dgv)

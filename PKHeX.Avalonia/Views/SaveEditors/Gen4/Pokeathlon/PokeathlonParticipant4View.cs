@@ -13,25 +13,29 @@ public sealed class PokeathlonParticipant4View : StackPanel
 {
     private readonly PokeathlonSpeciesForm4View UC_SpeciesForm = new();
     private readonly GenderToggleView GT_Gender = new() { Name = "GT_Gender" };
-    private readonly CheckBox CHK_IsShiny = UiFactory.Check("CHK_IsShiny", "☆");
+    private readonly CheckBox CHK_IsShiny = UiFactory.Check("CHK_IsShiny", "Shiny");
     private readonly TextBox TB_PID = UiFactory.Text("TB_PID", 8, 100);
     private readonly TextBox TB_TID16 = UiFactory.Text("TB_TID16", 5, 80);
     private readonly TextBox TB_SID16 = UiFactory.Text("TB_SID16", 5, 80);
 
     private bool IsLoading;
 
-    public PokeathlonParticipant4View(string caption)
+    public PokeathlonParticipant4View(string captionName, string caption)
     {
         Orientation = Orientation.Horizontal;
         Spacing = 4;
         VerticalAlignment = VerticalAlignment.Center;
 
-        Children.Add(UiFactory.Label("L_Participant", caption));
+        // Caption, then the species picker and the meta flow (gender, shiny, PID, TID, SID) of the WinForms control.
+        Children.Add(UiFactory.Label(captionName, caption));
         Children.Add(UC_SpeciesForm);
         Children.Add(GT_Gender);
         Children.Add(CHK_IsShiny);
+        Children.Add(UiFactory.Label("L_PID", "PID:"));
         Children.Add(TB_PID);
+        Children.Add(UiFactory.Label("L_TID16", "TID:"));
         Children.Add(TB_TID16);
+        Children.Add(UiFactory.Label("L_SID16", "SID:"));
         Children.Add(TB_SID16);
 
         UC_SpeciesForm.ValueChanged += (_, _) => WriteBack();

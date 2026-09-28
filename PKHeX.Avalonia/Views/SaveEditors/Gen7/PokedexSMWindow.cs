@@ -379,7 +379,12 @@ public sealed class PokedexSMWindow : SaveEditorWindow
         SetEntry();
         allModifying = false;
         LB_Forms.IsEnabled = LB_Forms.IsVisible = true;
+
+        // Move the cursor back to the first entry without letting the list's event write the bulk state into it.
+        editing = true;
         SetCurrentIndex(0);
+        CB_Species.SetValue(Dex.GetBaseSpecies(0));
+        editing = false;
         FillFormList();
         GetEntry();
     }

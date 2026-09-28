@@ -42,10 +42,10 @@ public sealed class PokedexSVKitakamiWindow : SaveEditorWindow
     private readonly ObservableCollection<string> SpeciesItems = [];
     private readonly ComboBox CB_Species = UiFactory.Combo("CB_Species", 190);
 
-    private readonly CheckedListView CLB_FormSeen = new() { Name = "CLB_FormSeen", Width = 180, Height = 180 };
-    private readonly CheckedListView CLB_FormObtained = new() { Name = "CLB_FormObtained", Width = 180, Height = 180 };
-    private readonly CheckedListView CLB_FormHeard = new() { Name = "CLB_FormHeard", Width = 180, Height = 180 };
-    private readonly CheckedListView CLB_FormViewed = new() { Name = "CLB_FormViewed", Width = 180, Height = 180 };
+    private readonly CheckedListView CLB_FormSeen = new() { Name = "CLB_FormSeen", Width = 150, Height = 260 };
+    private readonly CheckedListView CLB_FormObtained = new() { Name = "CLB_FormObtained", Width = 150, Height = 260 };
+    private readonly CheckedListView CLB_FormHeard = new() { Name = "CLB_FormHeard", Width = 150, Height = 260 };
+    private readonly CheckedListView CLB_FormViewed = new() { Name = "CLB_FormViewed", Width = 150, Height = 260 };
 
     private readonly CheckBox CHK_SeenMale = UiFactory.Check("CHK_SeenMale", "Male");
     private readonly CheckBox CHK_SeenFemale = UiFactory.Check("CHK_SeenFemale", "Female");
@@ -64,7 +64,7 @@ public sealed class PokedexSVKitakamiWindow : SaveEditorWindow
     private GroupBoxView GB_Paldea = null!, GB_Kitakami = null!, GB_Blueberry = null!;
 
     private readonly Button B_GiveAll = UiFactory.Button("B_GiveAll", "Check All");
-    private readonly Button B_Modify = UiFactory.Button("B_Modify", "Modify...");
+    private readonly Button B_Modify = UiFactory.Button("B_Modify", "Modify All...");
 
     public PokedexSVKitakamiWindow(SAV9SV sav) : base("SAV_PokedexSVKitakami", "Pokédex Editor")
     {
@@ -110,36 +110,33 @@ public sealed class PokedexSVKitakamiWindow : SaveEditorWindow
         LB_Species.ItemsSource = SpeciesItems;
         foreach (var cb in new[] { CB_PaldeaGender, CB_KitakamiGender, CB_BlueberryGender })
         {
-            foreach (var s in new[] { "Male", "Female", "Genderless" })
+            foreach (var s in new[] { "\u2642", "\u2640", "-" }) // WinForms gender items
                 cb.Items.Add(s);
         }
 
         var formLists = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-        formLists.Children.Add(UiFactory.Column(UiFactory.Label("L_FormSeen", "Seen"), CLB_FormSeen));
-        formLists.Children.Add(UiFactory.Column(UiFactory.Label("L_FormObtained", "Obtained"), CLB_FormObtained));
-        formLists.Children.Add(UiFactory.Column(UiFactory.Label("L_FormHeard", "Heard Of"), CLB_FormHeard));
-        formLists.Children.Add(UiFactory.Column(UiFactory.Label("L_FormViewed", "Viewed"), CLB_FormViewed));
+        formLists.Children.Add(UiFactory.Column(UiFactory.Label("L_Seen", "Seen:"), CLB_FormSeen));
+        formLists.Children.Add(UiFactory.Column(UiFactory.Label("L_Obtained", "Obtained:"), CLB_FormObtained));
+        formLists.Children.Add(UiFactory.Column(UiFactory.Label("L_HeardOf", "Heard Of:"), CLB_FormHeard));
+        formLists.Children.Add(UiFactory.Column(UiFactory.Label("L_Viewed", "Viewed:"), CLB_FormViewed));
 
-        GB_Paldea = new GroupBoxView("GB_Paldea", "Paldea", UiFactory.Column(CB_PaldeaForm, CB_PaldeaGender, CHK_PaldeaShiny));
-        GB_Kitakami = new GroupBoxView("GB_Kitakami", "Kitakami", UiFactory.Column(CB_KitakamiForm, CB_KitakamiGender, CHK_KitakamiShiny));
-        GB_Blueberry = new GroupBoxView("GB_Blueberry", "Blueberry", UiFactory.Column(CB_BlueberryForm, CB_BlueberryGender, CHK_BlueberryShiny));
+        GB_Paldea = new GroupBoxView("GB_Paldea", "Display: Paldea", UiFactory.Column(UiFactory.Row(CB_PaldeaGender, CHK_PaldeaShiny), CB_PaldeaForm));
+        GB_Kitakami = new GroupBoxView("GB_Kitakami", "Display: Kitakami", UiFactory.Column(UiFactory.Row(CB_KitakamiGender, CHK_KitakamiShiny), CB_KitakamiForm));
+        GB_Blueberry = new GroupBoxView("GB_Blueberry", "Display: Blueberry", UiFactory.Column(UiFactory.Row(CB_BlueberryGender, CHK_BlueberryShiny), CB_BlueberryForm));
         var regions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         regions.Children.Add(GB_Paldea);
         regions.Children.Add(GB_Kitakami);
         regions.Children.Add(GB_Blueberry);
 
         var right = UiFactory.Column(
-            UiFactory.Row(UiFactory.Label("L_goto", "goto:"), CB_Species),
-            new GroupBoxView("GB_Seen", "Seen", UiFactory.Row(CHK_SeenMale, CHK_SeenFemale, CHK_SeenGenderless, CHK_SeenShiny)),
-            formLists,
-            regions,
-            new GroupBoxView("GB_Language", "Languages", UiFactory.Row(CL)),
-            UiFactory.Row(B_GiveAll, B_Modify));
+            new GroupBoxView("GB_SeenFlags", "Seen", UiFactory.Column(CHK_SeenMale, CHK_SeenFemale, CHK_SeenGenderless, CHK_SeenShiny)),
+            new GroupBoxView("GB_Language", "Languages", UiFactory.Column(CL)));
 
-        var body = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
-        body.Children.Add(LB_Species);
-        body.Children.Add(new ScrollViewer { Content = right, MaxHeight = 640 });
-        SetBody(body);
+        var body = UiFactory.Column(
+            UiFactory.Row(UiFactory.Label("L_goto", "goto:"), CB_Species, B_GiveAll, B_Modify),
+            UiFactory.Row(LB_Species, formLists, right),
+            regions);
+        SetBody(new ScrollViewer { Content = body, MaxHeight = 660 });
 
         LB_Species.SelectionChanged += (_, _) => ChangeLBSpecies();
         CB_Species.SelectionChanged += (_, _) => ChangeCBSpecies();

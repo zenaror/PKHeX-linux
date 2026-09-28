@@ -23,7 +23,7 @@ public sealed class BlockAccessorWindow : Window
     public BlockAccessorWindow(ISaveBlockAccessor<BlockInfo> accessor)
     {
         Name = "SAV_Accessor";
-        Title = "Block Data";
+        Title = "SaveBlock Editor"; // WinForms form caption; there is no translation key for it
         Icon = AppIcon.Get();
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         SizeToContent = SizeToContent.WidthAndHeight;
@@ -32,18 +32,20 @@ public sealed class BlockAccessorWindow : Window
         foreach (var name in Metadata.GetSortedBlockList())
             CB_Key.Items.Add(name);
 
+        // The picker belongs to the "Blocks" page in WinForms, above the property grid.
         var header = UiFactory.Row(UiFactory.Label("L_Key", "Block:"), CB_Key);
         header.Margin = new global::Avalonia.Thickness(0, 0, 0, 6);
+        var page = new StackPanel { Orientation = Orientation.Vertical, Children = { header, PG_BlockView } };
 
         var tabs = new TabControl { Name = "TC_Tabs" };
-        tabs.Items.Add(new TabItem { Name = "Tab_Blocks", Header = "Blocks", Content = PG_BlockView });
+        tabs.Items.Add(new TabItem { Name = "Tab_Blocks", Header = "Blocks", Content = page });
         tabs.SelectedIndex = 0;
 
         Content = new StackPanel
         {
             Orientation = Orientation.Vertical,
             Margin = new global::Avalonia.Thickness(8),
-            Children = { header, tabs },
+            Children = { tabs },
         };
 
         CB_Key.SelectionChanged += (_, _) => LoadBlock();

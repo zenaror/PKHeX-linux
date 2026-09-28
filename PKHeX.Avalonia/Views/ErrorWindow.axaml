@@ -5,12 +5,18 @@
         Width="640" Height="420"
         WindowStartupLocation="CenterOwner">
   <DockPanel Margin="12">
-    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,12,0,0">
-      <Button x:Name="B_Copy" Content="Copy to Clipboard" Click="B_Copy_Click" />
-      <Button x:Name="B_Continue" Content="Continue" MinWidth="90" IsDefault="True" Click="B_Continue_Click" />
-      <Button x:Name="B_Abort" Content="Abort" MinWidth="90" Click="B_Abort_Click" />
-    </StackPanel>
-    <TextBlock x:Name="L_Message" DockPanel.Dock="Top" TextWrapping="Wrap" Margin="0,0,0,8" />
+    <DockPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
+      <Button x:Name="B_CopyToClipboard" DockPanel.Dock="Left" Content="Copy to Clipboard" Click="B_Copy_Click" />
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+        <Button x:Name="B_Continue" Content="Continue" MinWidth="90" IsDefault="True" Click="B_Continue_Click" />
+        <Button x:Name="B_Abort" Content="Abort" MinWidth="90" Click="B_Abort_Click" />
+      </StackPanel>
+      <Panel />
+    </DockPanel>
+    <TextBlock x:Name="L_Message" DockPanel.Dock="Top" TextWrapping="Wrap" Margin="0,0,0,8"
+               Text="An unknown error has occurred." />
+    <TextBlock x:Name="L_ProvideInfo" DockPanel.Dock="Top" TextWrapping="Wrap" Margin="0,0,0,4"
+               Text="Please provide this information when reporting this error:" />
     <TextBox x:Name="T_ExceptionDetails" IsReadOnly="True" AcceptsReturn="True" TextWrapping="NoWrap"
              FontFamily="monospace" FontSize="12" />
   </DockPanel>

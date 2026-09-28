@@ -27,7 +27,7 @@ public sealed class Raid9Window : SaveEditorWindow
     private readonly NumericTextBox TB_SeedTomorrow = UiFactory.Numeric("TB_SeedTomorrow", 16, 160, hex: true);
     private readonly Button B_CopyToOthers = UiFactory.Button("B_CopyToOthers", "Copy to Other Raids");
 
-    public Raid9Window(SAV9SV sav, TeraRaidOrigin raidOrigin) : base("SAV_Raid9", "Raid Editor")
+    public Raid9Window(SAV9SV sav, TeraRaidOrigin raidOrigin) : base("SAV_Raid9", "Raid Parameter Editor")
     {
         SAV = (SAV9SV)(Origin = sav).Clone();
         Raids = raidOrigin switch
@@ -48,7 +48,8 @@ public sealed class Raid9Window : SaveEditorWindow
         var seeds = UiFactory.FormGrid(2);
         UiFactory.AddFormRow(seeds, 0, L_SeedCurrent, TB_SeedToday);
         UiFactory.AddFormRow(seeds, 1, L_SeedTomorrow, TB_SeedTomorrow);
-        SetBody(UiFactory.Column(UiFactory.Row(CB_Raid, B_CopyToOthers), seeds, PG_Raid));
+        // WinForms order: the raid picker and the copy button on top, the grid, then the two seed rows below it.
+        SetBody(UiFactory.Column(UiFactory.Row(CB_Raid, B_CopyToOthers), PG_Raid, seeds));
 
         CB_Raid.SelectionChanged += (_, _) => LoadRaid(CB_Raid.SelectedIndex);
         B_CopyToOthers.AttachClick(mods => Raids.Propagate(CB_Raid.SelectedIndex, seedToo: mods == KeyModifiers.Shift));

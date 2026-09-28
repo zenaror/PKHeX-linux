@@ -60,7 +60,7 @@ public sealed class BlockDump8Window : Window
     public BlockDump8Window(ISCBlockArray sav)
     {
         Name = "SAV_BlockDump8";
-        Title = "Block Data";
+        Title = "Savedata Block Dump";
         Icon = AppIcon.Get();
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         SizeToContent = SizeToContent.WidthAndHeight;
@@ -86,10 +86,11 @@ public sealed class BlockDump8Window : Window
 
     private void BuildLayout()
     {
+        // Two columns, as in WinForms: export on the left, import and the single-file options on the right.
         var options = UiFactory.Column(CHK_DataOnly, CHK_Key, CHK_Type, CHK_FakeHeader);
-        var buttons = UiFactory.Column(
-            B_ExportCurrent, B_ImportCurrent,
-            B_ExportAll, B_ImportFolder, B_ExportAllSingle);
+        var buttons = UiFactory.Row(
+            UiFactory.Column(B_ExportAll, B_ExportCurrent, B_ExportAllSingle),
+            UiFactory.Column(B_ImportFolder, B_ImportCurrent, options));
 
         var viewers = new Panel();
         viewers.Children.Add(RTB_Hex);
@@ -100,7 +101,7 @@ public sealed class BlockDump8Window : Window
             L_BlockName,
             UiFactory.Row(UiFactory.Label("L_Detail_L", "Block Detail:"), L_Detail_R),
             viewers,
-            UiFactory.Row(buttons, options));
+            buttons);
 
         var researcher = new GroupBoxView("GB_Researcher", "Load Two Save Files", UiFactory.Column(
             UiFactory.Row(B_LoadOld, TB_OldSAV),

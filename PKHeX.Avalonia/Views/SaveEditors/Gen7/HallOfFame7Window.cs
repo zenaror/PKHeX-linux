@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using PKHeX.Avalonia.Controls;
+using PKHeX.Avalonia.Localization;
 using PKHeX.Core;
 
 namespace PKHeX.Avalonia.Views.SaveEditors.Gen7;
@@ -39,6 +40,9 @@ public sealed class HallOfFame7Window : SaveEditorWindow
             UiFactory.Row(new GroupBoxView("L_First", "First", first), new GroupBoxView("L_Current", "Current", current)),
             UiFactory.Row(L_EC, TB_EC));
         SetBody(body);
+        // The WinForms form names its save button B_Close, so the shared B_Save key does not exist for this form.
+        // Renaming a styled Avalonia control is not allowed, so the translation is fetched by hand.
+        B_Save.Content = Translator.TranslateText(Translator.GetKey("SAV_HallOfFame7", "B_Close"), "Save", MainWindow.CurrentLanguage);
 
         if (SAV is SAV7USUM uu)
             TB_EC.Text = uu.Misc.StarterEncryptionConstant.ToString("X8");

@@ -7,6 +7,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Layout;
 using PKHeX.Avalonia.Controls;
+using PKHeX.Avalonia.Localization;
 using PKHeX.Avalonia.Services;
 using PKHeX.Core;
 using static PKHeX.Core.Zukan4;
@@ -99,15 +100,20 @@ public sealed class Pokedex4Window : SaveEditorWindow
 
         GB_Language = new GroupBoxView("GB_Language", "Languages", UiFactory.Column(CL));
 
+        // WinForms has one "Seen"/"Not Seen" pair above the shared columns; both groups here reuse its wording.
+        var lang = MainWindow.CurrentLanguage;
+        var seenText = Translator.TranslateText("SAV_Pokedex4.L_Seen", "Seen", lang);
+        var notSeenText = Translator.TranslateText("SAV_Pokedex4.L_NotSeen", "Not Seen", lang);
+
         var genders = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
-        genders.Children.Add(UiFactory.Column(UiFactory.Label("L_GenderSeen", "Seen"), LB_Gender));
+        genders.Children.Add(UiFactory.Column(UiFactory.Label("L_Seen", "Seen"), LB_Gender));
         genders.Children.Add(UiFactory.Column(B_GLeft, B_GRight, B_GUp, B_GDown));
-        genders.Children.Add(UiFactory.Column(UiFactory.Label("L_GenderNot", "Not Seen"), LB_NGender));
+        genders.Children.Add(UiFactory.Column(UiFactory.Label("L_NotSeen", "Not Seen"), LB_NGender));
 
         var forms = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, VerticalAlignment = VerticalAlignment.Center };
-        forms.Children.Add(UiFactory.Column(UiFactory.Label("L_FormSeen", "Seen"), LB_Form));
+        forms.Children.Add(UiFactory.Column(UiFactory.Label("L_FormSeen", seenText), LB_Form));
         forms.Children.Add(UiFactory.Column(B_FLeft, B_FRight, B_FUp, B_FDown));
-        forms.Children.Add(UiFactory.Column(UiFactory.Label("L_FormNot", "Not Seen"), LB_NForm));
+        forms.Children.Add(UiFactory.Column(UiFactory.Label("L_FormNot", notSeenText), LB_NForm));
 
         var right = UiFactory.Column(
             UiFactory.Row(UiFactory.Label("L_goto", "goto:"), CB_Species),
@@ -116,7 +122,7 @@ public sealed class Pokedex4Window : SaveEditorWindow
             new GroupBoxView("GB_Forms", "Forms", forms),
             GB_Language,
             UiFactory.Row(B_GiveAll, B_Modify),
-            UiFactory.Row(UiFactory.Label("L_DexUpgraded", "Dex Mode:"), CB_DexUpgraded));
+            UiFactory.Row(UiFactory.Label("mnuUpgraded", "Dex Upgrade"), CB_DexUpgraded));
 
         var body = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
         body.Children.Add(LB_Species);

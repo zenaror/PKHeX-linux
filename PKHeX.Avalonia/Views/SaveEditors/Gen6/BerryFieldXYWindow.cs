@@ -47,7 +47,7 @@ public sealed class BerryFieldXYWindow : Window
 
         UiFactory.AddFormRow(grid, 0, UiFactory.Label("L_Berry", "Berry:"), Fields[0]);
         for (int i = 1; i < Fields.Length; i++)
-            UiFactory.AddFormRow(grid, i, UiFactory.Label($"L_u{i}", $"Unknown {i}:"), Fields[i]);
+            UiFactory.AddFormRow(grid, i, UiFactory.Label($"L_u{i}", i.ToString()), Fields[i]); // WinForms labels them 1-7
 
         var note = UiFactory.Label("L_Unfinished", "Unfinished - Needs More Research");
         note.SetForeColor(ColorUtilAvalonia.ColorWarn);
@@ -58,12 +58,17 @@ public sealed class BerryFieldXYWindow : Window
 
         var B_Cancel = UiFactory.Button("B_Cancel", "Cancel");
         B_Cancel.MinWidth = 80;
-        B_Cancel.HorizontalAlignment = HorizontalAlignment.Right;
         B_Cancel.Click += (_, _) => Close();
+        // WinForms shows a disabled Save button next to Cancel: the viewer writes nothing back.
+        var B_Save = UiFactory.Button("B_Save", "Save");
+        B_Save.MinWidth = 80;
+        B_Save.IsEnabled = false;
+        var buttons = UiFactory.Row(B_Cancel, B_Save);
+        buttons.HorizontalAlignment = HorizontalAlignment.Right;
 
         var root = new DockPanel { Margin = new global::Avalonia.Thickness(10) };
-        DockPanel.SetDock(B_Cancel, Dock.Bottom);
-        root.Children.Add(B_Cancel);
+        DockPanel.SetDock(buttons, Dock.Bottom);
+        root.Children.Add(buttons);
         root.Children.Add(body);
         Content = root;
         KeyDown += (_, e) => { if (e.Key == global::Avalonia.Input.Key.Escape) Close(); };

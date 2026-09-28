@@ -96,8 +96,10 @@ public sealed class InventoryWindow : SaveEditorWindow
         giveMenu.Items.Add(giveModify);
         sortMenu.Items.Add(mnuSortName);
         sortMenu.Items.Add(mnuSortNameReverse);
+        sortMenu.Items.Add(new Separator()); // toolStripSeparator2
         sortMenu.Items.Add(mnuSortCount);
         sortMenu.Items.Add(mnuSortCountReverse);
+        sortMenu.Items.Add(new Separator()); // toolStripSeparator1
         sortMenu.Items.Add(mnuSortIndex);
         sortMenu.Items.Add(mnuSortIndexReverse);
         B_GiveAll.Flyout = giveMenu;

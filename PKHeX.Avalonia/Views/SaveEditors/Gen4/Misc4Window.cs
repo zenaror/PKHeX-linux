@@ -141,7 +141,7 @@ public sealed class Misc4Window : SaveEditorWindow
 
     #endregion
 
-    public Misc4Window(SAV4 sav) : base("SAV_Misc4", "Misc Edits")
+    public Misc4Window(SAV4 sav) : base("SAV_Misc4", "Misc Editor")
     {
         SAV = (SAV4)(Origin = sav).Clone();
 

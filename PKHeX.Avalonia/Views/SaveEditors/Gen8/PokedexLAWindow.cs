@@ -20,6 +20,13 @@ namespace PKHeX.Avalonia.Views.SaveEditors.Gen8;
 public sealed class PokedexLAWindow : SaveEditorWindow
 {
     private const int FlagCount = 8;
+
+    /// <summary>Captions of the eight per-form flags, in the WinForms order (CHK_S0..CHK_S7).</summary>
+    private static readonly string[] FlagCaptions =
+    [
+        "Male", "Female", "Alpha Male", "Alpha Female",
+        "Shiny Male", "Shiny Female", "Shiny Alpha Male", "Shiny Alpha Female",
+    ];
     private const int MaxTasks = 10;
 
     private readonly SAV8LA Origin;
@@ -53,22 +60,22 @@ public sealed class PokedexLAWindow : SaveEditorWindow
     private readonly CheckBox CHK_A = UiFactory.Check("CHK_A", "Alpha");
     private readonly CheckBox CHK_S = UiFactory.Check("CHK_S", "Shiny");
     private readonly CheckBox CHK_G = UiFactory.Check("CHK_G", "Female");
-    private readonly CheckBox CHK_Seen = UiFactory.Check("CHK_Seen", "Ever Updated");
+    private readonly CheckBox CHK_Seen = UiFactory.Check("CHK_Seen", "Seen");
     private readonly CheckBox CHK_Complete = UiFactory.Check("CHK_Complete", "Complete");
     private readonly CheckBox CHK_Perfect = UiFactory.Check("CHK_Perfect", "Perfect");
     private readonly NumericTextBox MTB_UpdateIndex = UiFactory.Numeric("MTB_UpdateIndex", 5, 80);
     private readonly NumericTextBox MTB_ResearchLevelReported = UiFactory.Numeric("MTB_ResearchLevelReported", 5, 80);
     private readonly NumericTextBox MTB_ResearchLevelUnreported = UiFactory.Numeric("MTB_ResearchLevelUnreported", 5, 80);
 
-    private readonly CheckBox CHK_MinAndMax = UiFactory.Check("CHK_MinAndMax", "Has Min/Max");
+    private readonly CheckBox CHK_MinAndMax = UiFactory.Check("CHK_MinAndMax", "Has Both Min & Max");
     private readonly TextBox TB_MinHeight = UiFactory.Text("TB_MinHeight", 10, 90);
     private readonly TextBox TB_MaxHeight = UiFactory.Text("TB_MaxHeight", 10, 90);
     private readonly TextBox TB_MinWeight = UiFactory.Text("TB_MinWeight", 10, 90);
     private readonly TextBox TB_MaxWeight = UiFactory.Text("TB_MaxWeight", 10, 90);
-    private readonly TextBlock L_TheoryHeight = UiFactory.Label("L_TheoryHeight", string.Empty);
-    private readonly TextBlock L_TheoryWeight = UiFactory.Label("L_TheoryWeight", string.Empty);
+    private readonly TextBlock L_TheoryHeight = UiFactory.Label("L_TheoryHeight", "-");
+    private readonly TextBlock L_TheoryWeight = UiFactory.Label("L_TheoryWeight", "-");
 
-    private readonly Button B_Report = UiFactory.Button("B_Report", "Report Research");
+    private readonly Button B_Report = UiFactory.Button("B_Report", "Report Data");
     private readonly Button B_AdvancedResearch = UiFactory.Button("B_AdvancedResearch", "Edit All Tasks...");
     private readonly StackPanel TaskPanel = new() { Orientation = Orientation.Vertical, Spacing = 3 };
 
@@ -84,9 +91,10 @@ public sealed class PokedexLAWindow : SaveEditorWindow
 
         for (int i = 0; i < FlagCount; i++)
         {
-            CHK_SeenWild[i] = UiFactory.Check($"CHK_S{i}", i.ToString());
-            CHK_Obtained[i] = UiFactory.Check($"CHK_O{i}", i.ToString());
-            CHK_CaughtWild[i] = UiFactory.Check($"CHK_C{i}", i.ToString());
+            var caption = FlagCaptions[i];
+            CHK_SeenWild[i] = UiFactory.Check($"CHK_S{i}", caption);
+            CHK_Obtained[i] = UiFactory.Check($"CHK_O{i}", caption);
+            CHK_CaughtWild[i] = UiFactory.Check($"CHK_C{i}", caption);
         }
         for (int i = 0; i < MaxTasks; i++)
         {
@@ -147,40 +155,44 @@ public sealed class PokedexLAWindow : SaveEditorWindow
         LB_Species.ItemsSource = SpeciesItems;
         LB_Forms.ItemsSource = FormItems;
 
-        var flags = UiFactory.FormGrid(4);
-        UiFactory.AddFormRow(flags, 0, UiFactory.Label("L_SeenWild", "Seen in Wild:"), UiFactory.Row(CHK_SeenWild));
-        UiFactory.AddFormRow(flags, 1, UiFactory.Label("L_Obtained", "Obtained:"), UiFactory.Row(CHK_Obtained));
-        UiFactory.AddFormRow(flags, 2, UiFactory.Label("L_CaughtWild", "Caught in Wild:"), UiFactory.Row(CHK_CaughtWild));
-        UiFactory.AddFormRow(flags, 3, null, UiFactory.Row(CHK_Solitude));
+        // Three flag groups, each with the eight gender/alpha/shiny checkboxes (SAV_PokedexLA.Designer.cs).
+        var seenWild = new GroupBoxView("GB_SeenInWild", "Seen in the Wild", UiFactory.Column(CHK_SeenWild));
+        var obtained = new GroupBoxView("GB_Obtained", "Obtained", UiFactory.Column(CHK_Obtained));
+        var caughtWild = new GroupBoxView("GB_CaughtInWild", "Caught in the Wild", UiFactory.Column(CHK_CaughtWild));
 
-        var display = UiFactory.FormGrid(3);
-        UiFactory.AddFormRow(display, 0, UiFactory.Label("L_DisplayForm", "Displayed Form:"), CB_DisplayForm);
-        UiFactory.AddFormRow(display, 1, null, UiFactory.Row(CHK_A, CHK_S, CHK_G));
-        UiFactory.AddFormRow(display, 2, null, UiFactory.Row(CHK_Seen, CHK_Complete, CHK_Perfect));
+        var displayed = new GroupBoxView("GB_Displayed", "Displayed", UiFactory.Column(CHK_G, CHK_S, CHK_A));
+        var displayColumn = UiFactory.Column(
+            UiFactory.Label("L_DisplayedForm", "Displayed Form:"),
+            CB_DisplayForm,
+            displayed);
 
-        var research = UiFactory.FormGrid(3);
-        UiFactory.AddFormRow(research, 0, UiFactory.Label("L_UpdateIndex", "Update Index:"), MTB_UpdateIndex);
-        UiFactory.AddFormRow(research, 1, UiFactory.Label("L_ResearchReported", "Research (Reported):"), MTB_ResearchLevelReported);
-        UiFactory.AddFormRow(research, 2, UiFactory.Label("L_ResearchUnreported", "Research (Pending):"), UiFactory.Row(MTB_ResearchLevelUnreported, B_Report, B_AdvancedResearch));
+        // Research tasks group: the ten task rows, then the summary row along the bottom.
+        var researchSummary = UiFactory.Row(
+            UiFactory.Label("L_UpdateIndex", "Index:"), MTB_UpdateIndex,
+            UiFactory.Label("L_ResearchLevelReported", "Reported:"), MTB_ResearchLevelReported,
+            UiFactory.Label("L_ResearchLevelUnreported", "Unreported:"), MTB_ResearchLevelUnreported,
+            CHK_Seen, CHK_Complete, CHK_Perfect, B_Report, B_AdvancedResearch);
+        var researchTasks = new GroupBoxView("GB_ResearchTasks", "Research Tasks", UiFactory.Column(TaskPanel, researchSummary));
 
-        var sizes = UiFactory.FormGrid(5);
-        UiFactory.AddFormRow(sizes, 0, null, CHK_MinAndMax);
-        UiFactory.AddFormRow(sizes, 1, UiFactory.Label("L_Height", "Height min/max:"), UiFactory.Row(TB_MinHeight, TB_MaxHeight));
-        UiFactory.AddFormRow(sizes, 2, UiFactory.Label("L_Weight", "Weight min/max:"), UiFactory.Row(TB_MinWeight, TB_MaxWeight));
-        UiFactory.AddFormRow(sizes, 3, UiFactory.Label("L_TheoryHeightL", "Possible height:"), L_TheoryHeight);
-        UiFactory.AddFormRow(sizes, 4, UiFactory.Label("L_TheoryWeightL", "Possible weight:"), L_TheoryWeight);
+        // Statistics group: the recorded extremes, with the possible range under each pair.
+        var height = new GroupBoxView("GB_Height", "Height", UiFactory.Column(
+            UiFactory.Row(TB_MinHeight, UiFactory.Label("L_ConnectHeight", "-"), TB_MaxHeight),
+            L_TheoryHeight));
+        var weight = new GroupBoxView("GB_Weight", "Weight", UiFactory.Column(
+            UiFactory.Row(TB_MinWeight, UiFactory.Label("L_ConnectWeight", "-"), TB_MaxWeight),
+            L_TheoryWeight));
+        var statistics = new GroupBoxView("GB_Statistics", "Statistics", UiFactory.Column(CHK_MinAndMax, height, weight));
 
-        var right = UiFactory.Column(
-            UiFactory.Row(UiFactory.Label("L_goto", "goto:"), CB_Species),
-            new GroupBoxView("GB_Flags", "Flags", flags),
-            new GroupBoxView("GB_Display", "Displayed", display),
-            new GroupBoxView("GB_Research", "Research", research),
-            new GroupBoxView("GB_Tasks", "Research Tasks", TaskPanel),
-            new GroupBoxView("GB_Size", "Size Records", sizes));
+        var groups = UiFactory.Row(seenWild, obtained, caughtWild, statistics, displayColumn);
+        groups.Spacing = 8;
+
+        var right = UiFactory.Column(CHK_Solitude, researchTasks, groups);
 
         var body = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
-        body.Children.Add(LB_Species);
-        body.Children.Add(UiFactory.Column(UiFactory.Label("L_Forms", "Forms"), LB_Forms));
+        body.Children.Add(UiFactory.Column(
+            UiFactory.Row(UiFactory.Label("L_goto", "goto:"), CB_Species),
+            LB_Species,
+            LB_Forms));
         body.Children.Add(new ScrollViewer { Content = right, MaxHeight = 640 });
         SetBody(body);
 

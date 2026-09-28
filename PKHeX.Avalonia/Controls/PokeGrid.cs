@@ -48,6 +48,36 @@ public sealed class PokeGrid : Canvas
         return (w, h);
     }
 
+    /// <summary>Rows that fit in <paramref name="availableHeight"/> pixels (port of the WinForms <c>PokeGrid.GetMaxRowCount</c>).</summary>
+    public static int GetMaxRowCount(int availableHeight, int spriteHeight)
+    {
+        const int heightOffset = (2 * padEdge) + border;
+        var rowHeight = spriteHeight + border;
+        if (rowHeight <= 0)
+            return 1;
+        return System.Math.Max(1, (availableHeight - heightOffset) / rowHeight);
+    }
+
+    /// <summary>
+    /// Row count for a database sprite grid: the requested count clamped to [5, 20] and then capped to what fits on
+    /// the window's screen, as the WinForms database forms do in their <c>GetGridHeight</c>.
+    /// </summary>
+    /// <param name="window">Window the grid lives in; its screen bounds the grid.</param>
+    /// <param name="requestedRows">Row count from the settings.</param>
+    /// <param name="nonGridHeight">Vertical space the window needs for everything except the grid.</param>
+    public static int GetDatabaseRowCount(Window window, int requestedRows, int nonGridHeight)
+    {
+        requestedRows = System.Math.Clamp(requestedRows, 5, 20);
+        var screens = window.Screens;
+        var screen = screens.Primary ?? (screens.All.Count != 0 ? screens.All[0] : null);
+        if (screen is null)
+            return requestedRows; // no screen info (headless); trust the setting
+
+        var available = (int)(screen.WorkingArea.Height / screen.Scaling) - nonGridHeight;
+        var maxRows = GetMaxRowCount(available, SpriteUtil.Spriter.Height);
+        return System.Math.Max(1, System.Math.Min(requestedRows, maxRows));
+    }
+
     private void Generate(int width, int height)
     {
         Children.Clear();

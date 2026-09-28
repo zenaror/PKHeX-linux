@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using Avalonia.Media;
 using PKHeX.Avalonia.Controls;
 using PKHeX.Avalonia.Drawing;
 using PKHeX.Avalonia.Localization;
@@ -38,13 +39,13 @@ public sealed class Misc5Window : SaveEditorWindow
 
     // Main tab
     private readonly CheckedListView CLB_FlyDest = new() { Name = "CLB_FlyDest", Width = 260, Height = 260 };
-    private readonly Button B_AllFlyDest = UiFactory.Button("B_AllFlyDest", "All");
+    private readonly Button B_AllFlyDest = UiFactory.Button("B_AllFlyDest", "Check All");
     private readonly ComboBox CB_Roamer641 = UiFactory.Combo("CB_Roamer641", 170);
     private readonly ComboBox CB_Roamer642 = UiFactory.Combo("CB_Roamer642", 170);
     private readonly ComboBox CB_RoamStatus = UiFactory.Combo("CB_RoamStatus", 170);
-    private readonly CheckBox CHK_LibertyPass = UiFactory.Check("CHK_LibertyPass", "Liberty Pass");
+    private readonly CheckBox CHK_LibertyPass = UiFactory.Check("CHK_LibertyPass", "Activate LibertyPass");
     private readonly CheckedListView CLB_KeySystem = new() { Name = "CLB_KeySystem", Width = 260, Height = 220 };
-    private readonly Button B_AllKeys = UiFactory.Button("B_AllKeys", "All");
+    private readonly Button B_AllKeys = UiFactory.Button("B_AllKeys", "Check All");
     private GroupBoxView GB_Roamer = null!;
     private GroupBoxView GB_KeySystem = null!;
 
@@ -58,10 +59,10 @@ public sealed class Misc5Window : SaveEditorWindow
     private readonly ComboBox CB_PassPower3 = UiFactory.Combo("CB_PassPower3", 200);
     private readonly ListBox LB_FunfestMissions = new() { Name = "LB_FunfestMissions", Width = 240, Height = 240 };
     private readonly ObservableCollection<string> MissionItems = [];
-    private readonly Button B_FunfestMissions = UiFactory.Button("B_FunfestMissions", "Unlock All");
+    private readonly Button B_FunfestMissions = UiFactory.Button("B_FunfestMissions", "Unlock All (w/o No.0)");
     private readonly TextBlock L_FMUnlocked = UiFactory.Label("L_FMUnlocked", "Unlocked");
     private readonly TextBlock L_FMLocked = UiFactory.Label("L_FMLocked", "Locked");
-    private readonly CheckBox CHK_FMNew = UiFactory.Check("CHK_FMNew", "New");
+    private readonly CheckBox CHK_FMNew = UiFactory.Check("CHK_FMNew", "NEW");
     private readonly ComboBox CB_FMLevel = UiFactory.Combo("CB_FMLevel", 140);
     private readonly NumericUpDown NUD_FMBestScore = UiFactory.NumericUpDown("NUD_FMBestScore", 0, ushort.MaxValue, 110);
     private readonly NumericUpDown NUD_FMBestTotal = UiFactory.NumericUpDown("NUD_FMBestTotal", 0, ushort.MaxValue, 110);
@@ -76,7 +77,7 @@ public sealed class Misc5Window : SaveEditorWindow
 
     // Entree forest
     private readonly NumericUpDown NUD_Unlocked = UiFactory.NumericUpDown("NUD_Unlocked", 2, 8, 110);
-    private readonly CheckBox CHK_Area9 = UiFactory.Check("CHK_Area9", "9th Area");
+    private readonly CheckBox CHK_Area9 = UiFactory.Check("CHK_Area9", "Area 9 Unlocked:");
     private readonly ComboBox CB_Areas = UiFactory.Combo("CB_Areas", 180);
     private readonly ListBox LB_Slots = new() { Name = "LB_Slots", Width = 180, Height = 240 };
     private readonly ObservableCollection<string> SlotItems = [];
@@ -87,27 +88,27 @@ public sealed class Misc5Window : SaveEditorWindow
     private readonly TextBlock L_Form = UiFactory.Label("L_Form", "Form:");
     private readonly NumericUpDown NUD_Animation = UiFactory.NumericUpDown("NUD_Animation", 0, byte.MaxValue, 110);
     private readonly Image PB_SlotPreview = UiFactory.Picture("PB_SlotPreview", 68);
-    private readonly Button B_RandForest = UiFactory.Button("B_RandForest", "Randomize");
-    private readonly Button B_DumpFC = UiFactory.Button("B_DumpFC", "Export");
-    private readonly Button B_ImportFC = UiFactory.Button("B_ImportFC", "Import");
+    private readonly Button B_RandForest = UiFactory.Button("B_RandForest", "Randomize All Areas");
+    private readonly Button B_DumpFC = UiFactory.Button("B_DumpFC", "Dump Data");
+    private readonly Button B_ImportFC = UiFactory.Button("B_ImportFC", "Import Data");
     private TabItem TAB_BWCityForest = null!;
 
     // Subway
     private readonly NumericUpDown NUD_CurrentType = UiFactory.NumericUpDown("NUD_CurrentType", 0, byte.MaxValue, 110);
     private readonly NumericUpDown NUD_CurrentBattle = UiFactory.NumericUpDown("NUD_CurrentBattle", 0, ushort.MaxValue, 110);
-    private readonly CheckBox CHK_Subway0 = UiFactory.Check("CHK_Subway0", "Flag 0");
-    private readonly CheckBox CHK_Subway1 = UiFactory.Check("CHK_Subway1", "Flag 1");
-    private readonly CheckBox CHK_Subway2 = UiFactory.Check("CHK_Subway2", "Flag 2");
-    private readonly CheckBox CHK_Subway7 = UiFactory.Check("CHK_Subway7", "Flag 7");
-    private readonly CheckBox CHK_SuperSingle = UiFactory.Check("CHK_SuperSingle", "Super Single");
-    private readonly CheckBox CHK_SuperDouble = UiFactory.Check("CHK_SuperDouble", "Super Double");
-    private readonly CheckBox CHK_SuperMulti = UiFactory.Check("CHK_SuperMulti", "Super Multi");
-    private readonly CheckBox CHK_SWNPCMet = UiFactory.Check("CHK_SWNPCMet", "NPC Met");
+    private readonly CheckBox CHK_Subway0 = UiFactory.Check("CHK_Subway0", "Flag0");
+    private readonly CheckBox CHK_Subway1 = UiFactory.Check("CHK_Subway1", "Flag1");
+    private readonly CheckBox CHK_Subway2 = UiFactory.Check("CHK_Subway2", "Flag2");
+    private readonly CheckBox CHK_Subway7 = UiFactory.Check("CHK_Subway7", "Flag7");
+    private readonly CheckBox CHK_SuperSingle = UiFactory.Check("CHK_SuperSingle", "Super Singles?");
+    private readonly CheckBox CHK_SuperDouble = UiFactory.Check("CHK_SuperDouble", "Super Doubles?");
+    private readonly CheckBox CHK_SuperMulti = UiFactory.Check("CHK_SuperMulti", "Super Multi?");
+    private readonly CheckBox CHK_SWNPCMet = UiFactory.Check("CHK_SWNPCMet", "NPC met");
     private readonly SubwayRow[] SubwayRows;
 
     // Musical
     private readonly CheckedListView CLB_MusicalProps = new() { Name = "CLB_MusicalProps", Width = 300, Height = 420 };
-    private readonly Button B_UnlockAllProps = UiFactory.Button("B_UnlockAllProps", "Unlock All");
+    private readonly Button B_UnlockAllProps = UiFactory.Button("B_UnlockAllProps", "Unlock All Props");
 
     // Records
     private readonly NumericUpDown NUD_Record16 = UiFactory.NumericUpDown("NUD_Record16", 0, ushort.MaxValue, 110);
@@ -127,12 +128,14 @@ public sealed class Misc5Window : SaveEditorWindow
         swp = SAV.BattleSubwayPlay;
         sw = SAV.BattleSubway;
         PropNames = Util.GetStringList("props", MainWindow.CurrentLanguage);
+        // Control names follow the WinForms designer so the lang_*.txt keys apply; the checkbox captions
+        // are the ones the Normal/Super table shows (the Super row's cells are unlabeled upstream).
         SubwayRows =
         [
-            new("Single", "L_SinglePast"), new("Double", "L_DoublePast"),
-            new("Multi NPC", "L_MultiNpcPast"), new("Multi Friends", "L_MultiFriendsPast"),
-            new("Super Single", "L_SSinglePast"), new("Super Double", "L_SDoublePast"),
-            new("Super Multi NPC", "L_SMultiNpcPast"), new("Super Multi Friends", "L_SMultiFriendsPast"),
+            new("Single", "CHK_SingleSet", "Single"), new("Double", "CHK_DoubleSet", "Double"),
+            new("MultiNpc", "CHK_MultiNPCSet", "NPC"), new("MultiFriends", "CHK_MultiFriendsSet", "Friends"),
+            new("SSingle", "CHK_SuperSingleSet", ""), new("SDouble", "CHK_SuperDoubleSet", ""),
+            new("SMultiNpc", "CHK_SuperMultiNPCSet", ""), new("SMultiFriends", "CHK_SuperMultiFriendsSet", ""),
         ];
 
         BuildLayout();
@@ -154,55 +157,53 @@ public sealed class Misc5Window : SaveEditorWindow
     {
         var tabs = new TabControl { Name = "TC_Misc" };
 
-        GB_Roamer = new GroupBoxView("GB_Roamer", "Roamers", UiFactory.Column(
-            UiFactory.Row(UiFactory.Label("L_Roamer1", "Tornadus/Thundurus:"), CB_Roamer641),
-            UiFactory.Row(UiFactory.Label("L_Roamer2", "Second:"), CB_Roamer642),
-            UiFactory.Row(UiFactory.Label("L_RoamStatus", "Status:"), CB_RoamStatus)));
-        GB_KeySystem = new GroupBoxView("GB_KeySystem", "Key System", UiFactory.Column(CLB_KeySystem, B_AllKeys));
+        GB_Roamer = new GroupBoxView("GB_Roamer", "Roamer", UiFactory.Column(
+            UiFactory.Row(UiFactory.Label("L_Roamer641", "Tornadus"), CB_Roamer641),
+            UiFactory.Row(UiFactory.Label("L_Roamer642", "Thundurus"), CB_Roamer642),
+            UiFactory.Row(UiFactory.Label("L_RoamStatus", "Roam status"), CB_RoamStatus)));
+        GB_KeySystem = new GroupBoxView("GB_KeySystem", "Unlocked Keys", UiFactory.Column(CLB_KeySystem, B_AllKeys));
+
+        // The record counters live on the Main tab, as they do in WinForms.
+        var records = UiFactory.FormGrid(2);
+        UiFactory.AddFormRow(records, 0, UiFactory.Label("L_Record16", "Record:"),
+            UiFactory.Row(NUD_Record16, UiFactory.Label("L_Record16V", "Value:"), NUD_Record16V));
+        UiFactory.AddFormRow(records, 1, UiFactory.Label("L_Record32", "Record:"),
+            UiFactory.Row(NUD_Record32, UiFactory.Label("L_Record32V", "Value:"), NUD_Record32V));
 
         var main = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
-        main.Children.Add(UiFactory.Column(UiFactory.Label("L_FlyDest", "Fly Destinations"), CLB_FlyDest, B_AllFlyDest));
-        main.Children.Add(UiFactory.Column(GB_Roamer, CHK_LibertyPass, GB_KeySystem));
+        main.Children.Add(new GroupBoxView("GB_FlyDest", "Fly Destination", UiFactory.Column(CLB_FlyDest, B_AllFlyDest)));
+        main.Children.Add(UiFactory.Column(GB_Roamer, CHK_LibertyPass, GB_KeySystem, records));
         tabs.Items.Add(new TabItem { Name = "TAB_Main", Header = "Main", Content = main });
-
-        // Black City / White Forest
-        TAB_BWCityForest = new TabItem
-        {
-            Name = "TAB_BWCityForest",
-            Header = "City/Forest",
-            Content = UiFactory.Column(
-                UiFactory.Label("L_ForestCity", "Black City / White Forest block"),
-                UiFactory.Row(B_DumpFC, B_ImportFC)),
-        };
-        tabs.Items.Add(TAB_BWCityForest);
 
         // Entralink
         var levels = UiFactory.FormGrid(2);
-        UiFactory.AddFormRow(levels, 0, UiFactory.Label("L_EntreeWhite", "White Forest Lv:"), UiFactory.Row(NUD_EntreeWhiteLV, NUD_EntreeWhiteEXP));
-        UiFactory.AddFormRow(levels, 1, UiFactory.Label("L_EntreeBlack", "Black City Lv:"), UiFactory.Row(NUD_EntreeBlackLV, NUD_EntreeBlackEXP));
+        UiFactory.AddFormRow(levels, 0, UiFactory.Label("L_EntreeWhite", "W"), UiFactory.Row(NUD_EntreeWhiteLV, NUD_EntreeWhiteEXP));
+        UiFactory.AddFormRow(levels, 1, UiFactory.Label("L_EntreeBlack", "B"), UiFactory.Row(NUD_EntreeBlackLV, NUD_EntreeBlackEXP));
 
         GB_PassPowers = new GroupBoxView("GB_PassPowers", "Pass Powers", UiFactory.Column(CB_PassPower1, CB_PassPower2, CB_PassPower3));
 
         PAN_MissionMeta = UiFactory.Column(
-            UiFactory.Row(UiFactory.Label("L_FMHosted", "Hosted:"), NUD_FMHosted),
-            UiFactory.Row(UiFactory.Label("L_FMParticipated", "Participated:"), NUD_FMParticipated),
-            UiFactory.Row(UiFactory.Label("L_FMCompleted", "Completed:"), NUD_FMCompleted),
-            UiFactory.Row(UiFactory.Label("L_FMTopScores", "Top Scores:"), NUD_FMTopScores),
-            UiFactory.Row(UiFactory.Label("L_FMMostParticipants", "Most Participants:"), NUD_FMMostParticipants));
+            UiFactory.Row(UiFactory.Label("L_FMHosted", "Hosted"), NUD_FMHosted),
+            UiFactory.Row(UiFactory.Label("L_FMParticipated", "Participated"), NUD_FMParticipated),
+            UiFactory.Row(UiFactory.Label("L_FMCompleted", "Completed"), NUD_FMCompleted),
+            UiFactory.Row(UiFactory.Label("L_FMTopScore", "Top Score"), NUD_FMTopScores),
+            UiFactory.Row(UiFactory.Label("L_FMParticipants", "Most Participants"), NUD_FMMostParticipants));
 
         var missionDetail = UiFactory.Column(
             UiFactory.Row(L_FMUnlocked, L_FMLocked),
             CHK_FMNew,
-            UiFactory.Row(UiFactory.Label("L_FMLevel", "Level:"), CB_FMLevel),
-            UiFactory.Row(UiFactory.Label("L_FMBestScore", "Best Score:"), NUD_FMBestScore),
-            UiFactory.Row(UiFactory.Label("L_FMBestTotal", "Best Total:"), NUD_FMBestTotal),
+            CB_FMLevel, // the WinForms combo has no label either
+            UiFactory.Row(UiFactory.Label("L_FMBestScore", "Score"), NUD_FMBestScore),
+            UiFactory.Row(UiFactory.Label("L_FMBestTotal", "Best Records Total"), NUD_FMBestTotal),
             B_FunfestMissions);
         var missions = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
         missions.Children.Add(LB_FunfestMissions);
         missions.Children.Add(missionDetail);
         GB_FunfestMissions = new GroupBoxView("GB_FunfestMissions", "Funfest Missions", missions);
 
-        var entralink = UiFactory.Column(levels, GB_PassPowers, PAN_MissionMeta, GB_FunfestMissions);
+        var entralink = UiFactory.Column(
+            new GroupBoxView("GB_EntreeLevel", "Entree Level", levels),
+            GB_PassPowers, PAN_MissionMeta, GB_FunfestMissions);
         tabs.Items.Add(new TabItem { Name = "TAB_Entralink", Header = "Entralink", Content = new ScrollViewer { Content = entralink, MaxHeight = 560 } });
 
         // Entree Forest
@@ -212,45 +213,58 @@ public sealed class Misc5Window : SaveEditorWindow
         UiFactory.AddFormRow(slotDetail, 2, UiFactory.Label("L_Gender", "Gender:"), CB_Gender);
         UiFactory.AddFormRow(slotDetail, 3, UiFactory.Label("L_Move", "Move:"), CB_Move);
         UiFactory.AddFormRow(slotDetail, 4, UiFactory.Label("L_Animation", "Animation:"), NUD_Animation);
-        UiFactory.AddFormRow(slotDetail, 5, UiFactory.Label("L_Unlocked", "Areas Unlocked:"), UiFactory.Row(NUD_Unlocked, CHK_Area9));
+        UiFactory.AddFormRow(slotDetail, 5, UiFactory.Label("L_Area18", "Areas 1-8 Unlocked:"), UiFactory.Row(NUD_Unlocked, CHK_Area9));
 
         var forest = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
         forest.Children.Add(UiFactory.Column(CB_Areas, LB_Slots, B_RandForest));
         forest.Children.Add(slotDetail);
-        tabs.Items.Add(new TabItem { Name = "TAB_Forest", Header = "Entree Forest", Content = forest });
+        tabs.Items.Add(new TabItem { Name = "TAB_Forest", Header = "Forest", Content = forest });
 
-        // Subway
-        var subwayGrid = new Grid { ColumnSpacing = 6, RowSpacing = 3 };
-        for (int i = 0; i < 4; i++)
-            subwayGrid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
-        for (int i = 0; i < SubwayRows.Length; i++)
-        {
-            subwayGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
-            var row = SubwayRows[i];
-            UiFactory.SetRowCol(row.Title, i, 0);
-            UiFactory.SetRowCol(row.Set, i, 1);
-            UiFactory.SetRowCol(row.Past, i, 2);
-            UiFactory.SetRowCol(row.Record, i, 3);
-            subwayGrid.Children.Add(row.Title);
-            subwayGrid.Children.Add(row.Set);
-            subwayGrid.Children.Add(row.Past);
-            subwayGrid.Children.Add(row.Record);
-        }
-        var subway = UiFactory.Column(
-            UiFactory.Row(UiFactory.Label("L_CurrentType", "Current Type:"), NUD_CurrentType, UiFactory.Label("L_CurrentBattle", "Battle:"), NUD_CurrentBattle),
+        // Subway: the same group boxes the WinForms tab has.
+        var currentData = new GroupBoxView("GB_CurrentData", "Current run data", UiFactory.Row(
+            UiFactory.Label("L_CurrentType", "Type"), NUD_CurrentType,
+            UiFactory.Label("L_CurrentBattle", "Battle No."), NUD_CurrentBattle));
+        var subwayChecks = new GroupBoxView("GB_SubwayChecks", "Subway Flags", UiFactory.Column(
             UiFactory.Row(CHK_Subway0, CHK_Subway1, CHK_Subway2, CHK_Subway7),
-            UiFactory.Row(CHK_SuperSingle, CHK_SuperDouble, CHK_SuperMulti, CHK_SWNPCMet),
-            subwayGrid);
-        tabs.Items.Add(new TabItem { Name = "TAB_Subway", Header = "Battle Subway", Content = new ScrollViewer { Content = subway, MaxHeight = 560 } });
+            UiFactory.Row(CHK_SuperSingle, CHK_SuperDouble, CHK_SuperMulti, CHK_SWNPCMet)));
 
-        // Musical
-        tabs.Items.Add(new TabItem { Name = "TAB_Musical", Header = "Musical", Content = UiFactory.Column(CLB_MusicalProps, B_UnlockAllProps) });
+        var sets = UiFactory.FormGrid(2);
+        UiFactory.AddFormRow(sets, 0, UiFactory.Label("L_NormalSets", "Normal"),
+            UiFactory.Row(SubwayRows[0].Set, SubwayRows[1].Set, SubwayRows[2].Set, SubwayRows[3].Set));
+        UiFactory.AddFormRow(sets, 1, UiFactory.Label("L_SuperSets", "Super"),
+            UiFactory.Row(SubwayRows[4].Set, SubwayRows[5].Set, SubwayRows[6].Set, SubwayRows[7].Set));
+        var subwaySets = new GroupBoxView("GB_SubwaySets", "Is run active?", sets);
 
-        // Records
-        var records = UiFactory.FormGrid(2);
-        UiFactory.AddFormRow(records, 0, UiFactory.Label("L_Record16", "Record (16-bit):"), UiFactory.Row(NUD_Record16, NUD_Record16V));
-        UiFactory.AddFormRow(records, 1, UiFactory.Label("L_Record32", "Record (32-bit):"), UiFactory.Row(NUD_Record32, NUD_Record32V));
-        tabs.Items.Add(new TabItem { Name = "TAB_Records", Header = "Records", Content = records });
+        var normals = UiFactory.Row(
+            new GroupBoxView("GB_Singles", "Singles", SubwayRows[0].BuildBody()),
+            new GroupBoxView("GB_Doubles", "Doubles", SubwayRows[1].BuildBody()),
+            new GroupBoxView("GB_Multi", "Multi", UiFactory.Row(
+                UiFactory.Column(UiFactory.Label("L_MultiNPC", "NPC"), SubwayRows[2].BuildBody()),
+                UiFactory.Column(UiFactory.Label("L_MultiFriends", "Friends"), SubwayRows[3].BuildBody()))));
+        var supers = UiFactory.Row(
+            new GroupBoxView("GB_SuperSingles", "Super Singles", SubwayRows[4].BuildBody()),
+            new GroupBoxView("GB_SuperDoubles", "Super Doubles", SubwayRows[5].BuildBody()),
+            new GroupBoxView("GB_SuperMulti", "Super Multi", UiFactory.Row(
+                UiFactory.Column(UiFactory.Label("L_SMultiNPC", "NPC"), SubwayRows[6].BuildBody()),
+                UiFactory.Column(UiFactory.Label("L_SMultiFriends", "Friends"), SubwayRows[7].BuildBody()))));
+
+        var subway = UiFactory.Column(UiFactory.Row(currentData, subwayChecks), subwaySets, normals, supers);
+        tabs.Items.Add(new TabItem { Name = "TAB_Subway", Header = "Subway", Content = new ScrollViewer { Content = subway, MaxHeight = 560 } });
+
+        // Black City / White Forest (removed again for B2/W2 in ReadMain, as upstream does)
+        var forestCityHelp = UiFactory.Label("L_FC", "Dump data from a white save file and import it into a black one and vice versa, there you can have either city or forest in one save!");
+        forestCityHelp.TextWrapping = TextWrapping.Wrap;
+        forestCityHelp.MaxWidth = 460;
+        TAB_BWCityForest = new TabItem
+        {
+            Name = "TAB_BWCityForest",
+            Header = "WhiteForest/BlackCity",
+            Content = UiFactory.Column(forestCityHelp, UiFactory.Row(B_DumpFC, B_ImportFC)),
+        };
+        tabs.Items.Add(TAB_BWCityForest);
+
+        // Musical (TAB_Muscial: the typo is the WinForms control name, and the lang_*.txt key)
+        tabs.Items.Add(new TabItem { Name = "TAB_Muscial", Header = "Musical", Content = UiFactory.Column(CLB_MusicalProps, B_UnlockAllProps) });
 
         SetBody(tabs);
 
@@ -930,23 +944,31 @@ public sealed class Misc5Window : SaveEditorWindow
     /// <summary>One Battle Subway discipline: whether the current streak is live, plus its past and record streaks.</summary>
     private sealed class SubwayRow
     {
-        public TextBlock Title { get; }
+        public TextBlock PastLabel { get; }
+        public TextBlock RecordLabel { get; }
         public CheckBox Set { get; }
         public NumericUpDown Past { get; }
         public NumericUpDown Record { get; }
-        private readonly string BaseText;
 
-        public SubwayRow(string title, string name)
+        public SubwayRow(string key, string setName, string setText)
         {
-            BaseText = title;
-            Title = UiFactory.Label($"L_{name}", title);
-            Title.MinWidth = 140;
-            Set = UiFactory.Check($"CHK_{name}Set", "Current");
-            Past = UiFactory.NumericUpDown($"NUD_{name}", 0, ushort.MaxValue, 110);
-            Record = UiFactory.NumericUpDown($"NUD_{name}Record", 0, ushort.MaxValue, 110);
+            PastLabel = UiFactory.Label($"L_{key}Past", "Past");
+            RecordLabel = UiFactory.Label($"L_{key}Record", "Record");
+            Set = UiFactory.Check(setName, setText);
+            Past = UiFactory.NumericUpDown($"NUD_{key}Past", 0, ushort.MaxValue, 110);
+            Record = UiFactory.NumericUpDown($"NUD_{key}Record", 0, ushort.MaxValue, 110);
         }
 
-        /// <summary>Mirrors the WinForms label flip between "Current" and "Past".</summary>
-        public void UpdateTitleSuffix() => Title.Text = $"{BaseText} ({(Set.IsChecked == true ? "Current" : "Past")})";
+        /// <summary>Mirrors the WinForms label flip between "Current" and "Past" (English literals upstream too).</summary>
+        public void UpdateTitleSuffix() => PastLabel.Text = Set.IsChecked == true ? "Current" : "Past";
+
+        /// <summary>The past/record rows of one discipline, as the WinForms group box lays them out.</summary>
+        public Control BuildBody()
+        {
+            var grid = UiFactory.FormGrid(2);
+            UiFactory.AddFormRow(grid, 0, PastLabel, Past);
+            UiFactory.AddFormRow(grid, 1, RecordLabel, Record);
+            return grid;
+        }
     }
 }

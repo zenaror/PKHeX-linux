@@ -90,6 +90,7 @@ public sealed class WondercardWindow : SaveEditorWindow
             if (e.Key == Key.Delete)
                 RemoveSelectedFlags();
         };
+        LB_Received.ContextMenu = BuildReceivedMenu();
 
         SetGiftBoxes();
         GetReceivedFlags();
@@ -205,6 +206,18 @@ public sealed class WondercardWindow : SaveEditorWindow
         });
         slot.AddHandler(DragDrop.DropEvent, async (_, e) => await SlotDrop(index, e));
         DragDrop.SetAllowDrop(slot, true);
+    }
+
+    /// <summary>
+    /// Right-click menu of the Received list (WinForms <c>mnuDel</c> / <c>flagDel</c>).
+    /// </summary>
+    private ContextMenu BuildReceivedMenu()
+    {
+        var del = new MenuItem { Name = "flagDel", Header = "Delete" };
+        del.Click += (_, _) => RemoveSelectedFlags();
+        var menu = new ContextMenu { Name = "mnuDel" };
+        menu.Items.Add(del);
+        return menu;
     }
 
     private ContextMenu BuildSlotMenu(int index)

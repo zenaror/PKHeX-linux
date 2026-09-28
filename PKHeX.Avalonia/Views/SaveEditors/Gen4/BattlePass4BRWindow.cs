@@ -4,10 +4,12 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
 using PKHeX.Avalonia.Controls;
+using PKHeX.Avalonia.Controls.Hover;
 using PKHeX.Avalonia.Drawing;
 using PKHeX.Avalonia.Localization;
 using PKHeX.Avalonia.Services;
@@ -52,8 +54,14 @@ public sealed class BattlePass4BRWindow : SaveEditorWindow
     private readonly ListBox LB_Passes = new() { Name = "LB_Passes", Width = 250, Height = 520 };
     private readonly ObservableCollection<string> PassItems = [];
     private readonly PokeGrid Box = new();
+    private readonly ContextMenu SlotMenu = new();
+    private readonly SummaryPreviewer Preview = new();
+    private int MenuIndex = -1;
+    private int GroupSelected = -1;
+    private int SlotSelected = -1;
+    private static global::Avalonia.Media.Imaging.Bitmap? ViewOverlay => SlotUtil.GetTouchTypeBackground(SlotTouchType.Get);
 
-    private readonly TextBox TB_Name = UiFactory.Text("TB_Name", 10, 160);
+    private readonly TextBox TB_Name = UiFactory.Text("TB_Name", 11, 160);
     private readonly ComboBox CB_TrainerTitle = UiFactory.Combo("CB_TrainerTitle", 250);
     private readonly TextBox MT_TID = UiFactory.Text("MT_TID", 5, 90);
     private readonly TextBox MT_SID = UiFactory.Text("MT_SID", 5, 90);
@@ -71,10 +79,10 @@ public sealed class BattlePass4BRWindow : SaveEditorWindow
     private readonly ComboBox CB_Shoes = UiFactory.Combo("CB_Shoes", 200);
     private readonly ComboBox CB_Badge = UiFactory.Combo("CB_Badge", 200);
     private readonly ComboBox CB_Bag = UiFactory.Combo("CB_Bag", 200);
-    private readonly CheckBox CHK_Available = UiFactory.Check("CHK_Available", "Available");
-    private readonly CheckBox CHK_Issued = UiFactory.Check("CHK_Issued", "Issued");
-    private readonly CheckBox CHK_Rental = UiFactory.Check("CHK_Rental", "Rental");
-    private readonly CheckBox CHK_Friend = UiFactory.Check("CHK_Friend", "Friend");
+    private readonly CheckBox CHK_Available = UiFactory.Check("CHK_Available", "Pass Available");
+    private readonly CheckBox CHK_Issued = UiFactory.Check("CHK_Issued", "Pass Issued");
+    private readonly CheckBox CHK_Rental = UiFactory.Check("CHK_Rental", "Rental Pass");
+    private readonly CheckBox CHK_Friend = UiFactory.Check("CHK_Friend", "Friend Pass");
 
     private readonly NumericUpDown[] PartyBox = new NumericUpDown[BattlePass.Count];
     private readonly NumericUpDown[] PartySlot = new NumericUpDown[BattlePass.Count];
@@ -82,21 +90,21 @@ public sealed class BattlePass4BRWindow : SaveEditorWindow
 
     private readonly CheckBox[] PresetChecks = new CheckBox[6];
     private readonly NumericUpDown[] PresetIndexes = new NumericUpDown[6];
-    private readonly TextBox TB_Greeting = UiFactory.Text("TB_Greeting", 60, 340);
-    private readonly TextBox TB_SentOut = Multi("TB_SentOut");
-    private readonly TextBox TB_Shift1 = UiFactory.Text("TB_Shift1", 60, 340);
-    private readonly TextBox TB_Shift2 = UiFactory.Text("TB_Shift2", 60, 340);
-    private readonly TextBox TB_Win = Multi("TB_Win");
-    private readonly TextBox TB_Lose = Multi("TB_Lose");
+    private readonly TextBox TB_Greeting = UiFactory.Text("TB_Greeting", 25, 340);
+    private readonly TextBox TB_SentOut = Multi("TB_SentOut", 27);
+    private readonly TextBox TB_Shift1 = UiFactory.Text("TB_Shift1", 25, 340);
+    private readonly TextBox TB_Shift2 = UiFactory.Text("TB_Shift2", 25, 340);
+    private readonly TextBox TB_Win = Multi("TB_Win", 51);
+    private readonly TextBox TB_Lose = Multi("TB_Lose", 51);
 
-    private readonly TextBox TB_CreatorName = UiFactory.Text("TB_CreatorName", 10, 160);
+    private readonly TextBox TB_CreatorName = UiFactory.Text("TB_CreatorName", 11, 160);
     private readonly TextBox TB_BirthMonth = UiFactory.Text("TB_BirthMonth", 4, 80);
     private readonly TextBox TB_BirthDay = UiFactory.Text("TB_BirthDay", 4, 80);
     private readonly ComboBox CB_Country = UiFactory.Combo("CB_Country", 200);
     private readonly ComboBox CB_Region = UiFactory.Combo("CB_Region", 200);
     private readonly ComboBox CB_Language = UiFactory.Combo("CB_Language", 170);
-    private readonly TextBox TB_SelfIntroduction = Multi("TB_SelfIntroduction");
-    private readonly TextBox TB_RegionCode = UiFactory.Text("TB_RegionCode", 10, 140);
+    private readonly TextBox TB_SelfIntroduction = Multi("TB_SelfIntroduction", 53);
+    private readonly TextBox TB_RegionCode = UiFactory.Text("TB_RegionCode", 4, 140);
     private readonly TextBox MT_PlayerID = UiFactory.Text("MT_PlayerID", 16, 180);
 
     private readonly NumericUpDown NUD_Battles = Record("NUD_Battles");
@@ -109,8 +117,8 @@ public sealed class BattlePass4BRWindow : SaveEditorWindow
         "Sunset Colosseum", "Stargazer Colosseum",
     ];
 
-    private readonly Button B_FDelete = UiFactory.Button("B_FDelete", "Delete");
-    private static TextBox Multi(string name) => new() { Name = name, AcceptsReturn = true, Width = 340, Height = 70, TextWrapping = global::Avalonia.Media.TextWrapping.NoWrap };
+    private readonly Button B_FDelete = UiFactory.Button("B_FDelete", "X");
+    private static TextBox Multi(string name, int maxLength) => new() { Name = name, AcceptsReturn = true, MaxLength = maxLength, Width = 340, Height = 70, TextWrapping = global::Avalonia.Media.TextWrapping.NoWrap };
     private static NumericUpDown Record(string name) => UiFactory.NumericUpDown(name, 0, int.MaxValue, 140);
 
     public BattlePass4BRWindow(SAVEditorView parent, SAV4BR sav, int index = 0) : base("SAV_BattlePass", "Battle Pass Editor")
@@ -150,25 +158,28 @@ public sealed class BattlePass4BRWindow : SaveEditorWindow
     private void BuildLayout()
     {
         Box.InitializeGrid(3, 2, SpriteUtil.Spriter);
+        BuildSlotMenu();
         foreach (var slot in Box.Entries)
         {
             slot.PointerPressed += (s, e) => OmniClick((SlotView)s!, e);
+            slot.PointerEntered += (s, _) => HoverSlot((SlotView)s!);
+            slot.PointerExited += (_, _) => Preview.Clear();
             slot.Cursor = new Cursor(StandardCursorType.Hand);
         }
+        Closed += (_, _) => Preview.Clear();
 
-        var tabs = new TabControl { Name = "TC_BattlePass" };
-        tabs.Items.Add(new TabItem { Name = "Tab_Trainer", Header = "Trainer", Content = new ScrollViewer { Content = BuildTrainer(), MaxHeight = 560 } });
-        tabs.Items.Add(new TabItem { Name = "Tab_Party", Header = "Party", Content = new ScrollViewer { Content = BuildParty(), MaxHeight = 560 } });
-        tabs.Items.Add(new TabItem { Name = "Tab_Phrases", Header = "Catchphrases", Content = new ScrollViewer { Content = BuildPhrases(), MaxHeight = 560 } });
-        tabs.Items.Add(new TabItem { Name = "Tab_Creator", Header = "Creator", Content = new ScrollViewer { Content = BuildCreator(), MaxHeight = 560 } });
-        tabs.Items.Add(new TabItem { Name = "Tab_Records", Header = "Records", Content = new ScrollViewer { Content = BuildRecords(), MaxHeight = 560 } });
+        var tabs = new TabControl { Name = "Tab_Base" };
+        tabs.Items.Add(new TabItem { Name = "f_MAIN", Header = "Main", Content = new ScrollViewer { Content = BuildMain(), MaxHeight = 560 } });
+        tabs.Items.Add(new TabItem { Name = "f_PKM", Header = "Pokémon", Content = new ScrollViewer { Content = BuildParty(), MaxHeight = 560 } });
+        tabs.Items.Add(new TabItem { Name = "f_CATCHPHRASES", Header = "Catchphrases", Content = new ScrollViewer { Content = BuildPhrases(), MaxHeight = 560 } });
+        tabs.Items.Add(new TabItem { Name = "f_CREATOR", Header = "Creator", Content = new ScrollViewer { Content = BuildCreator(), MaxHeight = 560 } });
 
-        var up = UiFactory.Button("B_Up", "▲");
-        var down = UiFactory.Button("B_Down", "▼");
+        var up = UiFactory.Button("B_Up", "^");
+        var down = UiFactory.Button("B_Down", "v");
         var import = UiFactory.Button("B_Import", "Import");
         var export = UiFactory.Button("B_Export", "Export");
-        var unlockCustom = UiFactory.Button("B_UnlockCustom", "Unlock Custom");
-        var unlockRental = UiFactory.Button("B_UnlockRental", "Unlock Rental");
+        var unlockCustom = UiFactory.Button("B_UnlockCustom", "Unlock All Custom Passes");
+        var unlockRental = UiFactory.Button("B_UnlockRental", "Unlock All Rental Passes");
 
         up.Click += (_, _) => SwapSlots(false);
         down.Click += (_, _) => SwapSlots(true);
@@ -182,10 +193,12 @@ public sealed class BattlePass4BRWindow : SaveEditorWindow
         LB_Passes.SelectionChanged += (_, _) => ChangeIndexPass();
 
         var left = UiFactory.Column(
+            UiFactory.Label("L_BattlePasses", "Battle Passes:"),
             LB_Passes,
             UiFactory.Row(up, down, B_FDelete),
             UiFactory.Row(import, export),
-            UiFactory.Row(unlockCustom, unlockRental));
+            unlockCustom,
+            unlockRental);
 
         var body = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
         body.Children.Add(left);
@@ -193,49 +206,66 @@ public sealed class BattlePass4BRWindow : SaveEditorWindow
         SetBody(body);
     }
 
-    private Control BuildTrainer()
+    private Control BuildMain()
     {
-        var grid = UiFactory.FormGrid(8);
+        var trainer = UiFactory.FormGrid(4);
         int r = 0;
-        Row(grid, r++, "L_Name", "Name:", TB_Name);
-        Row(grid, r++, "L_TrainerTitle", "Title:", CB_TrainerTitle);
-        Row(grid, r++, "L_TID", "TID:", MT_TID);
-        Row(grid, r++, "L_SID", "SID:", MT_SID);
-        Row(grid, r++, "L_Model", "Character Style:", CB_Model);
-        Row(grid, r++, "L_SkinColor", "Skin Color:", CB_SkinColor);
-        Row(grid, r++, "L_PictureType", "Picture Type:", CB_PictureType);
-        Row(grid, r, "L_PassDesign", "Pass Design:", CB_PassDesign);
+        Row(trainer, r++, "L_Name", "Name:", TB_Name);
+        Row(trainer, r++, "L_TrainerTitle", "Trainer Title:", CB_TrainerTitle);
+        Row(trainer, r++, "L_TID", "TID:", MT_TID);
+        Row(trainer, r, "L_SID", "SID:", MT_SID);
 
-        var gear = UiFactory.FormGrid(10);
-        string[] labels = ["Head:", "Hair:", "Face:", "Glasses:", "Top:", "Hands:", "Bottom:", "Shoes:", "Badge:", "Bag:"];
+        var gear = UiFactory.FormGrid(12);
+        Row(gear, 0, "L_Model", "Character:", CB_Model);
+        Row(gear, 1, "L_SkinColor", "Skin Color:", CB_SkinColor);
+        string[] gearNames = ["Head", "Hair", "Face", "Glasses", "Top", "Hands", "Bottom", "Shoes", "Badge", "Bag"];
         ComboBox[] gearBoxes = [CB_Head, CB_Hair, CB_Face, CB_Glasses, CB_Top, CB_Hands, CB_Bottom, CB_Shoes, CB_Badge, CB_Bag];
         for (int i = 0; i < gearBoxes.Length; i++)
-            Row(gear, i, $"L_Gear{i}", labels[i], gearBoxes[i]);
+            Row(gear, i + 2, $"L_{gearNames[i]}", $"{gearNames[i]}:", gearBoxes[i]);
+
+        var pass = UiFactory.FormGrid(2);
+        Row(pass, 0, "L_PictureType", "Picture Type:", CB_PictureType);
+        Row(pass, 1, "L_PassDesign", "Pass Design:", CB_PassDesign);
 
         var flags = UiFactory.Row(CHK_Available, CHK_Issued, CHK_Rental, CHK_Friend);
         var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
-        row.Children.Add(UiFactory.Column(grid, flags));
+        row.Children.Add(UiFactory.Column(new GroupBoxView("GB_Trainer", "Trainer", trainer), pass, flags));
         row.Children.Add(new GroupBoxView("GB_Appearance", "Appearance", gear));
         return row;
     }
 
     private Control BuildParty()
     {
-        var grid = UiFactory.FormGrid(BattlePass.Count);
+        // WinForms shows the six sprites above six "Pokémon N" boxes laid out three per row, each with its
+        // Box / Slot / Flags fields.
+        var slots = new Grid
+        {
+            ColumnDefinitions = [new ColumnDefinition(GridLength.Auto), new ColumnDefinition(GridLength.Auto), new ColumnDefinition(GridLength.Auto)],
+            RowDefinitions = [new RowDefinition(GridLength.Auto), new RowDefinition(GridLength.Auto)],
+            ColumnSpacing = 8,
+            RowSpacing = 8,
+        };
         for (int i = 0; i < BattlePass.Count; i++)
-            UiFactory.AddFormRow(grid, i, UiFactory.Label($"L_PKM{i + 1}", $"{i + 1}."), UiFactory.Row(PartyBox[i], PartySlot[i], PartyFlags[i]));
-
-        var header = UiFactory.Row(UiFactory.Label("L_BoxSlot", "Box / Slot / Flags"));
-        return UiFactory.Column(Box, header, grid);
+        {
+            var grid = UiFactory.FormGrid(3);
+            Row(grid, 0, $"L_PKM{i + 1}Box", "Box:", PartyBox[i]);
+            Row(grid, 1, $"L_PKM{i + 1}Slot", "Slot:", PartySlot[i]);
+            Row(grid, 2, $"L_PKM{i + 1}Flags", "Flags:", PartyFlags[i]);
+            var box = new GroupBoxView($"GB_PKM{i + 1}", $"Pokémon {i + 1}", grid);
+            UiFactory.SetRowCol(box, i / 3, i % 3);
+            slots.Children.Add(box);
+        }
+        return UiFactory.Column(Box, slots);
     }
 
     private Control BuildPhrases()
     {
         TextBox[] boxes = [TB_Greeting, TB_SentOut, TB_Shift1, TB_Shift2, TB_Win, TB_Lose];
-        string[] labels = ["Greeting:", "Sent Out:", "Shift 1:", "Shift 2:", "Win:", "Lose:"];
+        string[] names = ["L_Greeting", "L_SentOut", "L_Shift1", "L_Shift2", "L_Win", "L_Lose"];
+        string[] labels = ["Greeting:", "Pokémon Sent Out:", "Pokémon Shift 1:", "Pokémon Shift 2:", "Win:", "Lose:"];
         var grid = UiFactory.FormGrid(boxes.Length);
         for (int i = 0; i < boxes.Length; i++)
-            UiFactory.AddFormRow(grid, i, UiFactory.Label($"L_Phrase{i}", labels[i]), UiFactory.Row(boxes[i], PresetChecks[i], PresetIndexes[i]));
+            UiFactory.AddFormRow(grid, i, UiFactory.Label(names[i], labels[i]), UiFactory.Row(boxes[i], PresetChecks[i], PresetIndexes[i]));
         return grid;
     }
 
@@ -243,25 +273,38 @@ public sealed class BattlePass4BRWindow : SaveEditorWindow
     {
         var grid = UiFactory.FormGrid(9);
         int r = 0;
-        Row(grid, r++, "L_CreatorName", "Creator:", TB_CreatorName);
+        Row(grid, r++, "L_CreatorName", "Created By:", TB_CreatorName);
         Row(grid, r++, "L_BirthMonth", "Birth Month:", TB_BirthMonth);
         Row(grid, r++, "L_BirthDay", "Birth Day:", TB_BirthDay);
         Row(grid, r++, "L_Country", "Country:", CB_Country);
-        Row(grid, r++, "L_Region", "Region:", CB_Region);
+        Row(grid, r++, "L_Region", "Sub Region:", CB_Region);
         Row(grid, r++, "L_Language", "Language:", CB_Language);
-        Row(grid, r++, "L_SelfIntroduction", "Self Introduction:", TB_SelfIntroduction);
+        Row(grid, r++, "L_SelfIntroduction", "Self-Introduction:", TB_SelfIntroduction);
         Row(grid, r++, "L_RegionCode", "Region Code:", TB_RegionCode);
         Row(grid, r, "L_PlayerID", "Player ID:", MT_PlayerID);
-        return grid;
+
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
+        row.Children.Add(new GroupBoxView("GB_Creator", "Creator", grid));
+        row.Children.Add(BuildRecords());
+        return row;
     }
 
     private Control BuildRecords()
     {
+        // Label names follow the WinForms record labels, so the translations apply.
+        string[] names =
+        [
+            "L_RecordColosseumBattles", "L_RecordFreeBattles", "L_RecordWiFiBattles",
+            "L_RecordGatewayColosseumClears", "L_RecordMainStreetColosseumClears", "L_RecordWaterfallColosseumClears",
+            "L_RecordNeonColosseumClears", "L_RecordCrystalColosseumClears", "L_RecordSunnyParkColosseumClears",
+            "L_RecordMagmaColosseumClears", "L_RecordCourtyardColosseumClears", "L_RecordSunsetColosseumClears",
+            "L_RecordStargazerColosseumClears",
+        ];
         var grid = UiFactory.FormGrid(Records.Length + 1);
         Row(grid, 0, "L_Battles", "Battles:", NUD_Battles);
         for (int i = 0; i < Records.Length; i++)
-            Row(grid, i + 1, $"L_Record{i}", RecordLabels[i] + ':', Records[i]);
-        return grid;
+            Row(grid, i + 1, names[i], RecordLabels[i] + ':', Records[i]);
+        return new GroupBoxView("GB_Records", "Records", grid);
     }
 
     private static void Row(Grid g, int row, string name, string text, Control editor)
@@ -283,6 +326,10 @@ public sealed class BattlePass4BRWindow : SaveEditorWindow
 
         CB_Model.SelectionChanged += (_, _) => ChangeModel();
         CB_Country.SelectionChanged += (_, _) => UpdateCountry();
+        CB_Language.SelectionChanged += (_, _) => UpdateLanguage();
+        MT_PlayerID.LostFocus += (_, _) => MT_PlayerID.Text = Util.GetHexValue64(MT_PlayerID.Text ?? string.Empty).ToString("X16");
+        foreach (var tb in new[] { TB_Greeting, TB_SentOut, TB_Shift1, TB_Shift2, TB_Win, TB_Lose, TB_SelfIntroduction })
+            tb.LostFocus += (s, _) => ValidateCatchphrase((TextBox)s!);
     }
 
     /// <summary>Builds the title list, disambiguating duplicates by character style and then by number.</summary>
@@ -390,6 +437,49 @@ public sealed class BattlePass4BRWindow : SaveEditorWindow
             CB_Region.SetCountrySubRegion("gen4_sr_default");
     }
 
+    /// <summary>Japanese fits two more characters in the self-introduction (port of <c>CB_Language_SelectedIndexChanged</c>).</summary>
+    private void UpdateLanguage()
+    {
+        if (CB_Language.GetSelectedItem() is not { } item)
+            return;
+        TB_SelfIntroduction.MaxLength = item.Value != (int)LanguageID.Japanese ? 51 : 53;
+        ValidateCatchphrase(TB_SelfIntroduction);
+    }
+
+    /// <summary>
+    /// Truncates a phrase to the in-game character budget (port of <c>ValidateCatchphrase</c>).
+    /// </summary>
+    /// <remarks>Line breaks and the special glyphs cost two in-game characters each.</remarks>
+    private static void ValidateCatchphrase(TextBox tb)
+    {
+        var text = tb.Text ?? string.Empty;
+        int max = tb.MaxLength;
+        int length = 0;
+        for (int i = 0; i < text.Length; i++)
+        {
+            var c = text[i];
+            if (c == '\r')
+                continue; // half of a CRLF pair; the '\n' accounts for the break
+            if (c == '\n')
+            {
+                length += 2;
+                continue;
+            }
+            length += c switch
+            {
+                StringConverter4GC.LineBreak or
+                    StringConverter4GC.Proportional or
+                    StringConverter4GC.PokemonName => 2,
+                _ => 1,
+            };
+            if (length > max)
+            {
+                tb.Text = text[..i];
+                return;
+            }
+        }
+    }
+
     #endregion
 
     #region Party slots
@@ -399,6 +489,13 @@ public sealed class BattlePass4BRWindow : SaveEditorWindow
         var index = Box.Entries.IndexOf(view);
         if (index < 0)
             return;
+        if (e.GetCurrentPoint(view).Properties.IsRightButtonPressed)
+        {
+            // WinForms attaches the View/Set/Delete menu to every slot picture box.
+            MenuIndex = index;
+            SlotMenu.Open(view);
+            return;
+        }
         switch (e.KeyModifiers)
         {
             case KeyModifiers.Control: ClickView(index); break;
@@ -407,7 +504,41 @@ public sealed class BattlePass4BRWindow : SaveEditorWindow
         }
     }
 
-    private void ClickView(int index) => Host.EditEnv.PKMEditor.PopulateFields(CurrentPass.GetPartySlotAtIndex(index), false);
+    /// <summary>Builds the slot context menu (port of the WinForms <c>mnu</c> strip).</summary>
+    private void BuildSlotMenu()
+    {
+        var view = new MenuItem { Name = "mnuView", Header = "View" };
+        var set = new MenuItem { Name = "mnuSet", Header = "Set" };
+        var delete = new MenuItem { Name = "mnuDelete", Header = "Delete" };
+        view.Click += (_, _) => { if (MenuIndex >= 0) ClickView(MenuIndex); };
+        set.Click += async (_, _) => { if (MenuIndex >= 0) await ClickSet(MenuIndex); };
+        delete.Click += (_, _) => { if (MenuIndex >= 0) ClickDelete(MenuIndex); };
+        SlotMenu.Items.Add(view);
+        SlotMenu.Items.Add(set);
+        SlotMenu.Items.Add(delete);
+        // A ContextMenu is outside its target's logical tree, so it is translated on its own.
+        Translator.TranslateControls(SlotMenu, "SAV_BattlePass", MainWindow.CurrentLanguage);
+    }
+
+    private void HoverSlot(SlotView view)
+    {
+        var index = Box.Entries.IndexOf(view);
+        if (index < 0)
+            return;
+        Preview.Show(view, CurrentPass.GetPartySlotAtIndex(index));
+    }
+
+    private void ClickView(int index)
+    {
+        Host.EditEnv.PKMEditor.PopulateFields(CurrentPass.GetPartySlotAtIndex(index), false);
+
+        // WinForms marks the slot that was loaded into the editor with the "View" overlay.
+        if (SlotSelected != index && (uint)SlotSelected < Box.Entries.Count)
+            Box.Entries[SlotSelected].BackgroundBitmap = null;
+        GroupSelected = CurrentPassIndex;
+        SlotSelected = index;
+        Box.Entries[index].BackgroundBitmap = ViewOverlay;
+    }
 
     private async Task ClickSet(int index)
     {
@@ -587,6 +718,9 @@ public sealed class BattlePass4BRWindow : SaveEditorWindow
             var pk = p.GetPartySlotAtIndex(i);
             view.Sprite = pk.Sprite(SAV, visibility: SlotVisibilityType.CheckLegalityIndicate).ToAvaloniaBitmapAndDispose();
         }
+
+        if (SlotSelected != -1 && (uint)SlotSelected < Box.Entries.Count)
+            Box.Entries[SlotSelected].BackgroundBitmap = GroupSelected != CurrentPassIndex ? null : ViewOverlay;
 
         loading = false;
     }

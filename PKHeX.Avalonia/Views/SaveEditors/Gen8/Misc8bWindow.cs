@@ -33,13 +33,16 @@ public sealed class Misc8bWindow : SaveEditorWindow
         SAV = (SAV8BS)(Origin = sav).Clone();
         Unlocker = new EventUnlocker8b(SAV);
 
-        var buttons = UiFactory.Column(
-            B_Spiritomb, B_Shaymin, B_Darkrai, B_Arceus, B_DialgaPalkia,
-            B_Roamer, B_Zones, B_Fashion, B_DefeatEyecatch, B_RebattleEyecatch);
+        // Two columns of five, in the WinForms order (SAV_Misc8b.Designer.cs locations).
+        var buttons = UiFactory.Row(
+            UiFactory.Column(B_Spiritomb, B_Shaymin, B_Darkrai, B_Arceus, B_Zones),
+            UiFactory.Column(B_DialgaPalkia, B_Roamer, B_DefeatEyecatch, B_RebattleEyecatch, B_Fashion));
         foreach (var b in new[] { B_Spiritomb, B_Shaymin, B_Darkrai, B_Arceus, B_DialgaPalkia, B_Roamer, B_Zones, B_Fashion, B_DefeatEyecatch, B_RebattleEyecatch })
-            b.MinWidth = 300;
+            b.MinWidth = 260;
 
-        SetBody(new TabControl { Items = { new TabItem { Name = "TAB_Main", Header = "Main", Content = buttons } } });
+        var tabs = new TabControl { Name = "TC_Misc" };
+        tabs.Items.Add(new TabItem { Name = "TAB_Main", Header = "Main", Content = buttons });
+        SetBody(tabs);
 
         ReadMain();
 

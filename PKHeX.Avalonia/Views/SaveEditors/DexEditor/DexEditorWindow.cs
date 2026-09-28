@@ -43,9 +43,9 @@ public class DexEditorWindow : SaveEditorWindow
     private readonly CheckBox CHK_NationalDexActive = UiFactory.Check("CHK_NationalDexActive", "National Mode Active");
     private readonly TextBlock L_Spinda = UiFactory.Label("L_Spinda", "Spinda:");
     private readonly NumericTextBox TB_Spinda = UiFactory.Numeric("TB_Spinda", 8, 90, hex: true);
-    private readonly TextBlock L_Seen = UiFactory.Label("L_Seen", "Seen:");
+    private readonly TextBlock L_DexNav = UiFactory.Label("L_DexNav", "Seen:");
     private readonly NumericTextBox MT_Seen = UiFactory.Numeric("MT_Seen", 5, 70);
-    private readonly TextBlock L_Obtained = UiFactory.Label("L_Obtained", "Obtained:");
+    private readonly TextBlock L_DexNavObtained = UiFactory.Label("L_DexNavObtained", "Obtained:");
     private readonly NumericTextBox MT_Obtained = UiFactory.Numeric("MT_Obtained", 5, 70);
     private StackPanel CountRow = null!;
 
@@ -113,10 +113,10 @@ public class DexEditorWindow : SaveEditorWindow
 
         var forms = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
         forms.Children.Add(UiFactory.Column(UiFactory.Label("L_FormsSeen", "Seen Forms:"), CLB_FormsSeen));
-        forms.Children.Add(UiFactory.Column(UiFactory.Label("L_FormsDisplayed", "Forms Displayed"), CLB_FormDisplayed));
+        forms.Children.Add(UiFactory.Column(UiFactory.Label("L_FormDisplayed", "Displayed Form:"), CLB_FormDisplayed));
 
         SpindaRow = UiFactory.Row(L_Spinda, TB_Spinda);
-        CountRow = UiFactory.Row(L_Seen, MT_Seen, L_Obtained, MT_Obtained);
+        CountRow = UiFactory.Row(L_DexNav, MT_Seen, L_DexNavObtained, MT_Obtained);
         CountRow.IsVisible = Dex.SupportsCounts;
 
         var right = UiFactory.Column(
@@ -164,7 +164,10 @@ public class DexEditorWindow : SaveEditorWindow
             Dex.CaughtAll((LanguageID)SAV.Language, allLanguages: mods.HasFlag(KeyModifiers.Control));
         });
         if (Dex.SupportsCounts)
-            AddModifyItem(flyout, "mnuDexNav", "Max DexNav", _ => Dex.SetAllCountSeen(999));
+        {
+            AddModifyItem(flyout, "mnuResetNav", "Reset DexNav", _ => Dex.SetAllCountSeen(0));
+            AddModifyItem(flyout, "mnuDexNav", "999 DexNav", _ => Dex.SetAllCountSeen(999));
+        }
         return flyout;
     }
 
@@ -195,6 +198,10 @@ public class DexEditorWindow : SaveEditorWindow
         var language = (LanguageID)SAV.Language;
         Dex.GiveAll(species, mods != KeyModifiers.Alt, mods.HasFlag(KeyModifiers.Shift), language, mods.HasFlag(KeyModifiers.Control));
         GetEntry(skipFormRepop: true);
+
+        // OR/AS: a caught entry with no DexNav sighting would read as never seen, so the counter is bumped to one.
+        if (Dex.SupportsCounts && Dex.GetCaught(species) && Dex.GetCountSeen(species) == 0)
+            MT_Seen.Text = 1.ToString();
     }
 
     #region Selection

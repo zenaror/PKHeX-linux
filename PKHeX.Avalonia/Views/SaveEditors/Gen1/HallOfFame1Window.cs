@@ -53,7 +53,9 @@ public sealed class HallOfFame1Window : SaveEditorWindow
         SAV = (SAV1)(Origin = sav).Clone();
         Fame = SAV.HallOfFame;
 
-        B_Save.Content = "Save"; // the WinForms form names this button B_Close
+        // The WinForms form names this button B_Close, so its translation lives under that key.
+        B_Save.Content = Localization.Translator.TranslateText(
+            Localization.Translator.GetKey("SAV_HallOfFame1", "B_Close"), "Save", MainWindow.CurrentLanguage);
         BuildLayout();
         Setup();
 
@@ -72,12 +74,13 @@ public sealed class HallOfFame1Window : SaveEditorWindow
         UiFactory.AddFormRow(entry, 1, UiFactory.Label("Label_Species", "Species:"), UiFactory.Row(CB_Species, PB_Sprite));
         UiFactory.AddFormRow(entry, 2, UiFactory.Label("L_Level", "Level:"), NUD_Level);
         UiFactory.AddFormRow(entry, 3, CHK_Nicknamed, TB_Nickname);
-        var GB_Entry = new GroupBoxView("GB_Entry", "Entry", UiFactory.Column(entry, UiFactory.Row(B_ClearSlot, B_Delete)));
+        // WinForms keeps only "Clear Slot" inside the Entry group; the other three buttons sit beside the team preview.
+        var GB_Entry = new GroupBoxView("GB_Entry", "Entry", UiFactory.Column(entry, B_ClearSlot));
 
         var right = UiFactory.Column(
             RTB_Team,
             GB_Entry,
-            UiFactory.Row(B_SetParty, B_ClearAll),
+            UiFactory.Row(B_Delete, B_SetParty, B_ClearAll),
             UiFactory.Row(L_Clears, NUD_Clears));
 
         var body = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };

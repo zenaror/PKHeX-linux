@@ -57,7 +57,7 @@ public sealed class JoinAvenueEntityGeneralView : StackPanel
         Row(grid, r++, "L_Version", "Version:", CB_Version);
         Row(grid, r++, "L_Language", "Language:", CB_Language);
         Row(grid, r++, "L_Unknown22", "0x22:", NUD_Unknown22);
-        Row(grid, r++, "L_Gender", "Gender:", UC_Gender);
+        UiFactory.AddFormRow(grid, r++, null, UC_Gender); // the WinForms gender row has no label either
         Row(grid, r++, "L_Unused23", "0x23:", NUD_Unused23);
         Row(grid, r++, "L_TID16", "Trainer ID:", NUD_TID16);
         Row(grid, r++, "L_Unknown26", "0x26:", NUD_Unknown26);

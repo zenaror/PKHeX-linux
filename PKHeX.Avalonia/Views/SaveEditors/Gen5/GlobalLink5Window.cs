@@ -34,7 +34,7 @@ public sealed class GlobalLink5Window : SaveEditorWindow
     private readonly CheckBox CHK_DateSet = UiFactory.Check("CHK_DateSet", "Set");
     private readonly DatePicker CAL_UploadDate = new() { Name = "CAL_UploadDate", MinWidth = 0 };
     private readonly TextBlock L_UploadCount = UiFactory.Label("L_UploadCount", "Upload Count:");
-    private readonly NumericUpDown NUD_UploadCount = UiFactory.NumericUpDown("NUD_UploadCount", 0, int.MaxValue, 130);
+    private readonly NumericUpDown NUD_UploadCount = UiFactory.NumericUpDown("NUD_UploadCount", int.MinValue, int.MaxValue, 130);
     private readonly TextBlock L_UploadStatus = UiFactory.Label("L_UploadStatus", "Upload Status:");
     private readonly NumericUpDown NUD_UploadStatus = UiFactory.NumericUpDown("NUD_UploadStatus", 0, 255, 110);
     private readonly CheckBox CHK_IsSlotPresent = UiFactory.Check("CHK_IsSlotPresent", "Upload Slot Tucked In");
@@ -53,7 +53,7 @@ public sealed class GlobalLink5Window : SaveEditorWindow
     private readonly NumericUpDown[] NUD_Furniture = new NumericUpDown[GlobalLink5.CountFurniture];
     private readonly TextBox[] TB_Furniture = new TextBox[GlobalLink5.CountFurniture];
 
-    private readonly DataGrid DGV_Items = new() { AutoGenerateColumns = false, HeadersVisibility = DataGridHeadersVisibility.Column, IsReadOnly = false, CanUserSortColumns = false };
+    private readonly DataGrid DGV_Items = new() { Name = "DGV_Items", AutoGenerateColumns = false, HeadersVisibility = DataGridHeadersVisibility.Column, IsReadOnly = false, CanUserSortColumns = false };
     private readonly ObservableCollection<ItemRow> ItemRows = [];
 
     public GlobalLink5Window(SAV5 sav) : base("SAV_GlobalLink5", "Pokémon Global Link Editor")
@@ -90,20 +90,21 @@ public sealed class GlobalLink5Window : SaveEditorWindow
                 return img;
             }),
         });
-        DGV_Items.Columns.Add(DataGridUtil.ComboColumn("Item", items, nameof(ItemRow.ItemID), 220));
-        DGV_Items.Columns.Add(new DataGridTextColumn { Header = "Count", Binding = new Binding(nameof(ItemRow.Count)) { Mode = BindingMode.TwoWay }, Width = new DataGridLength(70) });
+        DGV_Items.Columns.Add(DataGridUtil.ComboColumn("Item", items, nameof(ItemRow.ItemID), 220).Named("Item"));
+        DGV_Items.Columns.Add(new DataGridTextColumn { Header = "Count", Binding = new Binding(nameof(ItemRow.Count)) { Mode = BindingMode.TwoWay }, Width = new DataGridLength(70) }.Named("Count"));
         DGV_Items.ItemsSource = ItemRows;
         Tab_Items.Content = DGV_Items;
 
+        // Row order as in the WinForms TLP_Furniture: the five slots, then Synchronized, then Selected.
         var furniture = UiFactory.FormGrid(GlobalLink5.CountFurniture + 2);
-        UiFactory.AddFormRow(furniture, 0, L_FurnitureSelected, NUD_FurnitureSelected);
-        UiFactory.AddFormRow(furniture, 1, null, CHK_FurnitureSynchronized);
         for (int i = 0; i < GlobalLink5.CountFurniture; i++)
         {
             NUD_Furniture[i] = UiFactory.NumericUpDown($"NUD_Furniture{i + 1}", 0, 65535, 120);
             TB_Furniture[i] = UiFactory.Text($"TB_Furniture{i + 1}", 20, 200);
-            UiFactory.AddFormRow(furniture, i + 2, null, UiFactory.Row(NUD_Furniture[i], TB_Furniture[i]));
+            UiFactory.AddFormRow(furniture, i, null, UiFactory.Row(NUD_Furniture[i], TB_Furniture[i]));
         }
+        UiFactory.AddFormRow(furniture, GlobalLink5.CountFurniture, null, CHK_FurnitureSynchronized);
+        UiFactory.AddFormRow(furniture, GlobalLink5.CountFurniture + 1, L_FurnitureSelected, NUD_FurnitureSelected);
         Tab_Furniture.Content = furniture;
 
         Tabs.Items.Add(Tab_General);

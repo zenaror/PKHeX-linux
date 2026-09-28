@@ -13,7 +13,8 @@ public sealed class SimpleEditorWindow : Window
     public SimpleEditorWindow(object target)
     {
         Name = "SimpleEditor";
-        Title = "Simple Editor";
+        // WinForms builds this form at runtime and translates its caption with the SAVEditor-scoped key.
+        Title = Translator.TranslateText(Translator.GetKey("SAVEditor", "SimpleEditor"), "Simple Editor", MainWindow.CurrentLanguage);
         Icon = AppIcon.Get();
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         MinWidth = 350;

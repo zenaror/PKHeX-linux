@@ -31,6 +31,19 @@ public sealed class PropertyGridView : ScrollViewer
 {
     private readonly StackPanel Root = new() { Orientation = Orientation.Vertical, Spacing = 2, Margin = new Thickness(4) };
 
+    /// <summary>
+    /// Objects on the path from the displayed object down to the row being built.
+    /// </summary>
+    /// <remarks>
+    /// The WinForms grid expands a nested object only when the user clicks it, so a cyclic object graph is harmless
+    /// there. Expanding inline has to stop by itself: a save file reaches itself again through its blocks, which
+    /// recursed until the stack overflowed (Block Data on a Generation 1 save).
+    /// </remarks>
+    private readonly List<object> Ancestors = [];
+
+    /// <summary>How many levels of nested objects are expanded inline.</summary>
+    private const int MaxDepth = 3;
+
     public PropertyGridView()
     {
         Content = Root;
@@ -63,8 +76,10 @@ public sealed class PropertyGridView : ScrollViewer
         SelectedObject = obj;
         Root.Children.Clear();
         HelpChanged?.Invoke(null);
+        Ancestors.Clear();
         if (obj is null)
             return;
+        Ancestors.Add(obj);
         AddProperties(Root, obj, 0, null);
     }
 
@@ -115,6 +130,17 @@ public sealed class PropertyGridView : ScrollViewer
                 HorizontalContentAlignment = HorizontalAlignment.Stretch,
             });
         }
+    }
+
+    /// <summary>True when the object is already being expanded further up the current path.</summary>
+    private bool IsAncestor(object value)
+    {
+        foreach (var ancestor in Ancestors)
+        {
+            if (ReferenceEquals(ancestor, value))
+                return true;
+        }
+        return false;
     }
 
     private static string Translate(string key, string fallback) => Translator.TranslateText(key, fallback, MainWindow.CurrentLanguage);
@@ -208,9 +234,19 @@ public sealed class PropertyGridView : ScrollViewer
         {
             // Value types are edited through their box; write the box back to the owner after each change.
             var box = value;
+            if (depth >= MaxDepth || IsAncestor(box))
+                return null; // already on this path, or too deep: stop instead of recursing forever
             var inner = new StackPanel { Orientation = Orientation.Vertical, Spacing = 2 };
             Action? notify = type.IsValueType ? () => { Set(owner, pi, box, onChanged); } : onChanged;
-            AddProperties(inner, box, depth + 1, notify);
+            Ancestors.Add(box);
+            try
+            {
+                AddProperties(inner, box, depth + 1, notify);
+            }
+            finally
+            {
+                Ancestors.RemoveAt(Ancestors.Count - 1);
+            }
             if (inner.Children.Count == 0)
                 return null;
             return inner;

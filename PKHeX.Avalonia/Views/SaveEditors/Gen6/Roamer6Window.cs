@@ -22,7 +22,7 @@ public sealed class Roamer6Window : SaveEditorWindow
 
     private readonly ComboBox CB_Species = UiFactory.StringCombo("CB_Species", 160);
     private readonly ComboBox CB_RoamState = UiFactory.StringCombo("CB_RoamState", 160);
-    private readonly NumericUpDown NUD_TimesEncountered = UiFactory.NumericUpDown("NUD_TimesEncountered", 0, uint.MaxValue, 130);
+    private readonly NumericUpDown NUD_TimesEncountered = UiFactory.NumericUpDown("NUD_TimesEncountered", 0, 11, 130); // WinForms caps the counter at 11
 
     public Roamer6Window(SAV6XY sav) : base("SAV_Roamer6", "Roamer Editor")
     {
@@ -35,14 +35,15 @@ public sealed class Roamer6Window : SaveEditorWindow
         foreach (var s in new[] { "Inactive", "Roaming", "Stationary", "Defeated", "Captured" })
             CB_RoamState.Items.Add(s);
 
+        // Field order as in WinForms: roamer, times encountered, roam state.
         var grid = UiFactory.FormGrid(3);
-        UiFactory.AddFormRow(grid, 0, UiFactory.Label("L_Species", "Species:"), CB_Species);
-        UiFactory.AddFormRow(grid, 1, UiFactory.Label("L_RoamState", "State:"), CB_RoamState);
-        UiFactory.AddFormRow(grid, 2, UiFactory.Label("L_TimesEncountered", "Times Encountered:"), NUD_TimesEncountered);
+        UiFactory.AddFormRow(grid, 0, UiFactory.Label("L_Species", "Roamer"), CB_Species);
+        UiFactory.AddFormRow(grid, 1, UiFactory.Label("L_TimesEncountered", "Times Encountered"), NUD_TimesEncountered);
+        UiFactory.AddFormRow(grid, 2, UiFactory.Label("L_RoamState", "Roam State"), CB_RoamState);
         SetBody(grid);
 
         CB_Species.SelectedIndex = GetInitialIndex(sav);
-        NUD_TimesEncountered.Value = roamer.TimesEncountered;
+        NUD_TimesEncountered.SetValueClamped(roamer.TimesEncountered);
         CB_RoamState.SelectedIndex = (int)roamer.RoamStatus;
 
         CB_Species.SelectionChanged += (_, _) => roamer.Species = (ushort)(SpeciesOffset + CB_Species.SelectedIndex);

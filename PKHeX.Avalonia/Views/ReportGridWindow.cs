@@ -39,9 +39,9 @@ public sealed class ReportGridWindow : Window
         CanUserSortColumns = true,
         CanUserReorderColumns = true,
         CanUserResizeColumns = true,
-        RowHeight = 34,
         HeadersVisibility = DataGridHeadersVisibility.Column,
         SelectionMode = DataGridSelectionMode.Extended,
+        RowHeight = SpriteUtil.Spriter.Height + 1, // WinForms Data_Sorted sizes every row to the sprite height
     };
 
     private readonly ObservableCollection<EntitySummaryRow> Rows = [];
@@ -142,9 +142,15 @@ public sealed class ReportGridWindow : Window
         return false;
     }
 
+    /// <remarks>
+    /// The WinForms grid binds <c>EntitySummaryImage</c> with <c>AutoGenerateColumns</c>, which yields a column for
+    /// every public property, not only the <see cref="string"/> ones: the IV/EV/EXP/Level/contest/PP numbers and the
+    /// egg/shiny/nicknamed flags are columns there too. The sprite is its own template column and the extra-property
+    /// values live in <see cref="EntitySummaryRow.Extra"/>, so both are skipped here.
+    /// </remarks>
     private static IEnumerable<PropertyInfo> GetSummaryProperties() => typeof(EntitySummaryRow)
         .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-        .Where(z => z.CanRead && z.PropertyType == typeof(string));
+        .Where(z => z.CanRead && z.Name is not (nameof(EntitySummaryRow.Sprite) or nameof(EntitySummaryRow.Extra)));
 
     private void AddExtraColumns(ReadOnlySpan<string> extra)
     {
@@ -247,21 +253,29 @@ public sealed class ReportGridWindow : Window
         return Rows;
     }
 
+    /// <summary>Property lookup per column header, so an export does not reflect once per cell.</summary>
+    private static readonly Dictionary<string, PropertyInfo?> CellProperties = [];
+
     private static string GetCell(EntitySummaryRow row, DataGridColumn column)
     {
         var name = column.Header as string ?? string.Empty;
         if (row.Extra.TryGetValue(name, out var extra))
             return extra;
-        var pi = typeof(EntitySummaryRow).GetProperty(name);
+        if (!CellProperties.TryGetValue(name, out var pi))
+            CellProperties[name] = pi = typeof(EntitySummaryRow).GetProperty(name);
         return pi?.GetValue(row)?.ToString() ?? string.Empty;
     }
 
     private async Task CopyToClipboard()
     {
         var columns = dgData.Columns.Skip(1).Where(z => z.IsVisible).ToArray();
+        // WinForms copies the grid's selection (DataGridView.GetClipboardContent); with nothing selected it copies nothing,
+        // so fall back to every row only when the grid has no selection at all.
+        var rows = dgData.SelectedItems.OfType<EntitySummaryRow>().ToArray();
+        var source = rows.Length != 0 ? GetOrderedRows().Where(rows.Contains) : GetOrderedRows();
         var sb = new StringBuilder();
         sb.AppendLine(string.Join('\t', columns.Select(z => z.Header)));
-        foreach (var row in GetOrderedRows())
+        foreach (var row in source)
             sb.AppendLine(string.Join('\t', columns.Select(z => GetCell(row, z))));
 
         var data = sb.ToString();

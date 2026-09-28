@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Layout;
 using PKHeX.Avalonia.Controls;
 using PKHeX.Avalonia.Views.EntityEditors;
 using PKHeX.Core;
@@ -29,7 +30,7 @@ public sealed class Trainer8bWindow : SaveEditorWindow
     private readonly ComboBox CB_Language = UiFactory.Combo("CB_Language", 140);
     private readonly TrainerIDView trainerID1 = new() { Name = "trainerID1" };
     private readonly NumericTextBox MT_Money = UiFactory.Numeric("MT_Money", 8, 110);
-    private readonly Button B_MaxCash = UiFactory.Button("B_MaxCash", "Max");
+    private readonly Button B_MaxCash = UiFactory.Button("B_MaxCash", "+");
     private readonly NumericUpDown NUD_BP = UiFactory.NumericUpDown("NUD_BP", 0, uint.MaxValue, 120);
     private readonly NumericTextBox MT_Hours = UiFactory.Numeric("MT_Hours", 5, 60);
     private readonly NumericTextBox MT_Minutes = UiFactory.Numeric("MT_Minutes", 2, 44);
@@ -95,32 +96,46 @@ public sealed class Trainer8bWindow : SaveEditorWindow
 
     private void BuildLayout()
     {
-        var main = UiFactory.FormGrid(8);
-        UiFactory.AddFormRow(main, 0, UiFactory.Label("L_TrainerName", "Trainer Name:"), UiFactory.Row(TB_OTName, CB_Gender));
-        UiFactory.AddFormRow(main, 1, UiFactory.Label("L_Rival", "Rival Name:"), TB_Rival);
-        UiFactory.AddFormRow(main, 2, UiFactory.Label("L_Game", "Game:"), CB_Game);
-        UiFactory.AddFormRow(main, 3, UiFactory.Label("L_TrainerID", "Trainer ID:"), trainerID1);
-        UiFactory.AddFormRow(main, 4, UiFactory.Label("L_Money", "Money:"), UiFactory.Row(MT_Money, B_MaxCash));
-        UiFactory.AddFormRow(main, 5, UiFactory.Label("L_Language", "Language:"), CB_Language);
-        UiFactory.AddFormRow(main, 6, UiFactory.Label("L_BP", "Battle Points:"), NUD_BP);
-        UiFactory.AddFormRow(main, 7, UiFactory.Label("L_PlayTime", "Play Time:"), UiFactory.Row(MT_Hours, MT_Minutes, MT_Seconds));
+        // Overview: trainer details on the left, the Stats and Adventure groups on the right
+        // (SAV_Trainer8b.Designer.cs: Tab_Overview).
+        var main = UiFactory.FormGrid(5);
+        UiFactory.AddFormRow(main, 0, UiFactory.Label("L_TrainerName", "Trainer Name:"),
+            UiFactory.Row(TB_OTName, UiFactory.Label("L_RivalName", "Rival Name:"), TB_Rival)); // both names share a line upstream
+        UiFactory.AddFormRow(main, 1, trainerID1, UiFactory.Row());
+        UiFactory.AddFormRow(main, 2, UiFactory.Label("L_Money", "$:"), UiFactory.Row(MT_Money, B_MaxCash));
+        UiFactory.AddFormRow(main, 3, null, UiFactory.Row(CB_Gender, CB_Game));
+        UiFactory.AddFormRow(main, 4, UiFactory.Label("L_Language", "Language:"), CB_Language);
 
-        var dates = UiFactory.FormGrid(2);
-        UiFactory.AddFormRow(dates, 0, UiFactory.Label("L_AdventureStart", "Adventure Started:"), UiFactory.Row(CAL_AdventureStartDate, CAL_AdventureStartTime));
-        UiFactory.AddFormRow(dates, 1, UiFactory.Label("L_LastSaved", "Last Saved:"), UiFactory.Row(CAL_LastSavedDate, CAL_LastSavedTime));
+        var adventure = UiFactory.FormGrid(5);
+        UiFactory.AddFormRow(adventure, 0, UiFactory.Label("L_Started", "Game Started:"), UiFactory.Row(CAL_AdventureStartDate, CAL_AdventureStartTime));
+        UiFactory.AddFormRow(adventure, 1, UiFactory.Label("L_LastSaved", "Last Saved:"), UiFactory.Row(CAL_LastSavedDate, CAL_LastSavedTime));
+        UiFactory.AddFormRow(adventure, 2, UiFactory.Label("L_Hours", "Hrs:"), MT_Hours);
+        UiFactory.AddFormRow(adventure, 3, UiFactory.Label("L_Minutes", "Min:"), MT_Minutes);
+        UiFactory.AddFormRow(adventure, 4, UiFactory.Label("L_Seconds", "Sec:"), MT_Seconds);
+        // WinForms keeps the Hall of Fame pickers hidden (SAV_Trainer8b.cs:76), so they are not built here.
 
-        GB_Map = new GroupBoxView("GB_Map", "Map Position", UiFactory.Row(
-            UiFactory.Label("L_M", "Zone:"), NUD_M,
-            UiFactory.Label("L_X", "X:"), NUD_X,
-            UiFactory.Label("L_Z", "Height:"), NUD_Z,
-            UiFactory.Label("L_Y", "Y:"), NUD_Y,
-            UiFactory.Label("L_R", "R:"), NUD_R));
+        var stats = UiFactory.Column(UiFactory.Row(UiFactory.Label("L_BP", "BP:"), NUD_BP), TrainerStats);
 
-        var overview = UiFactory.Column(main, new GroupBoxView("GB_Badges", "Badges", UiFactory.Row(Badges)), dates, GB_Map);
+        var left = UiFactory.Column(main, new GroupBoxView("GB_Adventure", "Adventure Info", adventure));
+        var right = new GroupBoxView("GB_Stats", "Stats", stats);
+        left.VerticalAlignment = right.VerticalAlignment = VerticalAlignment.Top;
+        var overview = UiFactory.Row(left, right);
+        overview.Spacing = 10;
 
-        var tabs = new TabControl();
+        // Map tab: the badges and the map position group, as in WinForms.
+        var map = UiFactory.FormGrid(5);
+        UiFactory.AddFormRow(map, 0, UiFactory.Label("L_CurrentMap", "Zone ID:"), NUD_M);
+        UiFactory.AddFormRow(map, 1, UiFactory.Label("L_X", "X Coordinate:"), NUD_X);
+        UiFactory.AddFormRow(map, 2, UiFactory.Label("L_Y", "Y Coordinate:"), NUD_Y);
+        UiFactory.AddFormRow(map, 3, UiFactory.Label("L_Height", "Height:"), NUD_Z);
+        UiFactory.AddFormRow(map, 4, UiFactory.Label("L_Rotation", "Rotation:"), NUD_R);
+        GB_Map = new GroupBoxView("GB_Map", "Map Position", map);
+        GB_Map.HorizontalAlignment = HorizontalAlignment.Left;
+        var badgeMap = UiFactory.Column(UiFactory.Row(Badges), GB_Map);
+
+        var tabs = new TabControl { Name = "TC_Editor" };
         tabs.Items.Add(new TabItem { Name = "Tab_Overview", Header = "Overview", Content = new ScrollViewer { Content = overview, MaxHeight = 540 } });
-        tabs.Items.Add(new TabItem { Name = "Tab_Records", Header = "Records", Content = TrainerStats });
+        tabs.Items.Add(new TabItem { Name = "Tab_BadgeMap", Header = "Map", Content = new ScrollViewer { Content = badgeMap, MaxHeight = 540 } });
         SetBody(tabs);
     }
 

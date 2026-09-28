@@ -26,7 +26,7 @@ public sealed class JoinAvenueSettingsView : StackPanel
     private readonly NumericUpDown NUD_PlayerInsert = UiFactory.NumericUpDown("NUD_PlayerInsert", 0, ushort.MaxValue, 120);
     private readonly NumericUpDown NUD_Seed = UiFactory.NumericUpDown("NUD_Seed", 0, uint.MaxValue, 140);
     private readonly NumericUpDown NUD_PromotionDaysElapsed = UiFactory.NumericUpDown("NUD_PromotionDaysElapsed", 0, ushort.MaxValue, 120);
-    private readonly CheckBox CHK_IsPromotionActive = UiFactory.Check("CHK_IsPromotionActive", "Promotion Active");
+    private readonly CheckBox CHK_IsPromotionActive = UiFactory.Check("CHK_IsPromotionActive", string.Empty);
     private readonly ObservableCollection<PlayerRow> PlayerRows = [];
 
     public JoinAvenueSettingsView()
@@ -46,11 +46,11 @@ public sealed class JoinAvenueSettingsView : StackPanel
         Row(grid, r++, "L_Rank", "Rank:", NUD_Rank);
         Row(grid, r++, "L_CeilingColor", "Ceiling Color:", CB_CeilingColor);
         Row(grid, r++, "L_Flags", "Flags:", NUD_Flags);
-        Row(grid, r++, "L_PlayerCount", "Player Count:", NUD_PlayerCount);
-        Row(grid, r++, "L_PlayerInsert", "Insert Index:", NUD_PlayerInsert);
+        Row(grid, r++, "L_PlayerIDCount", "Player ID Count:", NUD_PlayerCount);
+        Row(grid, r++, "L_PlayerIDInsert", "Player ID Insert:", NUD_PlayerInsert);
         Row(grid, r++, "L_Seed", "Seed:", NUD_Seed);
-        Row(grid, r++, "L_PromotionDaysElapsed", "Promotion Days:", NUD_PromotionDaysElapsed);
-        Row(grid, r, "L_IsPromotionActive", string.Empty, CHK_IsPromotionActive);
+        Row(grid, r++, "L_PromotionDaysElapsed", "Promotion Days Elapsed:", NUD_PromotionDaysElapsed);
+        Row(grid, r, "L_IsPromotionActive", "Is Promotion Active:", CHK_IsPromotionActive);
 
         for (int i = 0; i < JoinAvenueSettings5.CountVisitingPlayersRemembered; i++)
             PlayerRows.Add(new PlayerRow { Index = i + 1 });
@@ -67,12 +67,12 @@ public sealed class JoinAvenueSettingsView : StackPanel
             Height = 460,
             HorizontalAlignment = HorizontalAlignment.Left,
         };
-        dgv.Columns.Add(new DataGridTextColumn { Header = "#", Binding = new Binding(nameof(PlayerRow.Index)), IsReadOnly = true, Width = new DataGridLength(50) });
-        dgv.Columns.Add(new DataGridTextColumn { Header = "TID", Binding = new Binding(nameof(PlayerRow.TID)) { Mode = BindingMode.TwoWay }, Width = new DataGridLength(100) });
-        dgv.Columns.Add(new DataGridTextColumn { Header = "SID", Binding = new Binding(nameof(PlayerRow.SID)) { Mode = BindingMode.TwoWay }, Width = new DataGridLength(100) });
+        dgv.Columns.Add(new DataGridTextColumn { Header = "#", Binding = new Binding(nameof(PlayerRow.Index)), IsReadOnly = true, Width = new DataGridLength(50) }.Named("Column_Index"));
+        dgv.Columns.Add(new DataGridTextColumn { Header = "TID", Binding = new Binding(nameof(PlayerRow.TID)) { Mode = BindingMode.TwoWay }, Width = new DataGridLength(100) }.Named("Column_TID"));
+        dgv.Columns.Add(new DataGridTextColumn { Header = "SID", Binding = new Binding(nameof(PlayerRow.SID)) { Mode = BindingMode.TwoWay }, Width = new DataGridLength(100) }.Named("Column_SID"));
 
         Children.Add(grid);
-        Children.Add(new GroupBoxView("GB_VisitingPlayers", "Visiting Players", dgv));
+        Children.Add(UiFactory.Column(UiFactory.Label("L_VisitingPlayerDatabase", "Player IDs:"), dgv));
         return;
 
         static void Row(Grid g, int row, string name, string text, Control editor)

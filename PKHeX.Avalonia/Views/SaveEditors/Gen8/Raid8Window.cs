@@ -17,7 +17,7 @@ public sealed class Raid8Window : SaveEditorWindow
     private readonly ComboBox CB_Den = UiFactory.StringCombo("CB_Den", 160);
     private readonly PropertyGridView PG_Den = new() { MinHeight = 360 };
 
-    public Raid8Window(SAV8SWSH sav, MaxRaidOrigin raidOrigin) : base("SAV_Raid8", "Raid Editor")
+    public Raid8Window(SAV8SWSH sav, MaxRaidOrigin raidOrigin) : base("SAV_Raid8", "Raid Parameter Editor")
     {
         SAV = (SAV8SWSH)(Origin = sav).Clone();
         Raids = raidOrigin switch

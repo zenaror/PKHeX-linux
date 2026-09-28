@@ -28,6 +28,11 @@ public sealed class GroupViewerWindow : Window
     private readonly Button B_BoxLeft = UiFactory.Button("B_BoxLeft", "<");
     private readonly Button B_BoxRight = UiFactory.Button("B_BoxRight", ">");
 
+    /// <summary>Slot right-click menu (port of the WinForms <c>mnu</c> context menu strip).</summary>
+    private readonly ContextMenu mnu = new();
+    private readonly MenuItem mnuView = new() { Name = "mnuView", Header = "View" };
+    private int menuIndex = -1;
+
     private int groupSelected = -1;
     private int slotSelected = -1;
 
@@ -77,6 +82,10 @@ public sealed class GroupViewerWindow : Window
             e.Handled = true;
         }, global::Avalonia.Interactivity.RoutingStrategies.Tunnel);
 
+        mnu.Items.Add(mnuView);
+        SetViewIcon();
+        mnuView.Click += (_, _) => ClickView(menuIndex);
+
         for (int i = 0; i < Box.Entries.Count; i++)
         {
             var index = i;
@@ -86,6 +95,13 @@ public sealed class GroupViewerWindow : Window
                 if (mods == KeyModifiers.Control)
                     ClickView(index);
             });
+            pb.ContextMenu = mnu;
+            // The menu is shared by every slot; remember which one opened it (WinForms resolves the owning PictureBox).
+            pb.AddHandler(PointerPressedEvent, (_, e) =>
+            {
+                if (e.GetCurrentPoint(pb).Properties.IsRightButtonPressed)
+                    menuIndex = index;
+            }, global::Avalonia.Interactivity.RoutingStrategies.Tunnel);
             pb.PointerEntered += (_, _) => HoverSlot(index);
             pb.PointerExited += (_, _) => Preview.Clear();
         }
@@ -93,6 +109,16 @@ public sealed class GroupViewerWindow : Window
 
         CB_BoxSelect.SelectedIndex = GetFirstTeamWithContent(groups);
         Translator.TranslateInterface(this, MainWindow.CurrentLanguage);
+        // Avalonia keeps a ContextMenu out of its target's logical tree, so translate it separately.
+        Translator.TranslateControls(mnu, "SAV_GroupViewer", MainWindow.CurrentLanguage);
+    }
+
+    /// <summary>WinForms gives the menu entry the "other" icon (<c>mnuView.Image</c>).</summary>
+    private void SetViewIcon()
+    {
+        var bmp = App.IsDarkModeEnabled ? AppResources.GetImageBlackToWhite("other") : AppResources.GetImage("other");
+        if (bmp is not null)
+            mnuView.Icon = new Image { Source = bmp, Width = 16, Height = 16 };
     }
 
     private void HoverSlot(int index)

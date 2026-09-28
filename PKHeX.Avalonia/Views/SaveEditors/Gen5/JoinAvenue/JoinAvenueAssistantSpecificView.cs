@@ -12,7 +12,7 @@ public sealed class JoinAvenueAssistantSpecificView : StackPanel, IJoinAvenueSpe
     private readonly NumericUpDown NUD_Position1 = Byte("NUD_Position1");
     private readonly NumericUpDown NUD_Position2 = Byte("NUD_Position2");
     private readonly NumericUpDown NUD_PositionUnused = Byte("NUD_PositionUnused");
-    private readonly CheckBox CHK_InteractedToday = UiFactory.Check("CHK_InteractedToday", "Interacted Today");
+    private readonly CheckBox CHK_InteractedToday = UiFactory.Check("CHK_InteractedToday", string.Empty);
 
     private static NumericUpDown Byte(string name) => UiFactory.NumericUpDown(name, 0, byte.MaxValue, 110);
 
@@ -22,11 +22,11 @@ public sealed class JoinAvenueAssistantSpecificView : StackPanel, IJoinAvenueSpe
         Spacing = 2;
 
         var grid = UiFactory.FormGrid(5);
-        UiFactory.AddFormRow(grid, 0, UiFactory.Label("L_Position0", "Position 0:"), NUD_Position0);
-        UiFactory.AddFormRow(grid, 1, UiFactory.Label("L_Position1", "Position 1:"), NUD_Position1);
-        UiFactory.AddFormRow(grid, 2, UiFactory.Label("L_Position2", "Position 2:"), NUD_Position2);
-        UiFactory.AddFormRow(grid, 3, UiFactory.Label("L_PositionUnused", "Position (unused):"), NUD_PositionUnused);
-        UiFactory.AddFormRow(grid, 4, null, CHK_InteractedToday);
+        UiFactory.AddFormRow(grid, 0, UiFactory.Label("L_Position0", "Position0:"), NUD_Position0);
+        UiFactory.AddFormRow(grid, 1, UiFactory.Label("L_Position1", "Position1:"), NUD_Position1);
+        UiFactory.AddFormRow(grid, 2, UiFactory.Label("L_Position2", "Position2:"), NUD_Position2);
+        UiFactory.AddFormRow(grid, 3, UiFactory.Label("L_UnusedPosition", "Unused:"), NUD_PositionUnused);
+        UiFactory.AddFormRow(grid, 4, UiFactory.Label("L_InteractedToday", "Interacted Today:"), CHK_InteractedToday);
         Children.Add(grid);
     }
 

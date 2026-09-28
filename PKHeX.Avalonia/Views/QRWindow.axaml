@@ -7,6 +7,16 @@
         CanResize="False"
         WindowStartupLocation="CenterOwner">
   <StackPanel Margin="8" Spacing="8">
+    <!-- QR7 injection controls; shown only for a PK7, like the WinForms splitContainer1.Panel1. -->
+    <StackPanel x:Name="P_QR7" Orientation="Horizontal" Spacing="4" IsVisible="False">
+      <TextBlock x:Name="L_Box" Text="Box:" VerticalAlignment="Center" />
+      <NumericUpDown x:Name="NUD_Box" Minimum="1" Maximum="32" Value="1" Increment="1" FormatString="0" Width="90" MinHeight="0" VerticalAlignment="Center" />
+      <TextBlock x:Name="L_Slot" Text="Slot:" VerticalAlignment="Center" />
+      <NumericUpDown x:Name="NUD_Slot" Minimum="1" Maximum="30" Value="1" Increment="1" FormatString="0" Width="90" MinHeight="0" VerticalAlignment="Center" />
+      <TextBlock x:Name="L_Copies" Text="Copies:" VerticalAlignment="Center" />
+      <NumericUpDown x:Name="NUD_Copies" Minimum="1" Maximum="960" Value="1" Increment="1" FormatString="0" Width="90" MinHeight="0" VerticalAlignment="Center" />
+      <Button x:Name="B_Refresh" Content="Refresh" Padding="8,2" MinHeight="0" VerticalAlignment="Center" />
+    </StackPanel>
     <Image x:Name="PB_QR" Stretch="None" Cursor="Hand" />
     <TextBlock x:Name="L_Info" TextWrapping="Wrap" MaxWidth="480" />
   </StackPanel>

@@ -41,7 +41,7 @@ public sealed class PokedexGGWindow : SaveEditorWindow
     private readonly ComboBox CB_Species = UiFactory.Combo("CB_Species", 180);
     private readonly Button B_GiveAll = UiFactory.Button("B_GiveAll", "Check All");
     private readonly Button B_Modify = UiFactory.Button("B_Modify", "Modify...");
-    private readonly Button B_Counts = UiFactory.Button("B_Counts", "Capture Records");
+    private readonly Button B_Counts = UiFactory.Button("B_Counts", "Counts");
     private GroupBoxView GB_SizeRecords = null!;
 
     public PokedexGGWindow(SAV7b sav) : base("SAV_PokedexGG", "Pokédex Editor")
@@ -64,12 +64,13 @@ public sealed class PokedexGGWindow : SaveEditorWindow
             UiFactory.Check("CHK_L9", "Chinese2"),
         ];
         RecordUsed = [
-            UiFactory.Check("CHK_RMinHeight", "Recorded"), UiFactory.Check("CHK_RMaxHeight", "Recorded"),
-            UiFactory.Check("CHK_RMinWeight", "Recorded"), UiFactory.Check("CHK_RMaxWeight", "Recorded"),
+            UiFactory.Check("CHK_RMinHeight", "Used"), UiFactory.Check("CHK_RMaxHeight", "Used"),
+            UiFactory.Check("CHK_RMinWeight", "Used"), UiFactory.Check("CHK_RMaxWeight", "Used"),
         ];
+        // The WinForms designer leaves these four unlabeled (they sit right of the height box).
         RecordFlag = [
-            UiFactory.Check("CHK_MinH", "Flag"), UiFactory.Check("CHK_MaxH", "Flag"),
-            UiFactory.Check("CHK_MinW", "Flag"), UiFactory.Check("CHK_MaxW", "Flag"),
+            UiFactory.Check("CHK_MinH", string.Empty), UiFactory.Check("CHK_MaxH", string.Empty),
+            UiFactory.Check("CHK_MinW", string.Empty), UiFactory.Check("CHK_MaxW", string.Empty),
         ];
         RecordHeight = [
             UiFactory.NumericUpDown("NUD_RHeightMin", 0, byte.MaxValue, 90),
@@ -109,11 +110,7 @@ public sealed class PokedexGGWindow : SaveEditorWindow
         flags.Children.Add(UiFactory.Column(owned, seen, displayed));
         flags.Children.Add(languages);
 
-        var records = UiFactory.FormGrid(4);
-        string[] labels = ["Min Height:", "Max Height:", "Min Weight:", "Max Weight:"];
-        for (int i = 0; i < RecordUsed.Length; i++)
-            UiFactory.AddFormRow(records, i, UiFactory.Label($"L_Record{i}", labels[i]), UiFactory.Row(RecordUsed[i], RecordHeight[i], RecordWeight[i], RecordFlag[i]));
-        GB_SizeRecords = new GroupBoxView("GB_SizeRecords", "Size Records", records);
+        GB_SizeRecords = new GroupBoxView("GB_SizeRecords", "Records", BuildSizeRecords());
 
         var right = UiFactory.Column(
             UiFactory.Row(UiFactory.Label("L_goto", "goto:"), CB_Species),
@@ -151,6 +148,50 @@ public sealed class PokedexGGWindow : SaveEditorWindow
     {
         SetEntry();
         await new Capture7GGWindow(SAV).ShowDialog(this);
+    }
+
+    /// <summary>
+    /// Four rows (min/max height, min/max weight), each with the recorded height, its flag, the recorded weight
+    /// and a "Used" box, under "Height" / "Weight" column headers - the WinForms <c>GB_SizeRecords</c> layout.
+    /// </summary>
+    private Control BuildSizeRecords()
+    {
+        var g = new Grid { ColumnSpacing = 6, RowSpacing = 3 };
+        for (int i = 0; i < 6; i++)
+            g.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+        for (int i = 0; i < 5; i++)
+            g.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+
+        var height = UiFactory.Label("L_RHeight", "Height");
+        height.HorizontalAlignment = HorizontalAlignment.Center;
+        UiFactory.SetRowCol(height, 0, 1, 2);
+        g.Children.Add(height);
+        var weight = UiFactory.Label("L_RWeight", "Weight");
+        weight.HorizontalAlignment = HorizontalAlignment.Center;
+        UiFactory.SetRowCol(weight, 0, 3, 2);
+        g.Children.Add(weight);
+
+        // Rows 0/1 are the height records and label the left column; rows 2/3 are the weight records and label the right.
+        string[] rowLabelNames = ["L_RHeightMin", "L_RHeightMax", "L_RWeightMin", "L_RWeightMax"];
+        string[] rowLabelText = ["Min", "Max", "Min", "Max"];
+        for (int i = 0; i < RecordUsed.Length; i++)
+        {
+            var row = i + 1;
+            var label = UiFactory.Label(rowLabelNames[i], rowLabelText[i]);
+            label.HorizontalAlignment = HorizontalAlignment.Right;
+            UiFactory.SetRowCol(label, row, i < 2 ? 0 : 3);
+            g.Children.Add(label);
+
+            UiFactory.SetRowCol(RecordHeight[i], row, 1);
+            g.Children.Add(RecordHeight[i]);
+            UiFactory.SetRowCol(RecordFlag[i], row, 2);
+            g.Children.Add(RecordFlag[i]);
+            UiFactory.SetRowCol(RecordWeight[i], row, 4);
+            g.Children.Add(RecordWeight[i]);
+            UiFactory.SetRowCol(RecordUsed[i], row, 5);
+            g.Children.Add(RecordUsed[i]);
+        }
+        return g;
     }
 
     private MenuFlyout BuildModifyMenu()
