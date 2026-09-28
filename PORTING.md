@@ -27,11 +27,11 @@ Development branch: `feature/linuxport`. Primary target: Linux Mint (x11/Wayland
 skin with PNG import/export, Pokédex skin, Battle Videos, Musicals, Memory Link, PWT, Pokéstar Studios), Festival
 Plaza (Generation 7, including the US/UM Battle Agency tab), Fashion/hair unlocks (S/V and Legends: Z-A), Donut pocket
 with its flavour radar chart and bulk generator (Legends: Z-A Mega Dimension), registered-team viewer for Stadium
-saves, Passerby export, and the block accessor (named blocks for Gen 5-7, the SCBlock dump for Gen 8/9, a plain property grid otherwise). Every generation now has a usable save for runtime testing. Every SAV-tab button is now wired; the few that stay disabled are games upstream's own editor does not handle either and say so in their tooltip, and the ones upstream hides outright (the Wonder Card album on Gen 8/9, which keep no cards in the save) are hidden here too A 2026-09-28 parity pass over the Generation 4 and Battle Revolution editors made the Battle Pass window non-modal again, restored its missing validators, slot menu, hover preview and upstream layout/names, translated the Pokéathlon pages built after `SetBody`, and fixed the Underground row order, the Gear and Geonet grids (see "Generation 4 and Battle Revolution parity pass") — **screen check pending** for those |
+saves, Passerby export, and the block accessor (named blocks for Gen 5-7, the SCBlock dump for Gen 8/9, a plain property grid otherwise). Every generation now has a usable save for runtime testing. Every SAV-tab button is now wired; the few that stay disabled are games upstream's own editor does not handle either and say so in their tooltip, and the ones upstream hides outright (the Wonder Card album on Gen 8/9, which keep no cards in the save) are hidden here too A 2026-09-28 parity pass over the Generation 4 and Battle Revolution editors made the Battle Pass window non-modal again, restored its missing validators, slot menu, hover preview and upstream layout/names, translated the Pokéathlon pages built after `SetBody`, and fixed the Underground row order, the Gear and Geonet grids (see "Generation 4 and Battle Revolution parity pass") — **screen-verified 2026-09-28**, including Misc4 (Pt and HGSS) and DLC4 (the Battle Video viewer), against hand-built Platinum and HeartGold fixtures generated for this pass (see "Generation 4 and Battle Revolution parity pass" and "Known blockers" for the fixture technique) |
 | File dialogs (open and save) | **RUNTIME VERIFIED** — the desktop portal dialog can be driven after all: it is the active window rather than the named `xdg-desktop-portal-gtk` one, so Ctrl+A, the path and Enter drive a save, and Ctrl+L, the path and Enter drive an open. Exporting a Mystery Gift wrote a 260-byte `.pgt` (the exact card size), importing it back filled an empty album slot and the card survived reselecting it, and File → Export SAV (Ctrl+E) wrote the save, which reads back with its three cards intact |
 | Mystery Gift album, Generation 4 (PGT/PCD) | **RUNTIME VERIFIED** — no Gen 4 save with gift data was supplied, so one was generated (an HG/SS save carrying three cards written through the save's own gift storage: a Pokémon, an egg and the Manaphy egg, which is its own card type). The album opens with the Gen 4 layout — PGT 1-6, PGT 7-8, PCD 1-3 and the Lock Capsule — draws each card's sprite, and the details pane names the gift and its trainer ("Celebi @ (None) --- REON", "Manaphy @ (None) --- Egg"). Import and export were later exercised through the file dialogs (a 260-byte `.pgt` written and imported back) |
 | Generation 5 DLC editor, Black/White paths | **RUNTIME VERIFIED** — no Black/White save was supplied, so one was generated (a blank `SAV5BW` with a C-Gear background written through `CGearBackgroundBW`, which is the path that also runs the shift-format palette conversion). The editor opens on it and draws the background from the BW tile layout, and the Musical tab renders; headless checks confirm the BW musical block size (130048, against 97280 for B2/W2), the `.psk` extension, that the BW tile index maps back to itself over 0..254, and that writing the background and reading it again returns the same bytes. Import and export go through the file dialogs, which are exercised elsewhere |
-| Tools (databases, batch editor, report grid, folder list, box dump) | **RUNTIME VERIFIED** — PKM Database (load/filter/search/view), Encounter Database (filters, criteria grid, search), Mystery Gift Database, Batch Editor (20/20 entities edited, saved and re-read from the exported file), Box Data Report (sortable grid, clipboard/CSV export), Folder List, Dump Boxes / Dump Box, KChart (Shift on the PKM Database menu item), and the Troubleshooting menu (force-load a save through a chosen handler, open a file from clipboard hex, plugin list); a 2026-09-28 parity pass against `PKHeX.WinForms` corrected the Mystery Gift format comparator, the report grid's column set, the grid row-count setting, the missing hover previews, the mouse wheel and the button/menu order (see "Tools and databases parity pass") — **screen check pending** for those |
+| Tools (databases, batch editor, report grid, folder list, box dump) | **RUNTIME VERIFIED** — PKM Database (load/filter/search/view), Encounter Database (filters, criteria grid, search), Mystery Gift Database, Batch Editor (20/20 entities edited, saved and re-read from the exported file), Box Data Report (sortable grid, clipboard/CSV export), Folder List, Dump Boxes / Dump Box, KChart (Shift on the PKM Database menu item), and the Troubleshooting menu (force-load a save through a chosen handler, open a file from clipboard hex, plugin list); a 2026-09-28 parity pass against `PKHeX.WinForms` corrected the Mystery Gift format comparator, the report grid's column set, the grid row-count setting, the missing hover previews, the mouse wheel and the button/menu order (see "Tools and databases parity pass") — **screen-verified 2026-09-28** for most of those (see "Tools and databases parity pass" for exactly which) |
 | Other tab (daycare + extra slots) | **RUNTIME VERIFIED** — the daycare group (two slots with the occupancy/experience readout, egg flag, editable seed, and the multi-daycare switch) and the extra-slot list (GTS, Fused, PGL, Battle Box, ...) grouped by storage type, all drag/drop and context-menu enabled like the box slots |
 | Box search | **RUNTIME VERIFIED** — the Search button in the box header opens the filter popout (general filters plus the batch-instruction tab); matching slots stay lit and the rest are dimmed, and Next/Previous seek through the matches. Alt resets, Shift seeks without reopening |
 | Slot hover preview | **RUNTIME VERIFIED** — the rich hover card (ball/name/gender header, Showdown paste, moves with type icons and illegal moves in the warning colour, first legality hint, encounter summary) and the plain-text fallback. Cries are played through a command-line audio player when one is installed |
@@ -283,7 +283,12 @@ buffer empty, so `SaveFile.Write` throws `ArgumentOutOfRangeException` from `Blo
 tool instead writes the two block footers save detection reads — each block keeps its own size at `-0xC` and the SDK
 build magic (`0x20060623`) at `-0x8`, in both 0x40000 partitions — and loads the image through the normal path. The
 Gen 4 editors are therefore runtime-testable; only the Hall of Fame extra block stays uninitialised in a blank save,
-so the Battle Hall streak counter is hidden there, as it is in WinForms.
+so the Battle Hall streak counter is hidden there, as it is in WinForms. Re-confirmed 2026-09-28 with fresh Platinum
+and HeartGold fixtures built the same way (`0x40000` partition 1 holding General then Storage, zero-filled apart from
+the size+magic footer at each block's `-0xC`/`-0x8`, extra-block range `0xFF`-filled so `BlockInfo4.IsInitialized`
+reads it as absent rather than garbage): `SaveUtil` recognized both as `SAV4Pt`/`SAV4HGSS` with `State.Exportable`
+true, and every Generation 4 SAV-tab editor opened cleanly on screen from them, including Misc4 and DLC4 — see
+"Generation 4 and Battle Revolution parity pass".
 
 **Generation 6 and 7 fixtures need patched magic values:** a blank save has no `BEEF` block-footer magic, so save detection
 rejects it until the four bytes at `length - 0x1F0` are written, and a Generation 7 dex block additionally needs its own
@@ -475,7 +480,7 @@ Gen 3, FRLG rival name, Gen 1/3/6 Hall of Fame nicknames), the dark-mode icon in
 context menus, and the Options -> Language header access-key escape ("EspañolEspaña") — these remain build- and
 headless-verified only.
 
-**Tools and databases parity pass (2026-09-28, BUILD VERIFIED + headless, screen check pending).** A static
+**Tools and databases parity pass (2026-09-28, BUILD VERIFIED + headless, screen-verified 2026-09-28 for most items).** A static
 comparison of the tool windows that no earlier pass had covered — PKM / Encounter / Mystery Gift databases, KChart,
 Batch Editor, Box Data Report, Folder List, Box Export, the save-handler troubleshooter and the error window — against
 `PKHeX.WinForms` closed these gaps:
@@ -531,10 +536,25 @@ comparator as `Any, >=, ==, <=` and "<=" preselected.
 
 One item overlaps with a screen check done elsewhere: pressing Ctrl+R twice on the Box Data Report re-focused the same
 window instead of opening a second one (2026-09-28, see "Main window / Box tab parity pass" above), which exercises
-the single-instance helper this pass introduced. The rest of this list — the Mystery Gift Database format filter, the
-Box Data Report's restored columns, the sprite-grid row count, the hover previews, the mouse-wheel fix, KChart's
-headers, the Batch Editor button order, the menu icons, Folder List staying open, and the Error window strings — has
-not been screen-checked and stays build- and headless-verified only.
+the single-instance helper this pass introduced.
+
+Screen-verified 2026-09-28, on a real Sword save (databases) and ultrasun (the unsupported-file rejection noted
+elsewhere): the Mystery Gift Database format comparator order (`Any, >=, ==, <=`), its hover preview, its
+`ResultsGridRowCount` setting actually resizing the window on next open (checked 9 → 5), its Tools-menu icons and its
+Ctrl+E exit; the PKM Database's View/Delete-only slot menu (the extra "Set" entry is gone) and its Ctrl+E exit; the Box
+Data Report's restored column set (spot-checked `ESV`/`HP_Type`/`Ability`/`Move1-4` and, further right,
+`EC`/`PID`/`IV_*`/`EXP`/`Level`) and its Ctrl+C copy (raises "Copy as formatted table?", then copies all 77 header
+columns and, with nothing selected, every row); KChart's translated headers (`Dex# / Type1 / ATK / DEF / SPA / SPD /
+SPE`, opened via Shift+click on the PKM Database menu item); the Batch Editor's `Reset | Run | Matching | Cancel |
+Save` button order; and Folder List staying open after using its right-click **Open** to reload a save. Not
+independently re-verified on screen: Encounter Database's own hover preview (inferred from the same
+`SummaryPreviewer` class the Mystery Gift DB case exercised), the mouse-wheel repaint fix (the result set used was too
+small to need scrolling), the Search Settings checkable items' "stays open on click," dark-mode icon inversion on the
+three database windows (session ran in light mode), the Box Export button's bottom-spanning layout, the Batch
+Editor's drag-and-drop-a-folder path, single-instance reuse for KChart/Encounter DB/Mystery Gift DB specifically, and
+the Error window's translated Copy/Continue/Abort layout (the only error dialog actually triggered was a plain
+`AppDialogs.Alert`-style OK dialog from loading an unsupported file, not the richer crash `ErrorWindow`) — these
+remain build- and headless-verified only.
 
 **Legends: Z-A / Legends: Arceus / BD-SP editor parity pass (2026-09-28, BUILD VERIFIED + headless, screen check
 pending).** A static comparison of the Generation 8/9 editors reached from a Legends: Z-A, Legends: Arceus or
@@ -718,7 +738,7 @@ checkbox column toggles on the first click. `DataGridUtil.CheckColumn` replaces 
 throughout, which restores the reference behaviour for the Underground, Poffin, Seal Sticker, Unity Tower, Medal,
 Pokéathlon and flag/work grids.
 
-**Generation 4 and Battle Revolution parity pass (2026-09-28, BUILD VERIFIED + headless, screen check pending).**
+**Generation 4 and Battle Revolution parity pass (2026-09-28, BUILD VERIFIED + headless, screen-verified 2026-09-28).**
 Reading `PKHeX.WinForms` against the Avalonia editors for Generation 4 (D/P/Pt, HG/SS) and Battle Revolution closed
 these gaps:
 
@@ -754,6 +774,78 @@ these gaps:
 * Smaller: the Generation 4 Pokédex gender lists use upstream's `L_Seen` / `L_NotSeen` names; the Chatter confusion
   box is disabled rather than merely read-only, as in the designer; and the Misc and Battle Video window titles use
   their own translation keys' wording.
+
+Screen-verified 2026-09-28, using the owner's real Battle Revolution save (`GeniusPbr/PbrSaveData`, SAV4BR) — the only
+real Generation 4-family save available in `_saves/`: the Battle Pass editor is non-modal (opening it and then
+clicking a different tab on the main window switched tabs immediately instead of being blocked) and single-instance
+(reopening it re-focused the same window); its tab strip is the restored four tabs `Main / Pokémon / Catchphrases /
+Creator` with the `Trainer`/`Appearance` groups populated for a real custom pass; its Catchphrases tab shows all six
+real fields with genuine text and a Preset-Catchphrase checkbox/ID spinner per field; its party slots have the
+View/Set/Delete context menu, the `SummaryPreviewer` hover card, and clicking View both highlights the slot and loads
+that Pokémon into the main window's own PKM editor tabs; and the Gear editor shows no index column, its two buttons
+above the grid, and its Shiny Outfits group below in two rows of three. Not reached this session on the Battle
+Revolution save specifically: the Battle Pass Creator tab's content (the tab itself is visible in the strip) and the
+catchphrase character-budget truncation itself (fields were only confirmed populated, not typed past their limits) —
+the Trainer Data Editor was screen-verified separately (see "Save sub-editor parity pass" above).
+
+**Misc4 (Pt), Misc4 (HGSS), DLC4, Underground, Geonet and Pokéathlon are now screen-verified too (2026-09-28)**, using
+hand-built Platinum and HeartGold fixtures — no real Diamond/Pearl/Platinum/HeartGold/SoulSilver save exists anywhere
+in `_saves/` (the one HGSS-adjacent file there is an Action Replay DS "ARDS..." wrapped export that PKHeX correctly
+rejects as an unsupported file, confirmed by actually opening it), so this pass built two, following the exact
+technique "Generation 4 fixtures are built by hand" under "Known blockers" already documents: a 0x80000-byte image,
+partition 1 holding General then Storage back-to-back (zero-filled, which is the correct "empty" sentinel for
+species/party-count fields) with a real footer (size + the `0x20060623` SDK magic at each block's `-0xC`/`-0x8`) so
+`SaveUtil` recognizes the file and `SAV4.GetActiveBlock` resolves both blocks to that partition, and the extra-block
+range (Hall of Fame / Battle Hall / Battle Video slots) filled with `0xFF`, the sentinel `BlockInfo4.IsInitialized`
+treats as "not present." (`BlankSaveFile.Get(version, null).Write()` itself still throws
+`System.ArgumentOutOfRangeException` in `BlockInfo4.GetRevision` for all four Generation 4 versions — the blank
+in-memory `SAV4` instance's `Data` field is never sized to the full raw image, only `General`/`Storage`/backups are
+separate small buffers, so extra-block offset math reads past the end; loading from a correctly-sized image via the
+normal file constructor sidesteps this. This is a real, pre-existing `PKHeX.Core` defect, reproduced and pinpointed
+this session, but out of scope to fix here — see "Known blockers".) Both fixtures loaded without error (`SaveUtil`
+recognized them as `SAV4Pt`/`SAV4HGSS`, `State.Exportable=true`, full SAV-tab button row present) and every window
+below opened and was usable with no crash:
+
+* **Misc4 (Pt)** — RV. Tabs `Main / Battle Frontier / Seals / Fashion Case / Poffins / Records`; Main shows
+  Coins/BP/Flags Obtained spinners and a "Fly Destination" checklist of real Sinnoh town names (Twinleaf Town,
+  Sandgem Town, Floaroma Town, ...) and the Pokétch app list (Digital Watch, Calculator, Memo Pad, Pedometer, Pokémon
+  List, Friendship Checker, Dowsing Machine, Berry Searcher, Day-Care Checker) with a "Give All" button; Records opened
+  cleanly too.
+* **Misc4 (HGSS)** — RV, including the PokeGear tab this fixture-generation specifically unblocked (this is "the
+  largest window in that batch" per the prior probe's note). Tabs `Main / Battle Frontier / Pokewalker / Seals /
+  Fashion Case / PokeGear / Records`; Main shows a "Current Map" combo (`Map Johto`), "Athlete Points" spinner and a
+  Fly Destination list of real Kanto town names (Pallet Town, Viridian City, Pewter City, ...); PokeGear shows a
+  10-row caller list (each a combo, defaulting to "Mother" for zero-filled data) with Give All / Give All
+  Non-Trainers / Delete All buttons.
+* **DLC4 (Battle Video viewer)** — RV. Shows the three Battle Video slots as "01/02/03 - N/A" (correct for the
+  fixture's uninitialized extra blocks) and "Battle Video is not available." for the selected slot, with Import/
+  Export disabled and a "Force decrypted export" checkbox — the correct empty-state UI, not a crash.
+* **Underground** — RV, including the specific label fix. The Scores group lists exactly the documented thirteen
+  rows in WinForms order, and reads **"Others Helped:"** (not "Helped Others:") — the renamed/relabeled/retranslated
+  field the fix targeted. Goods/Spheres/Traps/Treasures tabs each show item-slot dropdowns with no crash.
+* **Geonet** — RV, including both specific fixes. The grid's second column reads **"Region"** (not "Subregion"),
+  with a real country/region list (Afghanistan; Albania; ...; Argentina/Buenos Aires, Catamarca, Chaco, Chubut, ...)
+  and a Point combo per row; clicking the "Country" header left the row order unchanged, confirming `NotSortable`.
+  "Set All Locations" / "Set All Legal Locations" / "Clear Locations" buttons and a "Whole Globe Visible" checkbox are
+  present.
+* **Pokéathlon** — RV, including the specific translation fix. General tab (Points, Daily Shop 1-12, Data Cards
+  0-N with translated names like "Data Card 01") opened cleanly; the Counters tab, one of the "late-built pages,"
+  reads **"Sessions Joined:"**, "Time Spent:", "Placed 1st:", "Bonuses Earned:", etc. — real translated labels, not
+  the raw "SessionsJoined" the fix describes finding; the Courses tab shows Score 1-3/ScoreMax spinners and three
+  Participant rows each with species/form combos, a Shiny checkbox, and **PID:/TID:/SID:** labels, matching the fix's
+  description exactly.
+* **Apricorns** — RV. Seven named apricorns (Red/Yellow/Blue/Green/Pink/White/Black), each a spin box, not a grid,
+  with All/None buttons.
+* **Chatter** — RV. The "Confusion %:" field renders visibly disabled (greyed control, not merely a read-only
+  textbox), matching the fix.
+* **Generation 4 Pokédex Seen/Not Seen captions** — RV. Both the Genders group and the separate Forms group carry
+  their own "Seen" / "Not Seen" labels.
+
+Not exercised even with these fixtures: actual Battle Video *content* (the fixture has none to import/view, so only
+the empty-state UI was confirmed, not decoding a real video), and the Misc4/Pokéathlon/Underground/Geonet windows'
+Save path back to disk (all were closed via Cancel, matching this session's general practice of not writing scratch
+saves back unless the specific edit being tested required it). The two hand-built fixtures
+(`gen4_platinum.sav`, `gen4_heartgold.sav`) live only in the scratchpad, never the repository.
 
 **Grid column headers are named with an attached property.** The WinForms translator keys a grid header off
 `DataGridViewColumn.Name` (`{Form}.DGV_{Name}`). Avalonia's `DataGridColumn` has no name, so `DataGridUtil.Named`
@@ -1204,9 +1296,13 @@ The coverage overstatements, corrected here:
   WinForms branch.** Two batches called E8 correct while the four reorder buttons were shown for Gen 4/5 saves
   (upstream shows them only for Gen 2/3); the defect was found by the Gen 1-3 batch. E2 items, E5 flags and E7 album
   are in the same position and should be re-read per generation.
-* **E25 Misc4 and E31 DLC4 are NOT YET TESTED at runtime.** The Gen 4 probe skipped all three cases
-  (`[SKIP] Misc4 (Pt) / Misc4 (HGSS) / DLC4 -> ArgumentOutOfRangeException`); those two screens rest on source reading
-  plus a compile. Misc4 is the largest window in that batch.
+* **E25 Misc4 and E31 DLC4 were NOT YET TESTED at runtime as of this note; they now are (2026-09-28).** The Gen 4
+  probe that produced this note skipped all three cases (`[SKIP] Misc4 (Pt) / Misc4 (HGSS) / DLC4 ->
+  ArgumentOutOfRangeException`) because it called `BlankSaveFile.Get(...).Write()` directly, which hits a real,
+  pre-existing `PKHeX.Core` bug (see "Known blockers"); it was not a defect in these two windows themselves. Loading
+  hand-built Platinum and HeartGold fixtures instead (the same technique "Known blockers" already documents for
+  other Generation 4 editors) opened both Misc4 variants and DLC4 without error — see "Generation 4 and Battle
+  Revolution parity pass" for what was actually exercised on screen.
 * **E89 Donuts and E90 the random donut generator are source-compared only.** The Z-A probe never opened either window
   and the fixture set has no revision >= 1 Z-A save (`Tab_DLC=ABSENT`), so the Z-A DLC tab is unexercised as well.
   Re-reading the two windows confirms the control names and captions match, but nothing was run.
