@@ -4,6 +4,7 @@ using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
+using PKHeX.Avalonia.Localization;
 using PKHeX.Core;
 using PKHeX.Core.Searching;
 using PKHeX.Drawing.Misc;
@@ -29,27 +30,71 @@ public sealed class BoxView : UserControl, ISlotViewer<SlotView>
 
     public readonly ComboBox CB_BoxSelect = new() { Name = "CB_BoxSelect", MinWidth = 160, HorizontalAlignment = HorizontalAlignment.Center };
     private readonly AvaloniaList<string> BoxNames = [];
-    public readonly Button B_BoxLeft = new() { Name = "B_BoxLeft", Content = "<", Width = 32 };
-    public readonly Button B_BoxRight = new() { Name = "B_BoxRight", Content = ">", Width = 32 };
+    public readonly Button B_BoxLeft = IconButton("B_BoxLeft", "left", 32);
+    public readonly Button B_BoxRight = IconButton("B_BoxRight", "right", 32);
+
+    /// <summary>Opens the box viewer / storage viewer menu. WinForms floats this button over the grid's left edge.</summary>
+    public readonly Button B_PopoutBox = IconButton("B_PopoutBox", "popout", 24);
+
     /// <summary>Opens the box search popout. WinForms floats this button over the grid's right edge.</summary>
-    public readonly Button B_SearchBox = new() { Name = "B_SearchBox", Content = "Search", Padding = new global::Avalonia.Thickness(8, 2), MinHeight = 0 };
+    public readonly Button B_SearchBox = IconButton("B_SearchBox", "other", 24);
     public readonly PokeGrid BoxPokeGrid = new() { Name = "BoxPokeGrid" };
+
+    /// <summary>
+    /// Shows the popout and search buttons. WinForms hosts them on the save editor's Box tab rather than in
+    /// <c>BoxEditor</c>, so the box popouts (which reuse this control) do not have them.
+    /// </summary>
+    public bool BoxToolsVisible
+    {
+        get => B_SearchBox.IsVisible;
+        set => B_PopoutBox.IsVisible = B_SearchBox.IsVisible = value;
+    }
+
+    /// <summary>Builds a fixed-size image button, matching the WinForms designer sizes and icons.</summary>
+    private static Button IconButton(string name, string icon, double width)
+    {
+        var button = new Button
+        {
+            Name = name,
+            Width = width,
+            Height = 24,
+            Padding = new global::Avalonia.Thickness(0),
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+        };
+        var bmp = AppResources.GetImage(icon);
+        if (bmp is not null)
+            button.Content = new Image { Source = bmp, Stretch = global::Avalonia.Media.Stretch.None };
+        return button;
+    }
 
     private bool _suppressBoxChange;
 
     public BoxView()
     {
-        var header = new StackPanel
+        // WinForms: the arrows and the selector are centered over the grid, with the popout button at the grid's
+        // left edge and the search button at its right edge (SAVEditor.RecenterControls).
+        var nav = new StackPanel
         {
             Orientation = Orientation.Horizontal,
             HorizontalAlignment = HorizontalAlignment.Center,
-            Spacing = 4,
+            Spacing = 0,
+        };
+        nav.Children.Add(B_BoxLeft);
+        nav.Children.Add(CB_BoxSelect);
+        nav.Children.Add(B_BoxRight);
+
+        var header = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"),
             Margin = new global::Avalonia.Thickness(0, 4, 0, 4),
         };
-        header.Children.Add(B_BoxLeft);
-        header.Children.Add(CB_BoxSelect);
-        header.Children.Add(B_BoxRight);
+        Grid.SetColumn(nav, 1);
+        Grid.SetColumn(B_SearchBox, 2);
+        header.Children.Add(B_PopoutBox);
+        header.Children.Add(nav);
         header.Children.Add(B_SearchBox);
+        BoxToolsVisible = false;
 
         var layout = new StackPanel { Orientation = Orientation.Vertical, HorizontalAlignment = HorizontalAlignment.Center };
         layout.Children.Add(header);

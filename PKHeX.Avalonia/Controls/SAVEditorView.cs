@@ -7,6 +7,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
+using PKHeX.Avalonia.Localization;
 using PKHeX.Avalonia.Services;
 using PKHeX.Avalonia.Views;
 using PKHeX.Core;
@@ -55,6 +56,9 @@ public sealed partial class SAVEditorView : UserControl, ISaveHost, ISaveFilePro
     public readonly DaycareView SL_Daycare = new() { Name = "SL_Daycare" };
     public readonly SlotListView SL_Extra = new() { Name = "SL_Extra" };
 
+    /// <summary>WinForms <c>SAVEditor.Designer</c> puts this red note on the Other tab; the extra slots are read only.</summary>
+    private readonly TextBlock L_ReadOnlyOther = UiFactory.Label("L_ReadOnlyOther", "This tab is read only.");
+
     /// <summary>Box manipulation menu (right click the Box tab header).</summary>
     public BoxManipMenu SortMenu { get; private set; } = null!;
 
@@ -64,6 +68,11 @@ public sealed partial class SAVEditorView : UserControl, ISaveHost, ISaveFilePro
     private readonly MenuItem mnuDelete = new() { Name = "mnuDelete", Header = "_Delete" };
     private readonly MenuItem mnuLegality = new() { Name = "mnuLegality", Header = "_Legality" };
     private SlotViewInfo<SlotView>? menuTarget;
+
+    /// <summary>Menu shown by the box popout button (WinForms <c>PopoutMenu</c>).</summary>
+    private readonly ContextMenu PopoutMenu = new();
+    private readonly MenuItem Menu_PopoutBoxSingle = new() { Name = "Menu_PopoutBoxSingle", Header = "_Single Box" };
+    private readonly MenuItem Menu_PopoutBoxAll = new() { Name = "Menu_PopoutBoxAll", Header = "_All Boxes" };
 
     public bool FlagIllegal
     {
@@ -81,12 +90,23 @@ public sealed partial class SAVEditorView : UserControl, ISaveHost, ISaveFilePro
     {
         Tab_Box.Content = Box;
         Tab_PartyBattle.Content = SL_Party;
+        L_ReadOnlyOther.SetForeColor(ColorUtilAvalonia.ColorWarn);
+        L_ReadOnlyOther.HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Center;
         Tab_Other.Content = new StackPanel
         {
-            Orientation = global::Avalonia.Layout.Orientation.Horizontal,
+            Orientation = global::Avalonia.Layout.Orientation.Vertical,
             Spacing = 10,
             Margin = new global::Avalonia.Thickness(8),
-            Children = { SL_Daycare, SL_Extra },
+            Children =
+            {
+                new StackPanel
+                {
+                    Orientation = global::Avalonia.Layout.Orientation.Horizontal,
+                    Spacing = 10,
+                    Children = { SL_Daycare, SL_Extra },
+                },
+                L_ReadOnlyOther,
+            },
         };
         tabBoxMulti.Items.Add(Tab_Box);
         tabBoxMulti.Items.Add(Tab_PartyBattle);
@@ -101,7 +121,16 @@ public sealed partial class SAVEditorView : UserControl, ISaveHost, ISaveFilePro
         SL_Extra.Host = this;
         SL_Daycare.SwitchRequested += () => _ = SwitchDaycare();
 
+        Box.BoxToolsVisible = true;
         Box.B_SearchBox.AttachClickHandled(ClickSearchBox);
+
+        // Box popout button: Shift opens the storage viewer, Ctrl the single-box viewer, otherwise a menu.
+        Menu_PopoutBoxSingle.Click += (_, _) => OpenBoxViewer();
+        Menu_PopoutBoxAll.Click += (_, _) => OpenBoxList();
+        PopoutMenu.Items.Add(Menu_PopoutBoxSingle);
+        PopoutMenu.Items.Add(Menu_PopoutBoxAll);
+        PopoutMenu.Placement = PlacementMode.BottomEdgeAlignedLeft; // WinForms ShowContextMenuBelow
+        Box.B_PopoutBox.AttachClickHandled(ClickPopoutBox);
 
         // Box manipulation menu: right click the Box tab header (WinForms: Tab_Box.ContextMenuStrip).
         SortMenu = new BoxManipMenu(this);
@@ -138,6 +167,56 @@ public sealed partial class SAVEditorView : UserControl, ISaveHost, ISaveFilePro
         mnuSet.Click += async (_, _) => await ClickSet();
         mnuDelete.Click += async (_, _) => await ClickDelete();
         mnuLegality.Click += (_, _) => ClickShowLegality();
+        SetMenuIcons();
+        TranslateMenus(MainWindow.CurrentLanguage);
+    }
+
+    /// <summary>Slot and popout menu icons (WinForms <c>ContextMenuSAV.Designer</c> / <c>SAVEditor.Designer</c>).</summary>
+    private void SetMenuIcons()
+    {
+        // WinForms inverts the slot menu too (ContextMenuSAV's constructor runs InvertToolStripIcons on mnuVSD).
+        SetIcon(mnuView, "other", true);
+        SetIcon(mnuSet, "exit", true);
+        SetIcon(mnuDelete, "nocheck", true);
+        SetIcon(mnuLegality, "export", true);
+        SetIcon(Menu_PopoutBoxSingle, "open", true);
+        SetIcon(Menu_PopoutBoxAll, "database", true);
+    }
+
+    private static void SetIcon(MenuItem item, string name, bool invertInDarkMode)
+    {
+        var bmp = invertInDarkMode && App.IsDarkModeEnabled ? AppResources.GetImageBlackToWhite(name) : AppResources.GetImage(name);
+        if (bmp is not null)
+            item.Icon = new Image { Source = bmp, Width = 16, Height = 16 };
+    }
+
+    /// <summary>
+    /// Translates the context menus. Avalonia keeps a <see cref="ContextMenu"/> out of its target's logical tree,
+    /// so the window-wide translation pass never reaches these items; WinForms reaches them through Main's control tree.
+    /// </summary>
+    public void TranslateMenus(string lang)
+    {
+        Translator.TranslateControls(menu, "Main", lang);
+        Translator.TranslateControls(PopoutMenu, "Main", lang);
+        Translator.TranslateControls(SortMenu, "Main", lang);
+    }
+
+    /// <summary>Port of <c>B_PopoutBox_Click</c>.</summary>
+    private void ClickPopoutBox(KeyModifiers mods)
+    {
+        if (mods == KeyModifiers.Shift)
+        {
+            OpenBoxList();
+            return;
+        }
+        if (mods.HasFlag(KeyModifiers.Control))
+        {
+            OpenBoxViewer();
+            return;
+        }
+
+        // Otherwise, open the menu and let the user decide which to open.
+        PopoutMenu.Open(Box.B_PopoutBox);
     }
 
     private BoxViewerWindow? Viewer;
@@ -607,10 +686,26 @@ public sealed partial class SAVEditorView : UserControl, ISaveHost, ISaveFilePro
     {
         switch (z)
         {
+            // WinForms: SAVEditor.ClickSlot handles this before forwarding to the context menu's OmniClick.
+            case KeyModifiers.Control | KeyModifiers.Alt: await ClickClone(info); break;
             case KeyModifiers.Control: await ClickView(info); break;
             case KeyModifiers.Shift: await ClickSet(info); break;
             case KeyModifiers.Alt: await ClickDelete(info); break;
         }
+    }
+
+    /// <summary>
+    /// Ctrl+Alt+click a box slot: fill the box with copies of the entity in the editor
+    /// (WinForms <c>SAVEditor.ClickClone</c> raising <c>RequestCloneData</c>, handled by <c>Main.ClickClone</c>).
+    /// </summary>
+    private async Task ClickClone(SlotViewInfo<SlotView> info)
+    {
+        if (info.Slot is not SlotInfoBox)
+            return;
+        var editor = EditEnv.PKMEditor;
+        if (!editor.EditsComplete)
+            return; // don't copy garbage to the box
+        await SetClonesToBox(editor.PreparePKM());
     }
 
     private void OpenContextMenu(SlotViewInfo<SlotView> info, SlotView view, KeyModifiers modifiers)

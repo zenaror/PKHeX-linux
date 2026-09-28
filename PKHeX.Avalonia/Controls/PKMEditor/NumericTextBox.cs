@@ -71,6 +71,15 @@ public static class TextBoxUtil
         };
     }
 
+    /// <summary>
+    /// Invokes <paramref name="handler"/> when the text box loses focus, which is when the WinForms editor raises
+    /// <c>Validated</c> for the fields that reformat their content (PID, Encryption Constant, HOME tracker).
+    /// </summary>
+    public static void OnValidated(this TextBox tb, Action<TextBox> handler)
+    {
+        tb.LostFocus += (_, _) => handler(tb);
+    }
+
     public static void MouseWheelIncrement(this TextBox tb, uint increment)
     {
         tb.PointerWheelChanged += (_, e) =>

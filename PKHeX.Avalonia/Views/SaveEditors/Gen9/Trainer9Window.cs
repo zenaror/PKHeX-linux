@@ -27,7 +27,7 @@ public sealed class Trainer9Window : SaveEditorWindow
     private readonly bool Loading;
     private bool MapUpdated;
 
-    private readonly TextBox TB_OTName = UiFactory.Text("TB_OTName", 12, 140);
+    private readonly RenderedString TB_OTName = UiFactory.Name("TB_OTName", 12, 140);
     private readonly ComboBox CB_Gender = UiFactory.StringCombo("CB_Gender", 60);
     private readonly ComboBox CB_Game = UiFactory.StringCombo("CB_Game", 140);
     private readonly ComboBox CB_Language = UiFactory.Combo("CB_Language", 140);
@@ -64,12 +64,15 @@ public sealed class Trainer9Window : SaveEditorWindow
     public Trainer9Window(SAV9SV sav) : base("SAV_Trainer9", "Trainer Data Editor")
     {
         SAV = (SAV9SV)(Origin = sav).Clone();
+
+        if (!MainWindow.Unicode)
+            TB_OTName.DisableInGameFont = true;
         Loading = true;
 
         var games = GameInfo.Strings.gamelist;
         CB_Game.Items.Add(games[(int)GameVersion.SL]);
         CB_Game.Items.Add(games[(int)GameVersion.VL]);
-        foreach (var s in GameInfo.GenderSymbolUnicode.Take(2))
+        foreach (var s in MainWindow.GenderSymbols.Take(2)) // m/f depending on unicode selection
             CB_Gender.Items.Add(s);
 
         BuildLayout();
@@ -131,7 +134,10 @@ public sealed class Trainer9Window : SaveEditorWindow
         TB_OTName.AttachClick(async mods =>
         {
             if (mods == KeyModifiers.Control)
-                await TrashEditorWindow.ShowAsync(this, TB_OTName, SAV, SAV.MyStatus.OriginalTrainerTrash.ToArray());
+            {
+                var trash = await TrashEditorWindow.ShowAsync(this, TB_OTName, SAV, SAV.MyStatus.OriginalTrainerTrash.ToArray());
+                trash?.CopyTo(SAV.MyStatus.OriginalTrainerTrash); // WinForms writes the edited bytes back into the save
+            }
         });
     }
 

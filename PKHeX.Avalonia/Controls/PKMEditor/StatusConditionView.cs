@@ -17,13 +17,16 @@ public sealed class StatusConditionView : Border
 {
     private PKM? pk;
     private bool Loading;
-    private readonly Image PB_Status = new() { Stretch = Stretch.None, Width = 32, Height = 32 };
+    private readonly Image PB_Status = new() { Stretch = Stretch.None, Width = StatusSize, Height = StatusSize };
     private global::Avalonia.Media.Imaging.Bitmap? Current;
+
+    /// <summary>WinForms hosts the indicator in a 64x64 box; the status sprites are 64x64 too.</summary>
+    private const double StatusSize = 64;
 
     public StatusConditionView()
     {
-        Width = 32;
-        Height = 32;
+        Width = StatusSize;
+        Height = StatusSize;
         Background = Brushes.Transparent;
         Cursor = new Cursor(StandardCursorType.Hand);
         Child = PB_Status;

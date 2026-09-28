@@ -8,6 +8,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
+using Avalonia.Media;
 using PKHeX.Avalonia.Controls;
 using PKHeX.Avalonia.Localization;
 using PKHeX.Avalonia.Services;
@@ -32,9 +33,11 @@ public sealed class SettingsWindow : Window
     private readonly ListBox LB_Tabs = new() { Name = "LB_Tabs", Width = 190 };
     private readonly PropertyGridView PG_Editor = new() { Name = "PG_Editor" };
     private readonly TextBlock L_Blank = UiFactory.Label("L_Blank", "Blank Save Version:");
-    private readonly ComboBox CB_Blank = UiFactory.Combo("CB_Blank", 200);
+    private readonly AutoCompleteComboBox CB_Blank = UiFactory.AutoCombo("CB_Blank", 180);
     private readonly StackPanel FLP_Blank;
     private readonly Button B_Reset = UiFactory.Button("B_Reset", "Reset All");
+    private readonly TextBlock L_HelpTitle = new() { FontWeight = FontWeight.Bold, TextWrapping = TextWrapping.NoWrap };
+    private readonly TextBlock L_HelpText = new() { TextWrapping = TextWrapping.Wrap };
 
     public SettingsWindow(object obj)
     {
@@ -45,22 +48,43 @@ public sealed class SettingsWindow : Window
         Width = 780;
         Height = 560;
 
+        // WinForms keeps the blank-save picker and Reset All in a top band above the split view.
         FLP_Blank = UiFactory.Row(L_Blank, CB_Blank);
-        var bottom = new DockPanel { Margin = new Thickness(0, 8, 0, 0) };
+        var top = new DockPanel { Margin = new Thickness(0, 0, 0, 8) };
         DockPanel.SetDock(B_Reset, Dock.Right);
-        bottom.Children.Add(B_Reset);
-        bottom.Children.Add(FLP_Blank);
+        top.Children.Add(B_Reset);
+        top.Children.Add(FLP_Blank);
+
+        // Description pane, like the one the WinForms PropertyGrid draws at its bottom.
+        var help = new Border
+        {
+            BorderBrush = new SolidColorBrush(Color.FromArgb(0x60, 0x80, 0x80, 0x80)),
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(6, 4),
+            MinHeight = 52,
+            Child = UiFactory.Column(L_HelpTitle, L_HelpText),
+        };
+        PG_Editor.HelpChanged += item =>
+        {
+            L_HelpTitle.Text = item?.Name ?? string.Empty;
+            L_HelpText.Text = item?.Description ?? string.Empty;
+        };
+
+        var editor = new DockPanel();
+        DockPanel.SetDock(help, Dock.Bottom);
+        editor.Children.Add(help);
+        editor.Children.Add(PG_Editor);
 
         var body = new Grid { ColumnSpacing = 8 };
         body.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
         body.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
-        Grid.SetColumn(PG_Editor, 1);
+        Grid.SetColumn(editor, 1);
         body.Children.Add(LB_Tabs);
-        body.Children.Add(PG_Editor);
+        body.Children.Add(editor);
 
         var root = new DockPanel { Margin = new Thickness(10) };
-        DockPanel.SetDock(bottom, Dock.Bottom);
-        root.Children.Add(bottom);
+        DockPanel.SetDock(top, Dock.Top);
+        root.Children.Add(top);
         root.Children.Add(body);
         Content = root;
 

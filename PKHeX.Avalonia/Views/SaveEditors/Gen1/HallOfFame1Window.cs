@@ -263,7 +263,9 @@ public sealed class HallOfFame1Window : SaveEditorWindow
         var pk = Fame.GetEntity(Team, Slot);
         if (TB_Nickname.Text != pk.Nickname) // preserve trash bytes
             pk.Nickname = TB_Nickname.Text ?? string.Empty;
-        await TrashEditorWindow.ShowAsync(this, TB_Nickname, SAV, pk.NicknameTrash.ToArray());
+        var trash = await TrashEditorWindow.ShowAsync(this, TB_Nickname, SAV, pk.NicknameTrash.ToArray());
+        // WinForms writes the edited bytes back into the save; the entity is re-fetched because it is a ref struct.
+        trash?.CopyTo(Fame.GetEntity(Team, Slot).NicknameTrash);
     }
 
     #endregion

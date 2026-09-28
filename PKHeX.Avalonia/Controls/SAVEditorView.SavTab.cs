@@ -9,6 +9,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.VisualTree;
+using PKHeX.Avalonia.Localization;
 using PKHeX.Avalonia.Services;
 using PKHeX.Avalonia.Views;
 using PKHeX.Avalonia.Views.SaveEditors;
@@ -99,7 +100,13 @@ public sealed partial class SAVEditorView
     public event EventHandler? RequestReloadSave;
 
     /// <summary>Upstream has no editor for this game either; the button is disabled instead of doing nothing on click.</summary>
-    private const string UnsupportedTip = "This editor does not support the loaded game.";
+    /// <remarks>
+    /// Port-only text: WinForms silently opens nothing for these games, so no upstream translation key carries it. It
+    /// still goes through the translator, so an external <c>lang_*.txt</c> can translate it; the embedded files only
+    /// have the English fallback.
+    /// </remarks>
+    private static string UnsupportedTip => Translator.TranslateText("Main.L_UnsupportedEditor",
+        "This editor does not support the loaded game.", MainWindow.CurrentLanguage);
 
     private void BuildSavTab()
     {
@@ -269,10 +276,9 @@ public sealed partial class SAVEditorView
         B_OpenPokepuffs.IsVisible = sav is ISaveBlock6Main;
         B_JPEG.IsVisible = B_OpenLinkInfo.IsVisible = B_OpenSuperTraining.IsVisible = B_OUTPasserby.IsVisible = sav is ISaveBlock6Main;
         B_OpenBoxLayout.IsVisible = sav is IBoxDetailName;
+        // Only Gen 4-7 saves keep Wonder Cards, so only they provide the storage the album edits; WinForms hides the
+        // button for every other game rather than disabling it.
         B_OpenWondercards.IsVisible = sav is IMysteryGiftStorageProvider;
-        B_OpenWondercards.IsEnabled = sav is IMysteryGiftStorageProvider && sav.Generation is 4 or 5 or 6 or 7; // upstream's album layout only covers Gen 4-7 too
-        if (!B_OpenWondercards.IsEnabled)
-            ToolTip.SetTip(B_OpenWondercards, UnsupportedTip);
         B_OpenHallofFame.IsVisible = sav is ISaveBlock6Main or SAV7 or SAV3 { IsMisconfiguredSize: false } or SAV1;
         B_OpenHallofFame.IsEnabled = sav is SAV7 or SAV1 or SAV6 or SAV3 { IsMisconfiguredSize: false };
         if (!B_OpenHallofFame.IsEnabled)
@@ -532,6 +538,11 @@ public sealed partial class SAVEditorView
         if (SAV is SAV9ZA sav9za)
         {
             await OpenDialog(() => new Trainer9aWindow(sav9za));
+            return;
+        }
+        if (SAV is SAV4BR sav4br)
+        {
+            await OpenDialog(() => new Trainer4BRWindow(sav4br));
             return;
         }
         await OpenDialog(() => new SimpleTrainerWindow(SAV));

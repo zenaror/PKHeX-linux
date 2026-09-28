@@ -11,13 +11,16 @@
     <Menu x:Name="menuStrip1" DockPanel.Dock="Top">
       <MenuItem x:Name="Menu_File" Header="_File">
         <MenuItem x:Name="Menu_Open" Header="_Open..." HotKey="Ctrl+O" InputGesture="Ctrl+O" Click="MainMenuOpen" />
+        <Separator />
         <MenuItem x:Name="Menu_Save" Header="_Save PKM..." HotKey="Ctrl+S" InputGesture="Ctrl+S" Click="MainMenuSave" />
         <MenuItem x:Name="Menu_ExportSAV" Header="_Export SAV..." HotKey="Ctrl+E" InputGesture="Ctrl+E" Click="ClickExportSAV" />
+        <Separator />
         <MenuItem x:Name="Menu_Exit" Header="_Quit" HotKey="Ctrl+Q" InputGesture="Ctrl+Q" Click="MainMenuExit" />
       </MenuItem>
       <MenuItem x:Name="Menu_Tools" Header="_Tools">
         <MenuItem x:Name="Menu_Showdown" Header="_Showdown">
           <MenuItem x:Name="Menu_ShowdownImportPKM" Header="Import Set from Clipboard" HotKey="Ctrl+T" InputGesture="Ctrl+T" Click="ClickShowdownImportPKM" />
+          <Separator />
           <MenuItem x:Name="Menu_ShowdownExportPKM" Header="Export Set to Clipboard" HotKey="Ctrl+Shift+T" InputGesture="Ctrl+Shift+T" Click="ClickShowdownExportPKM" />
           <MenuItem x:Name="Menu_ShowdownExportParty" Header="Export _Party to Clipboard" Click="ClickShowdownExportParty" />
           <MenuItem x:Name="Menu_ShowdownExportCurrentBox" Header="Export Current _Box to Clipboard" Click="ClickShowdownExportCurrentBox" />
@@ -26,12 +29,16 @@
           <MenuItem x:Name="Menu_LoadBoxes" Header="_Load Boxes" Click="MainMenuBoxLoad" />
           <MenuItem x:Name="Menu_DumpBoxes" Header="Dump Bo_xes" Click="MainMenuBoxDump" />
           <MenuItem x:Name="Menu_DumpBox" Header="Dump Bo_x" Click="MainMenuBoxDumpSingle" />
+          <Separator />
           <MenuItem x:Name="Menu_Report" Header="Box Data _Report" HotKey="Ctrl+R" InputGesture="Ctrl+R" Click="MainMenuBoxReport" />
+          <Separator />
           <MenuItem x:Name="Menu_Database" Header="PKM _Database" HotKey="Ctrl+D" InputGesture="Ctrl+D" Click="MainMenuDatabase" />
           <MenuItem x:Name="Menu_MGDatabase" Header="Mystery _Gift Database" HotKey="Ctrl+G" InputGesture="Ctrl+G" Click="MainMenuMysteryDB" />
           <MenuItem x:Name="Menu_EncDatabase" Header="E_ncounter Database" HotKey="Ctrl+N" InputGesture="Ctrl+N" Click="Menu_EncDatabase_Click" />
+          <Separator />
           <MenuItem x:Name="Menu_BatchEditor" Header="_Batch Editor" HotKey="Ctrl+M" InputGesture="Ctrl+M" Click="MainMenuBatchEditor" />
         </MenuItem>
+        <Separator />
         <MenuItem x:Name="Menu_Folder" Header="Open _Folder" HotKey="Ctrl+F" InputGesture="Ctrl+F" Click="MainMenuFolder" />
         <Separator />
         <MenuItem x:Name="Menu_Troubleshooting" Header="Troubleshooting">
@@ -42,8 +49,10 @@
       </MenuItem>
       <MenuItem x:Name="Menu_Options" Header="_Options">
         <MenuItem x:Name="Menu_Language" Header="_Language" />
+        <Separator />
         <MenuItem x:Name="Menu_Undo" Header="_Undo Last Change" HotKey="Ctrl+U" InputGesture="Ctrl+U" Click="ClickUndo" IsEnabled="False" />
         <MenuItem x:Name="Menu_Redo" Header="_Redo Last Change" HotKey="Ctrl+Y" InputGesture="Ctrl+Y" Click="ClickRedo" IsEnabled="False" />
+        <Separator />
         <MenuItem x:Name="Menu_Settings" Header="_Settings" HotKey="Ctrl+Shift+S" InputGesture="Ctrl+Shift+S" Click="MainMenuSettings" />
         <MenuItem x:Name="Menu_About" Header="_About PKHeX" HotKey="Ctrl+P" InputGesture="Ctrl+P" Click="MainMenuAbout" />
       </MenuItem>

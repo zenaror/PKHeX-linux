@@ -15,7 +15,16 @@ public abstract class SaveEditorWindow : Window
     protected readonly Button B_Cancel = UiFactory.Button("B_Cancel", "Cancel");
     /// <summary>Bottom button bar; derived editors may insert extra controls before the Save/Cancel buttons.</summary>
     protected readonly StackPanel ButtonBar = new() { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Spacing = 8, Margin = new Thickness(0, 10, 0, 0) };
-    private readonly DockPanel Root = new() { Margin = new Thickness(10) };
+    /// <summary>
+    /// Body above, button bar below. A grid rather than a <see cref="DockPanel"/>, because the bar has to be the
+    /// <em>last</em> child for the tab order (Avalonia walks siblings in tree order) while still being laid out at the
+    /// bottom, and <see cref="DockPanel.LastChildFillProperty"/> would give that last child the remaining space.
+    /// </summary>
+    private readonly Grid Root = new()
+    {
+        Margin = new Thickness(10),
+        RowDefinitions = [new RowDefinition(GridLength.Star), new RowDefinition(GridLength.Auto)],
+    };
 
     protected SaveEditorWindow(string formName, string title)
     {
@@ -30,8 +39,8 @@ public abstract class SaveEditorWindow : Window
         B_Save.Padding = B_Cancel.Padding = new Thickness(8, 4);
         ButtonBar.Children.Add(B_Cancel);
         ButtonBar.Children.Add(B_Save);
-        DockPanel.SetDock(ButtonBar, Dock.Bottom);
-        Root.Children.Add(ButtonBar);
+        Grid.SetRow(ButtonBar, 1);
+        Root.Children.Add(ButtonBar); // SetBody inserts the body before it, so the fields come first in the tab order
         Content = Root;
 
         B_Cancel.Click += (_, _) => Close();
@@ -55,7 +64,10 @@ public abstract class SaveEditorWindow : Window
     protected void SetBody(Control body)
     {
         Body = body;
-        Root.Children.Add(body); // last child fills the remaining space
+        Grid.SetRow(body, 0);
+        // Inserted before the button bar: Avalonia tabs through siblings in tree order, and WinForms reaches
+        // Cancel/Save after the editor fields.
+        Root.Children.Insert(0, body);
         Translator.TranslateInterface(this, MainWindow.CurrentLanguage);
     }
 

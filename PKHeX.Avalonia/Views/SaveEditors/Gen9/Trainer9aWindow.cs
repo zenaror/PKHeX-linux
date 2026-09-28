@@ -28,7 +28,7 @@ public sealed class Trainer9aWindow : SaveEditorWindow
     private readonly bool Loading;
     private bool MapUpdated;
 
-    private readonly TextBox TB_OTName = UiFactory.Text("TB_OTName", 12, 140);
+    private readonly RenderedString TB_OTName = UiFactory.Name("TB_OTName", 12, 140);
     private readonly GenderToggleView CB_Gender = new() { Name = "CB_Gender" };
     private readonly ComboBox CB_Language = UiFactory.Combo("CB_Language", 140);
     private readonly TrainerIDView trainerID1 = new() { Name = "trainerID1" };
@@ -58,7 +58,7 @@ public sealed class Trainer9aWindow : SaveEditorWindow
 
     private readonly NumericTextBox MT_HyperspaceSurveyPoints = UiFactory.Numeric("MT_HyperspaceSurveyPoints", 7, 110);
     private readonly Button B_HyperspaceSurveyPoints = UiFactory.Button("B_HyperspaceSurveyPoints", "Max");
-    private readonly TextBox TB_StreetName = UiFactory.Text("TB_StreetName", 18, 220);
+    private readonly RenderedString TB_StreetName = UiFactory.Name("TB_StreetName", 18, 220);
 
     private readonly Button B_CollectTechnicalMachines = UiFactory.Button("B_CollectTechnicalMachines", "Collect all TMs");
     private readonly Button B_CollectScrews = UiFactory.Button("B_CollectScrews", "Collect all Screws");
@@ -66,6 +66,9 @@ public sealed class Trainer9aWindow : SaveEditorWindow
     public Trainer9aWindow(SAV9ZA sav) : base("SAV_Trainer9a", "Trainer Data Editor")
     {
         SAV = (SAV9ZA)(Origin = sav).Clone();
+
+        if (!MainWindow.Unicode)
+            TB_OTName.DisableInGameFont = true;
         Loading = true;
 
         BuildLayout();
@@ -89,7 +92,10 @@ public sealed class Trainer9aWindow : SaveEditorWindow
         TB_OTName.AttachClick(async mods =>
         {
             if (mods == KeyModifiers.Control)
-                await TrashEditorWindow.ShowAsync(this, TB_OTName, SAV, SAV.MyStatus.OriginalTrainerTrash.ToArray());
+            {
+                var trash = await TrashEditorWindow.ShowAsync(this, TB_OTName, SAV, SAV.MyStatus.OriginalTrainerTrash.ToArray());
+                trash?.CopyTo(SAV.MyStatus.OriginalTrainerTrash); // WinForms writes the edited bytes back into the save
+            }
         });
     }
 

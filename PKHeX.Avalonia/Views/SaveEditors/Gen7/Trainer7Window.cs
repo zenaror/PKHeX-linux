@@ -33,7 +33,7 @@ public sealed class Trainer7Window : SaveEditorWindow
     private int SkipFlag => SAV is SAV7USUM ? 4160 : 3200; // FlagMax - 768
 
     // Overview
-    private readonly TextBox TB_OTName = UiFactory.Text("TB_OTName", 12, 140);
+    private readonly RenderedString TB_OTName = UiFactory.Name("TB_OTName", 12, 140);
     private readonly ComboBox CB_Gender = UiFactory.StringCombo("CB_Gender", 60);
     private readonly ComboBox CB_Game = UiFactory.StringCombo("CB_Game", 130);
     private readonly TrainerIDView trainerID1 = new() { Name = "trainerID1" };
@@ -52,7 +52,7 @@ public sealed class Trainer7Window : SaveEditorWindow
     private readonly NumericUpDown NUD_DaysFromRefreshed = UiFactory.NumericUpDown("NUD_DaysFromRefreshed", 0, byte.MaxValue, 110);
     private readonly ComboBox CB_Vivillon = UiFactory.StringCombo("CB_Vivillon", 160);
     private readonly TextBlock L_Vivillon = UiFactory.Label("L_Vivillon", "Vivillon:");
-    private readonly TextBox TB_PlazaName = UiFactory.Text("TB_PlazaName", 20, 200);
+    private readonly RenderedString TB_PlazaName = UiFactory.Name("TB_PlazaName", 20, 200);
     private readonly ComboBox CB_SkinColor = UiFactory.StringCombo("CB_SkinColor", 160);
     private readonly ComboBox CB_BallThrowType = UiFactory.StringCombo("CB_BallThrowType", 160);
     private readonly CheckBox CHK_UnlockMega = UiFactory.Check("CHK_UnlockMega", "Mega Unlocked");
@@ -102,7 +102,7 @@ public sealed class Trainer7Window : SaveEditorWindow
 
     // Ultra only
     private readonly NumericUpDown[] NUD_Surf = new NumericUpDown[4];
-    private readonly TextBox TB_RotomOT = UiFactory.Text("TB_RotomOT", 12, 140);
+    private readonly RenderedString TB_RotomOT = UiFactory.Name("TB_RotomOT", 12, 140);
     private readonly NumericUpDown NUD_RotomAffection = UiFactory.NumericUpDown("NUD_RotomAffection", 0, ushort.MaxValue, 110);
     private readonly CheckBox CHK_RotoLoto1 = UiFactory.Check("CHK_RotoLoto1", "Roto Loto 1");
     private readonly CheckBox CHK_RotoLoto2 = UiFactory.Check("CHK_RotoLoto2", "Roto Loto 2");
@@ -117,6 +117,9 @@ public sealed class Trainer7Window : SaveEditorWindow
             BattleStyles = BattleStyles[..^1]; // Nihilist is Ultra-only
 
         SAV = (SAV7)(Origin = sav).Clone();
+
+        if (!MainWindow.Unicode)
+            TB_OTName.DisableInGameFont = true;
         Loading = true;
 
         for (int i = 0; i < TreeStreaks.Length; i++)
@@ -124,7 +127,7 @@ public sealed class Trainer7Window : SaveEditorWindow
         for (int i = 0; i < NUD_Surf.Length; i++)
             NUD_Surf[i] = UiFactory.NumericUpDown($"NUD_Surf{i}", 0, ushort.MaxValue, 110);
 
-        foreach (var s in GameInfo.GenderSymbolUnicode.Take(2))
+        foreach (var s in MainWindow.GenderSymbols.Take(2)) // m/f depending on unicode selection
             CB_Gender.Items.Add(s);
         foreach (var v in new[] { GameVersion.SN, GameVersion.MN, GameVersion.US, GameVersion.UM })
             CB_Game.Items.Add(v.ToString());
@@ -263,7 +266,10 @@ public sealed class Trainer7Window : SaveEditorWindow
         TB_OTName.AttachClick(async mods =>
         {
             if (mods == KeyModifiers.Control)
-                await TrashEditorWindow.ShowAsync(this, TB_OTName, SAV, SAV.MyStatus.OriginalTrainerTrash.ToArray());
+            {
+                var trash = await TrashEditorWindow.ShowAsync(this, TB_OTName, SAV, SAV.MyStatus.OriginalTrainerTrash.ToArray());
+                trash?.CopyTo(SAV.MyStatus.OriginalTrainerTrash); // WinForms writes the edited bytes back into the save
+            }
         });
         foreach (var nud in new[] { NUD_M, NUD_X, NUD_Z, NUD_Y, NUD_R })
             nud.ValueChanged += (_, _) => { if (!Loading) MapUpdated = true; };

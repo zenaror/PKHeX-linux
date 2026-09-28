@@ -19,6 +19,12 @@ namespace PKHeX.Avalonia.Controls;
 /// </remarks>
 public sealed class BoxManipMenu : ContextMenu
 {
+    /// <summary>
+    /// Avalonia matches a style (and therefore the theme's control template) by the exact style key, so a
+    /// derived menu gets no template at all: the popup opens empty, unsized and unpositioned. Report the base key.
+    /// </summary>
+    protected override Type StyleKeyOverride => typeof(ContextMenu);
+
     private readonly SAVEditorView Editor;
     private readonly List<(MenuItem Item, IBoxManip Manip)> CustomItems = [];
     private readonly Manipulator Worker;
@@ -33,22 +39,85 @@ public sealed class BoxManipMenu : ContextMenu
         {
             var category = categories[i];
             var name = names[i];
-            var parent = new MenuItem { Name = $"mnu_{name}", Header = name };
+            var parent = new MenuItem { Name = $"mnu_{name}", Header = name, Icon = GetIcon(TopLevelImages[i]) };
             foreach (var item in category)
                 AddItem(parent, item);
             Items.Add(parent);
         }
-        Translator.TranslateControls(this, "SAV_BoxManip", MainWindow.CurrentLanguage);
+        // The keys live under the Main form in lang_*.txt; WinForms reaches this menu through Main's control tree.
+        Translator.TranslateControls(this, "Main", MainWindow.CurrentLanguage);
     }
 
     private void AddItem(MenuItem parent, IBoxManip item)
     {
         var name = item.Type.ToString();
-        var tsi = new MenuItem { Name = $"mnu_{name}", Header = name };
+        ManipTypeImage.TryGetValue(item.Type, out var img);
+        var tsi = new MenuItem { Name = $"mnu_{name}", Header = name, Icon = GetIcon(img) };
         tsi.Click += async (_, _) => await Execute(item, Reverse);
         parent.Items.Add(tsi);
         CustomItems.Add((tsi, item));
     }
+
+    /// <summary>WinForms inverts this menu's icons in dark mode (<c>SAVEditor</c> ctor, <c>InvertToolStripIcons</c>).</summary>
+    private static Image? GetIcon(string? name)
+    {
+        if (name is null)
+            return null;
+        var bmp = App.IsDarkModeEnabled ? AppResources.GetImageBlackToWhite(name) : AppResources.GetImage(name);
+        return bmp is null ? null : new Image { Source = bmp, Width = 16, Height = 16 };
+    }
+
+    private static readonly string[] TopLevelImages = ["nocheck", "swapBox", "settings", "wand"];
+
+    private static readonly Dictionary<BoxManipType, string> ManipTypeImage = new()
+    {
+        [BoxManipType.DeleteAll] = "nocheck",
+        [BoxManipType.DeleteEggs] = "about",
+        [BoxManipType.DeletePastGen] = "bak",
+        [BoxManipType.DeleteForeign] = "language",
+        [BoxManipType.DeleteUntrained] = "gift",
+        [BoxManipType.DeleteItemless] = "main",
+        [BoxManipType.DeleteIllegal] = "export",
+        [BoxManipType.DeleteClones] = "users",
+
+        [BoxManipType.SortSpecies] = "numlohi",
+        [BoxManipType.SortSpeciesReverse] = "numhilo",
+        [BoxManipType.SortLevel] = "vallohi",
+        [BoxManipType.SortLevelReverse] = "valhilo",
+        [BoxManipType.SortDate] = "date",
+        [BoxManipType.SortName] = "alphaAZ",
+        [BoxManipType.SortFavorite] = "heart",
+        [BoxManipType.SortParty] = "users",
+        [BoxManipType.SortShiny] = "showdown",
+        [BoxManipType.SortAlpha] = "alpha",
+        [BoxManipType.SortRandom] = "wand",
+
+        [BoxManipType.SortUsage] = "heart",
+        [BoxManipType.SortPotential] = "numhilo",
+        [BoxManipType.SortTraining] = "showdown",
+        [BoxManipType.SortOwner] = "users",
+        [BoxManipType.SortType] = "main",
+        [BoxManipType.SortTypeTera] = "main",
+        [BoxManipType.SortVersion] = "numlohi",
+        [BoxManipType.SortBST] = "vallohi",
+        [BoxManipType.SortCP] = "vallohi",
+        [BoxManipType.SortScale] = "vallohi",
+        [BoxManipType.SortRibbons] = "valhilo",
+        [BoxManipType.SortMarks] = "valhilo",
+        [BoxManipType.SortLegal] = "export",
+        [BoxManipType.SortEncounterType] = "about",
+
+        [BoxManipType.ModifyHatchEggs] = "about",
+        [BoxManipType.ModifyMaxFriendship] = "users",
+        [BoxManipType.ModifyMaxLevel] = "showdown",
+        [BoxManipType.ModifyResetMoves] = "date",
+        [BoxManipType.ModifyRandomMoves] = "wand",
+        [BoxManipType.ModifyHyperTrain] = "vallohi",
+        [BoxManipType.ModifyGanbaru] = "vallohi",
+        [BoxManipType.ModifyRemoveNicknames] = "alphaAZ",
+        [BoxManipType.ModifyRemoveItem] = "gift",
+        [BoxManipType.ModifyHeal] = "heart",
+    };
 
     /// <param name="reverse">Invert the criteria / reverse the sort (Ctrl on a menu entry).</param>
     private async Task Execute(IBoxManip item, bool reverse)
