@@ -278,9 +278,19 @@ sectors itself — sector id at `+0xFF4`, checksum at `+0xFF6`, the `0x08012025`
 bytes save detection reads (`Small[0xAC]` picks R/S vs Emerald vs FR/LG; `Small[0x06..0x08]` must not be zero or the
 save is read as Japanese). The resulting image loads through the normal detection path and round-trips.
 
-**Generation 4 fixtures are built by hand** (this used to be a blocker). `BlankSaveFile.Get` leaves the raw 512 KB
-buffer empty, so `SaveFile.Write` throws `ArgumentOutOfRangeException` from `BlockInfo4.GetRevision`. The scratchpad
-tool instead writes the two block footers save detection reads — each block keeps its own size at `-0xC` and the SDK
+**Generation 4 blank saves work again (fixed 2026-09-28; this used to be a blocker).** `SAV4`'s blank constructor
+allocated only the General and Storage buffers and left the raw 512 KB `Data` empty, so `SaveFile.Write` walked the
+extra blocks over an empty span and threw `ArgumentOutOfRangeException` from `BlockInfo4.GetRevision` - and would have
+returned no data even without that throw, since `GetFinalData` returns `Data`. The blank constructor now takes the
+storage start like its data counterpart, allocates a full `SaveUtil.SIZE_G4RAW` image, delegates to that constructor
+and writes the footer every block carries (its own size at `-0xC`, the SDK build magic `0x20060623` at `-0x8`, in both
+0x40000 partitions), which is what save detection reads. `BlankSaveFile.Get` now returns a writable save for all five
+versions: each writes 524,288 bytes that `SaveUtil` reads back as `SAV4DP`/`SAV4Pt`/`SAV4HGSS` with valid checksums and
+`State.Exportable` true, and writing what was just read changes no byte. Guarded by
+`Tests/PKHeX.Core.Tests/Saves/Gen4BlankSave.cs`. This is a deliberate `PKHeX.Core` change - see "Deliberate deviations".
+
+The fixtures below predate that fix and are kept because the screen checks were run on them. The scratchpad
+tool writes the two block footers save detection reads — each block keeps its own size at `-0xC` and the SDK
 build magic (`0x20060623`) at `-0x8`, in both 0x40000 partitions — and loads the image through the normal path. The
 Gen 4 editors are therefore runtime-testable; only the Hall of Fame extra block stays uninitialised in a blank save,
 so the Battle Hall streak counter is hidden there, as it is in WinForms. Re-confirmed 2026-09-28 with fresh Platinum
@@ -693,6 +703,15 @@ layout; and the inventory Sort menu separators.
 
 ## Deliberate deviations
 
+**A blank Generation 4 save is a full image, so it can be written (a `PKHeX.Core` change).** This is the only
+behavioural change this port makes to Core, and it fixes a defect rather than adapting anything to Linux: `SAV4`'s
+blank constructor left `Data` empty, so writing one threw and, but for the throw, would have produced nothing.
+`SAV4`, `SAV4Sinnoh`, `SAV4DP`, `SAV4Pt` and `SAV4HGSS` now pass the storage start through that constructor, allocate
+a full `SaveUtil.SIZE_G4RAW` buffer and write each block's size and SDK magic footer. The diff is small and the loaded
+save path is untouched - every save available here still writes back byte for byte identical. The port needs this
+because the Generation 4 editors have no real save to be tested against; upstream is unaffected by the bug because its
+own front end never writes a blank Generation 4 save. Worth reporting upstream rather than carrying forever.
+
 **The hover preview is a tooltip, not a window.** The WinForms `PokePreview` is a custom-painted, non-activating,
 top-most form positioned with `SetWindowPos` and shown with `ShowWindowAsync`. Avalonia's tooltip already shows
 without taking focus and is placed next to the pointer, so the same card is built as tooltip content instead. Fluent
@@ -797,12 +816,11 @@ partition 1 holding General then Storage back-to-back (zero-filled, which is the
 species/party-count fields) with a real footer (size + the `0x20060623` SDK magic at each block's `-0xC`/`-0x8`) so
 `SaveUtil` recognizes the file and `SAV4.GetActiveBlock` resolves both blocks to that partition, and the extra-block
 range (Hall of Fame / Battle Hall / Battle Video slots) filled with `0xFF`, the sentinel `BlockInfo4.IsInitialized`
-treats as "not present." (`BlankSaveFile.Get(version, null).Write()` itself still throws
-`System.ArgumentOutOfRangeException` in `BlockInfo4.GetRevision` for all four Generation 4 versions — the blank
-in-memory `SAV4` instance's `Data` field is never sized to the full raw image, only `General`/`Storage`/backups are
-separate small buffers, so extra-block offset math reads past the end; loading from a correctly-sized image via the
-normal file constructor sidesteps this. This is a real, pre-existing `PKHeX.Core` defect, reproduced and pinpointed
-this session, but out of scope to fix here — see "Known blockers".) Both fixtures loaded without error (`SaveUtil`
+treats as "not present." (`BlankSaveFile.Get(version, null).Write()` threw `System.ArgumentOutOfRangeException` in
+`BlockInfo4.GetRevision` for every Generation 4 version when this pass ran, which is why it built the images by hand.
+That defect was **fixed later the same day** — see "Generation 4 blank saves work again" under "Known blockers" — so a
+future pass can simply call `BlankSaveFile.Get`. The screen results below stand as they were run, on the hand-built
+images.) Both fixtures loaded without error (`SaveUtil`
 recognized them as `SAV4Pt`/`SAV4HGSS`, `State.Exportable=true`, full SAV-tab button row present) and every window
 below opened and was usable with no crash:
 

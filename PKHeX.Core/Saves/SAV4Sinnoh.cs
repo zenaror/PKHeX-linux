@@ -10,7 +10,7 @@ namespace PKHeX.Core;
 public abstract class SAV4Sinnoh : SAV4, IBoxDetailName, IBoxDetailWallpaper
 {
     protected override int FooterSize => 0x14;
-    protected SAV4Sinnoh([ConstantExpected] int gSize, [ConstantExpected] int sSize) : base(gSize, sSize) { }
+    protected SAV4Sinnoh([ConstantExpected] int gSize, [ConstantExpected] int sSize, [ConstantExpected] int sStart) : base(gSize, sSize, sStart) { }
     protected SAV4Sinnoh(Memory<byte> data, [ConstantExpected] int gSize, [ConstantExpected] int sSize, [ConstantExpected] int sStart) : base(data, gSize, sSize, sStart) { }
 
     #region Storage

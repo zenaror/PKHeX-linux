@@ -41,13 +41,41 @@ public abstract class SAV4 : SaveFile, IEventFlag37, IDaycareStorage, IDaycareRa
     public sealed override bool GetFlag(int offset, int bitIndex) => GetFlag(General, offset, bitIndex);
     public sealed override void SetFlag(int offset, int bitIndex, bool value) => SetFlag(General, offset, bitIndex, value);
 
-    protected SAV4([ConstantExpected] int gSize, [ConstantExpected] int sSize)
+    /// <summary>
+    /// Creates a blank save: a full size image whose block footers carry what the games write, so that it can be
+    /// written out and read back like any other.
+    /// </summary>
+    /// <remarks>
+    /// Linux port fix. Upstream allocates only the General and Storage buffers here and leaves <see cref="SaveFile.Data"/>
+    /// empty, so <see cref="SaveFile.Write"/> walked the extra blocks over an empty span and threw out of
+    /// <see cref="BlockInfo4.GetRevision"/> - and would have returned no data even without that throw, since
+    /// <c>GetFinalData</c> returns <see cref="SaveFile.Data"/>. A blank Generation 4 save is the only way to build a
+    /// fixture for the Generation 4 editors when no real save is available, which is why the port needs it to work.
+    /// </remarks>
+    protected SAV4([ConstantExpected] int gSize, [ConstantExpected] int sSize, [ConstantExpected] int sStart)
+        : this(new byte[SaveUtil.SIZE_G4RAW], gSize, sSize, sStart)
     {
-        GeneralBuffer = new byte[gSize];
-        StorageBuffer = new byte[sSize];
-        BackupGeneralBuffer = new byte[gSize];
-        BackupStorageBuffer = new byte[sSize];
+        InitializeBlankFooters(gSize, sSize);
         ClearBoxes();
+    }
+
+    /// <summary>
+    /// Writes the size and SDK magic that every block footer carries, in both partitions, as the games do when they
+    /// first write a save. Without the size, <c>SaveUtil</c> does not recognize the result as a Generation 4 save;
+    /// the magic is rewritten by <see cref="SetMagics(uint)"/> on every save, the size is not.
+    /// </summary>
+    private void InitializeBlankFooters(int gSize, int sSize)
+    {
+        WriteFooter(General, gSize);
+        WriteFooter(Storage, sSize);
+        WriteFooter(BackupGeneral, gSize);
+        WriteFooter(BackupStorage, sSize);
+
+        static void WriteFooter(Span<byte> block, int size)
+        {
+            WriteUInt32LittleEndian(block[^0xC..], (uint)size);
+            WriteUInt32LittleEndian(block[^0x8..], MAGIC_JAPAN_INTL);
+        }
     }
 
     protected SAV4(Memory<byte> data, [ConstantExpected] int gSize, [ConstantExpected] int sSize, [ConstantExpected] int sStart) : base(data)
