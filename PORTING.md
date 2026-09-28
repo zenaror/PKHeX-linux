@@ -867,6 +867,8 @@ it back over the flag on the next save, undoing the event) and damage the profil
 for a Crystal save that is not Japanese and is larger than `SaveUtil.SIZE_G2RAW_U`, and says why in its tooltip. A
 retail Japanese Crystal save is untouched by the rule: it is 64 KB by design, and 0xA000 / 0xA083 are the addresses Core
 already writes. `PKHeX.Core` is unchanged, and the check reads only the save's own shape - no plugin is referenced.
+Screen-verified 2026-09-28 from the AppImage of commit `9fff7c2f`: with a 65,584-byte western Crystal save loaded, the
+button in Misc Edits is greyed out and the tooltip is shown on the disabled control with that explanation.
 
 ## Known cosmetic issues inherited from upstream
 
