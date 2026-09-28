@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
@@ -120,6 +121,8 @@ public sealed partial class MainWindow : Window
             ("Menu_Data", "data"), ("Menu_LoadBoxes", "load"), ("Menu_DumpBoxes", "dump"), ("Menu_DumpBox", "dump"),
             ("Menu_Report", "report"), ("Menu_Database", "database"), ("Menu_MGDatabase", "gift"), ("Menu_EncDatabase", "users"),
             ("Menu_BatchEditor", "settings"), ("Menu_Folder", "folder"),
+            // Troubleshooting group (WinForms: Troubleshooting.AddTroubleshootingControls)
+            ("Menu_Troubleshooting", "settings"), ("Menu_ForceLoadSAV", "main"), ("Menu_HexImporter", "database"), ("Menu_PluginInfo", "about"),
             ("Menu_Language", "language"), ("Menu_Undo", "bak"), ("Menu_Redo", "redo"), ("Menu_Settings", "settings"), ("Menu_About", "about"),
         ];
         foreach (var (name, icon) in icons)
@@ -130,6 +133,13 @@ public sealed partial class MainWindow : Window
                 continue;
             item.Icon = new Image { Source = bmp, Width = 16, Height = 16 };
         }
+    }
+
+    private static void SetItemIcon(MenuItem item, string icon)
+    {
+        var bmp = App.IsDarkModeEnabled ? AppResources.GetImageBlackToWhite(icon) : AppResources.GetImage(icon);
+        if (bmp is not null)
+            item.Icon = new Image { Source = bmp, Width = 16, Height = 16 };
     }
 
     /// <summary>
@@ -227,7 +237,14 @@ public sealed partial class MainWindow : Window
         mnu.Items.Add(mnuLegality);
         mnu.Items.Add(mnuQR);
         mnu.Items.Add(mnuSaveAs);
+        // WinForms icons (ContextMenuPKM.Designer.cs), inverted in dark mode like ContextMenuPKM's constructor does.
+        SetItemIcon(mnuLegality, "export");
+        SetItemIcon(mnuQR, "qr");
+        SetItemIcon(mnuSaveAs, "savePKM");
         dragoutBorder.ContextMenu = mnu;
+
+        // WinForms: PB_Legal.Click += ClickLegality (Main.Designer.cs)
+        PB_Legal.AttachClickHandled(mods => { _ = ClickLegality(); });
 
         L_UpdateAvailable.PointerPressed += (_, _) => Process.Start(new ProcessStartInfo(ThreadPath) { UseShellExecute = true });
     }
@@ -374,9 +391,30 @@ public sealed partial class MainWindow : Window
         await form.ShowDialog(this);
     }
 
-    // Sub Menu Options (features not yet ported are disabled in FormInitializeSecond)
+    /// <summary>
+    /// Activates the already-open window of the requested type, if there is one.
+    /// </summary>
+    /// <remarks>Port of <c>WinFormsUtil.OpenWindowExists</c>; these tool windows are single-instance upstream.</remarks>
+    private static bool OpenWindowExists<T>() where T : Window
+    {
+        if (global::Avalonia.Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
+            return false;
+        foreach (var window in desktop.Windows)
+        {
+            if (window is not T)
+                continue;
+            window.Activate();
+            return true;
+        }
+        return false;
+    }
+
+    // Sub Menu Options
     private void MainMenuBoxReport(object? sender, RoutedEventArgs e)
     {
+        if (OpenWindowExists<ReportGridWindow>())
+            return;
+
         var report = new ReportGridWindow();
         var list = new List<SlotCache>();
         SlotInfoLoader.AddFromSaveFile(C_SAV.SAV, list);
@@ -393,7 +431,8 @@ public sealed partial class MainWindow : Window
     {
         if (ModifierKeys == KeyModifiers.Shift) // WinForms: Shift opens the personal-table chart instead.
         {
-            new KChartWindow(C_SAV.SAV).Show(this);
+            if (!OpenWindowExists<KChartWindow>())
+                new KChartWindow(C_SAV.SAV).Show(this);
             return;
         }
 
@@ -403,10 +442,14 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        new DatabaseWindow(PKME_Tabs, C_SAV).Show(this);
+        if (!OpenWindowExists<DatabaseWindow>())
+            new DatabaseWindow(PKME_Tabs, C_SAV).Show(this);
     }
     private void Menu_EncDatabase_Click(object? sender, RoutedEventArgs e)
     {
+        if (OpenWindowExists<EncounterDatabaseWindow>())
+            return;
+
         var db = new TrainerDatabase();
         var sav = C_SAV.SAV;
         _ = Task.Run(() =>
@@ -422,7 +465,10 @@ public sealed partial class MainWindow : Window
         new EncounterDatabaseWindow(PKME_Tabs, db).Show(this);
     }
     private void MainMenuMysteryDB(object? sender, RoutedEventArgs e)
-        => new MysteryGiftDatabaseWindow(PKME_Tabs, C_SAV).Show(this);
+    {
+        if (!OpenWindowExists<MysteryGiftDatabaseWindow>())
+            new MysteryGiftDatabaseWindow(PKME_Tabs, C_SAV).Show(this);
+    }
     private void MainMenuSettings(object? sender, RoutedEventArgs e) => _ = MainMenuSettingsAsync();
 
     private async Task MainMenuSettingsAsync()
@@ -450,6 +496,9 @@ public sealed partial class MainWindow : Window
 
     private async Task MainMenuBoxDumpAsync()
     {
+        if (OpenWindowExists<BoxExporterWindow>())
+            return;
+
         var ld = await AppDialogs.Prompt(this, MessageBoxButtons.YesNo, MsgDatabaseExport);
         if (ld == DialogResult.Yes)
         {
@@ -459,17 +508,19 @@ public sealed partial class MainWindow : Window
         if (ld != DialogResult.No)
             return;
 
+        // WinForms shows this modeless with the main window as owner.
         var dumper = new BoxExporterWindow(C_SAV.SAV, BoxExporterWindow.ExportOverride.All);
-        await dumper.ShowDialog(this);
+        dumper.Show(this);
     }
 
-    private void MainMenuBoxDumpSingle(object? sender, RoutedEventArgs e) => _ = MainMenuBoxDumpSingleAsync();
-
-    private async Task MainMenuBoxDumpSingleAsync()
+    private void MainMenuBoxDumpSingle(object? sender, RoutedEventArgs e)
     {
+        if (OpenWindowExists<BoxExporterWindow>())
+            return;
+
         C_SAV.SAV.CurrentBox = C_SAV.CurrentBox; // double check
         var dumper = new BoxExporterWindow(C_SAV.SAV, BoxExporterWindow.ExportOverride.Current);
-        await dumper.ShowDialog(this);
+        dumper.Show(this);
     }
     private void MainMenuBatchEditor(object? sender, RoutedEventArgs e) => _ = MainMenuBatchEditorAsync();
 
@@ -486,6 +537,9 @@ public sealed partial class MainWindow : Window
     }
     private void MainMenuFolder(object? sender, RoutedEventArgs e)
     {
+        if (OpenWindowExists<FolderListWindow>())
+            return;
+
         var form = new FolderListWindow(s => _ = OpenSAV(s.Clone(), s.Metadata.FilePath!));
         form.Show(this);
     }
@@ -937,6 +991,7 @@ public sealed partial class MainWindow : Window
                 return true;
         }
 
+        PKME_Tabs.FlushPendingEdits(); // WinForms: PKME_Tabs.Focus() to flush any pending changes
         StoreLegalSaveGameData(sav);
         ParseSettings.InitFromSaveFileData(sav); // physical GB, no longer used in logic
         RecentTrainerCache.SetRecentTrainer(sav);
@@ -999,7 +1054,7 @@ public sealed partial class MainWindow : Window
         PKME_Tabs.PopulateFields(pk);
 
         // Initialize Overall Info
-        Menu_LoadBoxes.IsEnabled = C_SAV.SAV.HasBox;
+        Menu_LoadBoxes.IsEnabled = Menu_DumpBoxes.IsEnabled = Menu_DumpBox.IsEnabled = Menu_Report.IsEnabled = C_SAV.SAV.HasBox;
 
         // Initialize Subviews
         bool WindowTranslationRequired = false;
@@ -1159,7 +1214,9 @@ public sealed partial class MainWindow : Window
         {
             var item = new MenuItem
             {
-                Header = names[i],
+                // Avalonia reads '_' as the access-key marker, and two of the entries are Español_España / Español_LATAM;
+                // WinForms shows the underscore, so escape it.
+                Header = Translator.ConvertAccessKeys(names[i]),
                 Tag = i,
                 ToggleType = MenuItemToggleType.CheckBox,
             };
@@ -1167,6 +1224,17 @@ public sealed partial class MainWindow : Window
             Menu_Language.Items.Add(item);
         }
         UpdateLanguageMenuChecks(GameLanguage.GetLanguageIndex(CurrentLanguage));
+    }
+
+    /// <summary>
+    /// Translates the context menus. Avalonia keeps a <see cref="ContextMenu"/> out of its target's logical tree, so
+    /// <see cref="Translator.TranslateInterface"/> never reaches these items; WinForms reaches them via the control tree.
+    /// </summary>
+    private void TranslatePopupMenus(string lang)
+    {
+        if (dragoutBorder.ContextMenu is { } dragoutMenu)
+            Translator.TranslateControls(dragoutMenu, "Main", lang);
+        C_SAV.TranslateMenus(lang);
     }
 
     private void ChangeMainLanguage(object? sender, RoutedEventArgs e)
@@ -1193,6 +1261,7 @@ public sealed partial class MainWindow : Window
         var sav = C_SAV.SAV;
         LocalizeUtil.InitializeStrings(lang, sav, HaX);
         Translator.TranslateInterface(this, lang); // Translate the UI to language.
+        TranslatePopupMenus(lang);
         LocalizedDescriptionAttribute.Localizer = Translator.GetDictionary(lang);
 
         SizeCPView.ResetSizeLocalizations(lang);

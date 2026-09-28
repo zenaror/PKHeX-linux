@@ -1,10 +1,12 @@
 using System;
 using System.Linq;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Layout;
 using PKHeX.Avalonia.Controls;
 using PKHeX.Avalonia.Drawing;
 using PKHeX.Avalonia.Localization;
+using PKHeX.Avalonia.Views.EntityEditors;
 using PKHeX.Core;
 using PKHeX.Drawing.Misc;
 
@@ -23,7 +25,7 @@ public sealed class Trainer6Window : SaveEditorWindow
     private readonly SAV6 SAV;
 
     // Overview
-    private readonly TextBox TB_OTName = UiFactory.Text("TB_OTName", 12, 140);
+    private readonly RenderedString TB_OTName = UiFactory.Name("TB_OTName", 12, 140);
     private readonly ComboBox CB_Gender = UiFactory.StringCombo("CB_Gender", 60);
     private readonly ComboBox CB_Game = UiFactory.StringCombo("CB_Game", 120);
     private readonly NumericTextBox MT_TID = UiFactory.Numeric("MT_TID", 5, 70);
@@ -84,7 +86,7 @@ public sealed class Trainer6Window : SaveEditorWindow
     private readonly ComboBox CB_BattleChateauRank = UiFactory.StringCombo("CB_BattleChateauRank", 160);
     private readonly NumericUpDown NUD_BattleChateauPoints = UiFactory.NumericUpDown("NUD_BattleChateauPoints", 0, ushort.MaxValue, 110);
     private readonly PropertyGridView PG_CurrentAppearance = new() { Name = "PG_CurrentAppearance" };
-    private readonly TextBox TB_TRNick = UiFactory.Text("TB_TRNick", 12, 140);
+    private readonly RenderedString TB_TRNick = UiFactory.Name("TB_TRNick", 12, 140);
     private readonly Button B_GiveAllAccessories = UiFactory.Button("B_GiveAllAccessories", "Unlock all Accessories");
 
     private readonly bool editing;
@@ -93,6 +95,9 @@ public sealed class Trainer6Window : SaveEditorWindow
     public Trainer6Window(SAV6 sav) : base("SAV_Trainer", "Trainer Data Editor")
     {
         SAV = (SAV6)(Origin = sav).Clone();
+
+        if (!MainWindow.Unicode)
+            TB_OTName.DisableInGameFont = TB_TRNick.DisableInGameFont = true;
 
         cba = [.. Enumerable.Range(1, 8).Select(i => UiFactory.Check($"CHK_Badge{i}", i.ToString()))];
         MaisonRecords = [.. new[]
@@ -105,7 +110,7 @@ public sealed class Trainer6Window : SaveEditorWindow
         }.Select(n => UiFactory.Numeric(n, 5, 70))];
 
         CB_Gender.Items.Clear();
-        foreach (var s in GameInfo.GenderSymbolUnicode.Take(2))
+        foreach (var s in MainWindow.GenderSymbols.Take(2)) // m/f depending on unicode selection
             CB_Gender.Items.Add(s);
         foreach (var v in Enum.GetValues<GameVersion>().Where(z => z is GameVersion.X or GameVersion.Y or GameVersion.AS or GameVersion.OR))
             CB_Game.Items.Add(v.ToString());
@@ -138,6 +143,13 @@ public sealed class Trainer6Window : SaveEditorWindow
             if (SAV is SAV6XY xy)
                 xy.Blocks.Fashion.UnlockAllAccessories();
         };
+        TB_OTName.AttachClick(async mods =>
+        {
+            if (mods != KeyModifiers.Control) // Special Character Form
+                return;
+            var trash = await TrashEditorWindow.ShowAsync(this, TB_OTName, SAV, SAV.Status.OriginalTrainerTrash.ToArray());
+            trash?.CopyTo(SAV.Status.OriginalTrainerTrash); // WinForms writes the edited bytes back into the save
+        });
     }
 
     #region Layout

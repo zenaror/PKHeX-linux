@@ -51,6 +51,16 @@ public static class UiFactory
         return cb;
     }
 
+    /// <summary>
+    /// Combo box that can be typed into, for the WinForms combos configured with <c>AutoCompleteMode.SuggestAppend</c>.
+    /// </summary>
+    public static AutoCompleteComboBox AutoCombo(string name, double minWidth = 140)
+    {
+        var cb = new AutoCompleteComboBox { Name = name, MinWidth = minWidth, VerticalAlignment = VerticalAlignment.Center, Padding = new Thickness(6, 2) };
+        cb.InitializeBinding();
+        return cb;
+    }
+
     public static ComboBox StringCombo(string name, double minWidth = 60, params string[] items)
     {
         var cb = new ComboBox { Name = name, MinWidth = minWidth, VerticalAlignment = VerticalAlignment.Center, Padding = new Thickness(6, 2) };
@@ -147,14 +157,28 @@ public static class UiFactory
     /// <summary>
     /// Two-column form grid (label | field) with the requested number of rows.
     /// </summary>
-    public static Grid FormGrid(int rows)
+    /// <param name="rows">Number of rows to create.</param>
+    /// <param name="labelWidth">Width of the label column, from the WinForms <c>TableLayoutPanel</c> column style. It is
+    /// a minimum here rather than a fixed size, because a longer font (or translation) would otherwise be cut off;
+    /// pass 0 to size the column to its content.</param>
+    public static Grid FormGrid(int rows, double labelWidth = 0)
     {
         var g = new Grid { ColumnSpacing = 6, RowSpacing = 3 };
-        g.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+        g.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto) { MinWidth = labelWidth });
         g.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
         for (int i = 0; i < rows; i++)
             g.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
         return g;
+    }
+
+    /// <summary>
+    /// Gives the label the fixed width of the WinForms label column, right aligned, so the fields below line up.
+    /// </summary>
+    public static Control FixedLabel(TextBlock label, double width)
+    {
+        label.MinWidth = width;
+        label.TextAlignment = TextAlignment.Right;
+        return label;
     }
 
     public static void AddFormRow(Grid g, int row, Control? label, Control field, HorizontalAlignment labelAlign = HorizontalAlignment.Right)

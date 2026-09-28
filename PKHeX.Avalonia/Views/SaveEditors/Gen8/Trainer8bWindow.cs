@@ -22,8 +22,8 @@ public sealed class Trainer8bWindow : SaveEditorWindow
     private readonly bool Loading;
     private bool MapUpdated;
 
-    private readonly TextBox TB_OTName = UiFactory.Text("TB_OTName", 12, 140);
-    private readonly TextBox TB_Rival = UiFactory.Text("TB_Rival", 12, 140);
+    private readonly RenderedString TB_OTName = UiFactory.Name("TB_OTName", 12, 140);
+    private readonly RenderedString TB_Rival = UiFactory.Name("TB_Rival", 12, 140);
     private readonly ComboBox CB_Gender = UiFactory.StringCombo("CB_Gender", 60);
     private readonly ComboBox CB_Game = UiFactory.StringCombo("CB_Game", 120);
     private readonly ComboBox CB_Language = UiFactory.Combo("CB_Language", 140);
@@ -53,10 +53,13 @@ public sealed class Trainer8bWindow : SaveEditorWindow
     public Trainer8bWindow(SAV8BS sav) : base("SAV_Trainer8b", "Trainer Data Editor")
     {
         SAV = (SAV8BS)(Origin = sav).Clone();
+
+        if (!MainWindow.Unicode)
+            TB_OTName.DisableInGameFont = TB_Rival.DisableInGameFont = true;
         Loading = true;
 
         Badges = [.. Enumerable.Range(1, 8).Select(i => UiFactory.Check($"CHK_Badge{i}", i.ToString()))];
-        foreach (var s in GameInfo.GenderSymbolUnicode.Take(2))
+        foreach (var s in MainWindow.GenderSymbols.Take(2)) // m/f depending on unicode selection
             CB_Gender.Items.Add(s);
         foreach (var v in new[] { GameVersion.BD, GameVersion.SP })
             CB_Game.Items.Add(v.ToString());
@@ -75,12 +78,18 @@ public sealed class Trainer8bWindow : SaveEditorWindow
         TB_OTName.AttachClick(async mods =>
         {
             if (mods == KeyModifiers.Control)
-                await TrashEditorWindow.ShowAsync(this, TB_OTName, SAV, SAV.MyStatus.OriginalTrainerTrash.ToArray());
+            {
+                var trash = await TrashEditorWindow.ShowAsync(this, TB_OTName, SAV, SAV.MyStatus.OriginalTrainerTrash.ToArray());
+                trash?.CopyTo(SAV.MyStatus.OriginalTrainerTrash); // WinForms writes the edited bytes back into the save
+            }
         });
         TB_Rival.AttachClick(async mods =>
         {
             if (mods == KeyModifiers.Control)
-                await TrashEditorWindow.ShowAsync(this, TB_Rival, SAV, SAV.RivalNameTrash.ToArray());
+            {
+                var trash = await TrashEditorWindow.ShowAsync(this, TB_Rival, SAV, SAV.RivalNameTrash.ToArray());
+                trash?.CopyTo(SAV.RivalNameTrash); // WinForms writes the edited bytes back into the save
+            }
         });
     }
 

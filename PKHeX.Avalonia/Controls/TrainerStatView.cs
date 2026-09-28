@@ -16,6 +16,7 @@ public sealed class TrainerStatView : StackPanel
 {
     private readonly ComboBox CB_Stats = UiFactory.StringCombo("CB_Stats", 260);
     private readonly NumericUpDown NUD_Stat = UiFactory.NumericUpDown("NUD_Stat", 0, int.MaxValue, 150);
+    private readonly TextBlock L_Value = UiFactory.Label("L_Value", "Value");
     private readonly TextBlock L_Offset = UiFactory.Label("L_Offset", "Offset: 0x000");
     private readonly ObservableCollection<string> Names = [];
 
@@ -33,7 +34,7 @@ public sealed class TrainerStatView : StackPanel
         Spacing = 4;
         CB_Stats.ItemsSource = Names;
         Children.Add(CB_Stats);
-        Children.Add(NUD_Stat);
+        Children.Add(UiFactory.Row(L_Value, NUD_Stat)); // WinForms labels the value box
         Children.Add(L_Offset);
 
         CB_Stats.SelectionChanged += (_, _) => ChangeStat();

@@ -29,8 +29,8 @@ public sealed class Trainer7GGWindow : SaveEditorWindow
     private readonly GoParkStorage Park;
     private bool MapUpdated;
 
-    private readonly TextBox TB_OTName = UiFactory.Text("TB_OTName", 12, 140);
-    private readonly TextBox TB_RivalName = UiFactory.Text("TB_RivalName", 12, 140);
+    private readonly RenderedString TB_OTName = UiFactory.Name("TB_OTName", 12, 140);
+    private readonly RenderedString TB_RivalName = UiFactory.Name("TB_RivalName", 12, 140);
     private readonly ComboBox CB_Gender = UiFactory.StringCombo("CB_Gender", 60);
     private readonly ComboBox CB_Game = UiFactory.Combo("CB_Game", 160);
     private readonly ComboBox CB_Language = UiFactory.Combo("CB_Language", 140);
@@ -72,6 +72,9 @@ public sealed class Trainer7GGWindow : SaveEditorWindow
     public Trainer7GGWindow(SAV7b sav) : base("SAV_Trainer7GG", "Trainer Data Editor")
     {
         SAV = (SAV7b)(Origin = sav).Clone();
+
+        if (!MainWindow.Unicode)
+            TB_OTName.DisableInGameFont = TB_RivalName.DisableInGameFont = true;
         Park = SAV.Park;
 
         BuildLayout();
@@ -99,12 +102,18 @@ public sealed class Trainer7GGWindow : SaveEditorWindow
         TB_OTName.AttachClick(async mods =>
         {
             if (mods == KeyModifiers.Control)
-                await TrashEditorWindow.ShowAsync(this, TB_OTName, SAV, SAV.Status.OriginalTrainerTrash.ToArray());
+            {
+                var trash = await TrashEditorWindow.ShowAsync(this, TB_OTName, SAV, SAV.Status.OriginalTrainerTrash.ToArray());
+                trash?.CopyTo(SAV.Status.OriginalTrainerTrash); // WinForms writes the edited bytes back into the save
+            }
         });
         TB_RivalName.AttachClick(async mods =>
         {
             if (mods == KeyModifiers.Control)
-                await TrashEditorWindow.ShowAsync(this, TB_RivalName, SAV, SAV.Misc.RivalNameTrash.ToArray());
+            {
+                var trash = await TrashEditorWindow.ShowAsync(this, TB_RivalName, SAV, SAV.Misc.RivalNameTrash.ToArray());
+                trash?.CopyTo(SAV.Misc.RivalNameTrash); // WinForms writes the edited bytes back into the save
+            }
         });
     }
 
@@ -149,7 +158,7 @@ public sealed class Trainer7GGWindow : SaveEditorWindow
     private void GetComboBoxes()
     {
         CB_Gender.Items.Clear();
-        foreach (var s in GameInfo.GenderSymbolUnicode.Take(2))
+        foreach (var s in MainWindow.GenderSymbols.Take(2)) // m/f depending on unicode selection
             CB_Gender.Items.Add(s);
         CB_Language.SetItems(GameInfo.LanguageDataSource(SAV.Generation, SAV.Context));
         CB_Game.SetItems(GameInfo.Sources.VersionDataSource.Where(z => (GameVersion)z.Value is GameVersion.GP or GameVersion.GE).ToList());

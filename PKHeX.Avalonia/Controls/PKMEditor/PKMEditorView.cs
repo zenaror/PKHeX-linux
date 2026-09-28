@@ -172,10 +172,12 @@ public sealed partial class PKMEditorView : UserControl, IMainEditor
         CB_Handler.SelectionChanged += (_, _) => ChangeHandlerIndex();
         CB_ExtraBytes.SelectionChanged += (_, _) => UpdateExtraByteIndex();
         TB_ExtraByte.OnTextChanged(_ => UpdateExtraByteValue(TB_ExtraByte));
-        TB_HomeTracker.OnTextChanged(_ => Update_ID64(TB_HomeTracker));
+        TB_HomeTracker.OnValidated(_ => Update_ID64(TB_HomeTracker));
         BTN_RerollEC.Click += (_, _) => UpdateRandomEC();
-        TB_PID.OnTextChanged(_ => { Update_ID(); UpdateTSV(); });
-        TB_EC.OnTextChanged(_ => Update_ID());
+        // WinForms commits (and reformats) these on Validated, i.e. when the field is left; the tooltip is built on hover.
+        TB_PID.OnValidated(_ => Update_ID());
+        TB_PID.PointerEntered += (_, _) => UpdateTSV();
+        TB_EC.OnValidated(_ => Update_ID());
 
         BTN_Ribbons.Click += (_, _) => Run(OpenRibbons);
         BTN_Medals.Click += (_, _) => Run(OpenSuperTrainRegimen);
@@ -308,12 +310,30 @@ public sealed partial class PKMEditorView : UserControl, IMainEditor
         if (click)
         {
             forceValidation = true;
+            FlushPendingEdits();
             ValidateAllComboBoxes();
             forceValidation = false;
         }
 
         var pk = GetPKMfromFields();
         return pk.Clone();
+    }
+
+    /// <summary>
+    /// Commits the text boxes that only write to the entity when they lose focus.
+    /// </summary>
+    /// <remarks>
+    /// WinForms flushes them with <c>ValidateChildren()</c> in <c>PKMEditor.PreparePKM</c>, which raises
+    /// <c>Validated</c> on every child: <see cref="TB_PID"/> and <see cref="TB_EC"/> run <see cref="Update_ID"/>,
+    /// <see cref="TB_HomeTracker"/> runs <see cref="Update_ID64"/>. Without it a value typed into the HOME tracker is
+    /// lost whenever the entity is read without moving focus first (Ctrl+S, the drag-out sprite, Ctrl+Alt+click),
+    /// because nothing else copies that box into the entity. Both handlers are no-ops for the generations that do not
+    /// have the field, so they need no guard here.
+    /// </remarks>
+    public void FlushPendingEdits()
+    {
+        Update_ID();
+        Update_ID64(TB_HomeTracker);
     }
 
     private void ValidateAllComboBoxes()
@@ -1842,7 +1862,7 @@ public sealed partial class PKMEditorView : UserControl, IMainEditor
     {
         if (c is not ComboBox cb)
             return;
-        if (cb.SelectedItem is null && cb.GetItemCount() > 0)
+        if (cb.Text is null or { Length: 0 } && cb.GetItemCount() > 0)
         {
             cb.SelectedIndex = 0;
         }
@@ -2234,6 +2254,15 @@ public sealed partial class PKMEditorView : UserControl, IMainEditor
 
         CHK_AsEgg.IsVisible = GB_EggConditions.IsVisible = PB_Mark5.IsVisible = PB_Mark6.IsVisible = format >= 4;
         ShinyLeaf.IsVisible = FLP_WalkingMood.IsVisible = format == 4;
+
+        // Ensure marking order is correct for gen3|future. Gen3 has square second, not third.
+        var orderCorrect = (format == 3) == (Grid.GetColumn(PB_Mark3) < Grid.GetColumn(PB_Mark2));
+        if (!orderCorrect) // Swap the columns of the marks.
+        {
+            (var c2, var c3) = (Grid.GetColumn(PB_Mark2), Grid.GetColumn(PB_Mark3));
+            Grid.SetColumn(PB_Mark2, c3);
+            Grid.SetColumn(PB_Mark3, c2);
+        }
 
         CB_Ability.IsVisible = !DEV_Ability.IsEnabled && format >= 3;
         Label_Nature.IsVisible = CB_Nature.IsVisible = format >= 3;

@@ -193,7 +193,8 @@ public sealed class HallOfFame3Window : SaveEditorWindow
         var pk = Current;
         if (TB_Nickname.Text != pk.Nickname) // preserve trash
             pk.Nickname = TB_Nickname.Text ?? string.Empty;
-        await TrashEditorWindow.ShowAsync(this, TB_Nickname, SAV, pk.NicknameTrash.ToArray());
+        var trash = await TrashEditorWindow.ShowAsync(this, TB_Nickname, SAV, pk.NicknameTrash.ToArray());
+        trash?.CopyTo(pk.NicknameTrash); // WinForms writes the edited bytes back into the save
     }
 
     /// <summary>Copies the current party into this entry; Shift applies it to every entry.</summary>

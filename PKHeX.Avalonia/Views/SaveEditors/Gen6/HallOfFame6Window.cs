@@ -408,7 +408,9 @@ public sealed class HallOfFame6Window : SaveEditorWindow
         var data = Fame.GetEntity(team, member);
         var nickTrash = data.Slice(0x18, 26);
         SAV.SetString(nickTrash, TB_Nickname.Text ?? string.Empty, 12, StringConverterOption.None);
-        await TrashEditorWindow.ShowAsync(this, TB_Nickname, SAV, nickTrash.ToArray());
+        var trash = await TrashEditorWindow.ShowAsync(this, TB_Nickname, SAV, nickTrash.ToArray());
+        // WinForms writes the edited bytes back into the save; the slice is retaken because it is a span into it.
+        trash?.CopyTo(Fame.GetEntity(team, member).Slice(0x18, 26));
     }
 
     private async Task ClickDelete()

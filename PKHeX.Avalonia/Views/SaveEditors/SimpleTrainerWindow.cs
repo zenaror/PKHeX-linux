@@ -1,8 +1,11 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Layout;
 using PKHeX.Avalonia.Controls;
+using PKHeX.Avalonia.Views.EntityEditors;
 using PKHeX.Core;
 
 namespace PKHeX.Avalonia.Views.SaveEditors;
@@ -17,7 +20,7 @@ public sealed class SimpleTrainerWindow : SaveEditorWindow
 
     // Trainer
     private readonly TextBlock L_TrainerName = UiFactory.Label("L_TrainerName", "Name:");
-    private readonly TextBox TB_OTName = UiFactory.Text("TB_OTName", 12, 140);
+    private readonly RenderedString TB_OTName = UiFactory.Name("TB_OTName", 12, 140);
     private readonly ComboBox CB_Gender = UiFactory.StringCombo("CB_Gender", 60);
     private readonly TextBlock L_TID = UiFactory.Label("L_TID", "TID16:");
     private readonly NumericTextBox MT_TID = UiFactory.Numeric("MT_TID", 5, 64);
@@ -79,8 +82,16 @@ public sealed class SimpleTrainerWindow : SaveEditorWindow
     private readonly CheckBox CHK_BattleEffects = UiFactory.Check("CHK_BattleEffects", "Use Battle Effects");
     private readonly GroupBoxView GB_Adventure;
 
+    private readonly StackPanel PN_Coins; // Coins / BP row; Generation 5 moves it into the Badges group
+    private readonly StackPanel PN_TrainerRow2; // holds the mutually exclusive SID and Coins rows
+    private readonly StackPanel PN_Badges;
+
     private readonly bool Loading;
     private bool MapUpdated;
+
+    // Trash bytes behind the trainer name; WinForms wires a ClickOT handler per save type.
+    private Func<byte[]>? GetTrash;
+    private Action<byte[]>? SetTrash;
 
     public SimpleTrainerWindow(SaveFile sav) : base("SAV_SimpleTrainer", "Trainer Data Editor")
     {
@@ -95,19 +106,28 @@ public sealed class SimpleTrainerWindow : SaveEditorWindow
         }
         cba = AllBadges[..8];
 
-        // Layout
-        var trainer = UiFactory.FormGrid(7);
-        UiFactory.AddFormRow(trainer, 0, L_TrainerName, UiFactory.Row(TB_OTName, CB_Gender));
-        UiFactory.AddFormRow(trainer, 1, L_TID, MT_TID);
-        UiFactory.AddFormRow(trainer, 2, L_SID, MT_SID);
-        UiFactory.AddFormRow(trainer, 3, L_Money, UiFactory.Row(MT_Money, B_MaxCash));
-        UiFactory.AddFormRow(trainer, 4, L_Coins, UiFactory.Row(MT_Coins, B_MaxCoins));
-        UiFactory.AddFormRow(trainer, 5, L_Country, CB_Country);
-        UiFactory.AddFormRow(trainer, 6, L_Region, CB_Region);
+        // Layout: WinForms arranges the groups in a fixed 2x2 grid -- Trainer / Badges on top,
+        // Adventure / (Map or Options) below (SAV_SimpleTrainer.Designer.cs:563,668,133,432,862).
+        var trainer = new Grid { ColumnSpacing = 6, RowSpacing = 3 };
+        trainer.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+        trainer.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+        for (int i = 0; i < 5; i++)
+            trainer.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+
+        // Two columns, as in WinForms: TID next to money, SID (or coins) next to the gender combo.
+        PN_Coins = UiFactory.Row(L_Coins, MT_Coins, B_MaxCoins);
+        PN_TrainerRow2 = UiFactory.Row(UiFactory.Row(L_SID, MT_SID), PN_Coins);
+        UiFactory.AddFormRow(trainer, 0, L_TrainerName, TB_OTName);
+        UiFactory.AddFormRow(trainer, 1, UiFactory.Row(L_TID, MT_TID), UiFactory.Row(L_Money, MT_Money, B_MaxCash));
+        UiFactory.AddFormRow(trainer, 2, PN_TrainerRow2, CB_Gender);
+        UiFactory.AddFormRow(trainer, 3, L_Country, CB_Country);
+        UiFactory.AddFormRow(trainer, 4, L_Region, CB_Region);
         var GB_Trainer = new GroupBoxView("GB_Trainer", "Trainer", trainer);
 
         var adventure = UiFactory.FormGrid(5);
-        UiFactory.AddFormRow(adventure, 0, null, UiFactory.Row(L_Hours, MT_Hours, L_Minutes, MT_Minutes, L_Seconds, MT_Seconds));
+        var playTime = UiFactory.Row(L_Hours, MT_Hours, L_Minutes, MT_Minutes, L_Seconds, MT_Seconds);
+        UiFactory.SetRowCol(playTime, 0, 0, 2); // WinForms puts the play time flush left, above the label column
+        adventure.Children.Add(playTime);
         UiFactory.AddFormRow(adventure, 1, L_Started, UiFactory.Column(CAL_AdventureStartDate, CAL_AdventureStartTime));
         UiFactory.AddFormRow(adventure, 2, L_Fame, UiFactory.Column(CAL_HoFDate, CAL_HoFTime));
         UiFactory.AddFormRow(adventure, 3, L_PikaFriend, MT_PikaFriend);
@@ -128,26 +148,38 @@ public sealed class SimpleTrainerWindow : SaveEditorWindow
             chk.Margin = new global::Avalonia.Thickness(2);
             badges.Children.Add(chk);
         }
-        GB_Badges = new GroupBoxView("GB_Badges", "Badges", badges);
+        PN_Badges = UiFactory.Column(badges);
+        GB_Badges = new GroupBoxView("GB_Badges", "Badges", PN_Badges);
 
+        // WinForms order, top to bottom: effects, style, sound, speed.
         var options = UiFactory.FormGrid(4);
-        UiFactory.AddFormRow(options, 0, LBL_TextSpeed, CB_TextSpeed);
-        UiFactory.AddFormRow(options, 1, LBL_SoundType, CB_SoundType);
-        UiFactory.AddFormRow(options, 2, LBL_BattleStyle, CB_BattleStyle);
-        UiFactory.AddFormRow(options, 3, null, CHK_BattleEffects);
+        UiFactory.AddFormRow(options, 0, null, CHK_BattleEffects);
+        UiFactory.AddFormRow(options, 1, LBL_BattleStyle, CB_BattleStyle, HorizontalAlignment.Left);
+        UiFactory.AddFormRow(options, 2, LBL_SoundType, CB_SoundType, HorizontalAlignment.Left);
+        UiFactory.AddFormRow(options, 3, LBL_TextSpeed, CB_TextSpeed, HorizontalAlignment.Left);
         GB_Options = new GroupBoxView("GB_Options", "Options", options);
         GB_Options.IsVisible = false;
 
-        var left = UiFactory.Column(GB_Trainer, GB_Badges, GB_Options);
-        var right = UiFactory.Column(GB_Adventure, GB_Map);
-        var body = UiFactory.Row(left, right);
-        body.Spacing = 10;
-        foreach (var c in new Control[] { left, right })
-            c.VerticalAlignment = VerticalAlignment.Top;
+        var body = new Grid { ColumnSpacing = 10, RowSpacing = 10 };
+        body.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+        body.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+        body.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        body.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        AddCell(body, GB_Trainer, 0, 0);
+        AddCell(body, GB_Badges, 0, 1);
+        AddCell(body, GB_Adventure, 1, 0);
+        AddCell(body, GB_Map, 1, 1);
+        AddCell(body, GB_Options, 1, 1); // WinForms puts Map and Options at the same spot; only one is ever visible
         SetBody(body); // translate now; generation-specific text (e.g. "BP") is applied afterwards
 
         // Behavior
         TB_OTName.MaxLength = SAV.MaxStringLengthTrainer;
+        TB_OTName.DisplayContext = SAV.Context;
+        TB_OTName.AttachClick(async mods =>
+        {
+            if (mods == KeyModifiers.Control) // Special Character Form
+                await ClickOT();
+        });
         B_MaxCash.Click += (_, _) => MT_Money.Text = SAV.MaxMoney.ToString();
         B_MaxCoins.Click += (_, _) => MT_Coins.Text = SAV.MaxCoins.ToString();
         MT_Money.MaxLength = (int)Math.Floor(Math.Log10(SAV.MaxMoney) + 1);
@@ -196,6 +228,8 @@ public sealed class SimpleTrainerWindow : SaveEditorWindow
             CB_SoundType.SelectedIndex = sav1.Sound;
             CB_TextSpeed.SelectedIndex = sav1.TextSpeed;
 
+            SetTrashAccessor(() => sav1.OriginalTrainerTrash.ToArray(), b => b.CopyTo(sav1.OriginalTrainerTrash));
+
             MT_PikaFriend.Text = sav1.PikaFriendship.ToString();
             MT_PikaBeach.Text = sav1.PikaBeachScore.ToString();
             if (!sav1.Version.Contains(GameVersion.YW))
@@ -222,6 +256,7 @@ public sealed class SimpleTrainerWindow : SaveEditorWindow
             CB_SoundType.SelectedIndex = sav2.Sound > 0 ? 1 : 0;
             CB_TextSpeed.SelectedIndex = sav2.TextSpeed;
             badgeval = sav2.Badges;
+            SetTrashAccessor(() => sav2.OriginalTrainerTrash.ToArray(), b => b.CopyTo(sav2.OriginalTrainerTrash));
             var b = AllBadges;
             cba = [b[0], b[1], b[2], b[3], b[5], b[4], b[6], b[7], b[8], b[9], b[10], b[11], b[12], b[13], b[14], b[15]];
         }
@@ -243,6 +278,7 @@ public sealed class SimpleTrainerWindow : SaveEditorWindow
             CB_BattleStyle.SelectedIndex = small.OptionBattleStyle ? 1 : 0;
             CB_SoundType.SelectedIndex = small.OptionSound ? 1 : 0;
             CHK_BattleEffects.IsChecked = !small.OptionBattleScene;
+            SetTrashAccessor(() => small.OriginalTrainerTrash.ToArray(), b => b.CopyTo(small.OriginalTrainerTrash));
         }
         if (SAV is SAV3Colosseum or SAV3XD)
         {
@@ -250,6 +286,10 @@ public sealed class SimpleTrainerWindow : SaveEditorWindow
             GB_Badges.IsVisible = false;
             HideDates();
             GB_Adventure.IsVisible = false;
+            if (SAV is SAV3Colosseum colo)
+                SetTrashAccessor(() => colo.OriginalTrainerTrash.ToArray(), b => b.CopyTo(colo.OriginalTrainerTrash));
+            else if (SAV is SAV3XD xd)
+                SetTrashAccessor(() => xd.OriginalTrainerTrash.ToArray(), b => b.CopyTo(xd.OriginalTrainerTrash));
             Loading = false;
             return;
         }
@@ -271,10 +311,14 @@ public sealed class SimpleTrainerWindow : SaveEditorWindow
             CB_Country.SetCountrySubRegion("gen4_countries");
             CB_Country.SetValue(sav4.Country);
             CB_Region.SetValue(sav4.Region);
+
+            SetTrashAccessor(() => sav4.OriginalTrainerTrash.ToArray(), b => b.CopyTo(sav4.OriginalTrainerTrash));
         }
         else if (SAV is SAV5 s)
         {
             L_Coins.IsVisible = B_MaxCoins.IsVisible = MT_Coins.IsVisible = true;
+            PN_TrainerRow2.Children.Remove(PN_Coins); // WinForms reparents the three controls into GB_Badges
+            PN_Badges.Children.Add(PN_Coins);
             L_Coins.Text = "BP"; // no translation boo
             MT_Coins.Text = s.BattleSubway.BP.ToString();
 
@@ -288,6 +332,8 @@ public sealed class SimpleTrainerWindow : SaveEditorWindow
             CB_Country.SetCountrySubRegion("gen5_countries");
             CB_Country.SetValue(s.Country);
             CB_Region.SetValue(s.Region);
+
+            SetTrashAccessor(() => s.PlayerData.OriginalTrainerTrash.ToArray(), b => b.CopyTo(s.PlayerData.OriginalTrainerTrash));
         }
 
         for (int i = 0; i < cba.Length; i++)
@@ -304,6 +350,29 @@ public sealed class SimpleTrainerWindow : SaveEditorWindow
         SetDate(CAL_HoFDate, date);
         CAL_HoFTime.SelectedTime = time.TimeOfDay;
         Loading = false;
+    }
+
+    private static void AddCell(Grid g, Control c, int row, int col)
+    {
+        c.VerticalAlignment = VerticalAlignment.Top;
+        UiFactory.SetRowCol(c, row, col);
+        g.Children.Add(c);
+    }
+
+    private void SetTrashAccessor(Func<byte[]> get, Action<byte[]> set)
+    {
+        GetTrash = get;
+        SetTrash = set;
+    }
+
+    /// <summary>Opens the special-character editor for the trainer name (WinForms <c>ClickOT</c>).</summary>
+    private async Task ClickOT()
+    {
+        if (GetTrash is null || SetTrash is null)
+            return;
+        var result = await TrashEditorWindow.ShowAsync(this, TB_OTName, SAV, GetTrash());
+        if (result is not null)
+            SetTrash(result); // WinForms copies the edited bytes straight back into the save
     }
 
     private void HideDates()
@@ -427,6 +496,8 @@ public sealed class SimpleTrainerWindow : SaveEditorWindow
             s.Region = CB_Region.GetValue();
         }
 
+        // WinForms writes these unconditionally; the pickers are only shown for Gen 4/5, which are also the only
+        // saves here that override SecondsToStart/Fame, so guarding on visibility writes exactly the same bytes.
         if (CAL_AdventureStartDate.IsVisible)
         {
             SAV.SecondsToStart = (uint)DateUtil.GetSecondsFrom2000(GetDate(CAL_AdventureStartDate), GetTime(CAL_AdventureStartTime));

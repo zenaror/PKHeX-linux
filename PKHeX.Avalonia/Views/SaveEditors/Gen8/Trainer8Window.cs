@@ -25,20 +25,20 @@ public sealed class Trainer8Window : SaveEditorWindow
     private readonly SAV8SWSH SAV;
     private bool MapUpdated;
 
-    private readonly TextBox TB_OTName = UiFactory.Text("TB_OTName", 12, 140);
-    private readonly TextBox TB_TrainerCardName = UiFactory.Text("TB_TrainerCardName", 12, 140);
-    private readonly TextBox TB_TrainerCardNumber = UiFactory.Text("TB_TrainerCardNumber", 8, 120);
+    private readonly RenderedString TB_OTName = UiFactory.Name("TB_OTName", 12, 140);
+    private readonly RenderedString TB_TrainerCardName = UiFactory.Name("TB_TrainerCardName", 12, 140);
+    private readonly TextBox TB_TrainerCardNumber = UiFactory.Text("TB_TrainerCardNumber", 12, 120);
     private readonly NumericTextBox MT_TrainerCardID = UiFactory.Numeric("MT_TrainerCardID", 6, 90);
-    private readonly NumericTextBox MT_RotoRally = UiFactory.Numeric("MT_RotoRally", 7, 100);
+    private readonly NumericTextBox MT_RotoRally = UiFactory.Numeric("MT_RotoRally", 5, 100);
     private readonly ComboBox CB_Gender = UiFactory.StringCombo("CB_Gender", 60);
     private readonly ComboBox CB_Game = UiFactory.StringCombo("CB_Game", 120);
     private readonly ComboBox CB_Language = UiFactory.Combo("CB_Language", 140);
     private readonly ComboBox CB_SkinColor = UiFactory.StringCombo("CB_SkinColor", 160);
     private readonly TrainerIDView trainerID1 = new() { Name = "trainerID1" };
-    private readonly NumericTextBox MT_Money = UiFactory.Numeric("MT_Money", 8, 110);
-    private readonly Button B_MaxCash = UiFactory.Button("B_MaxCash", "Max");
-    private readonly NumericTextBox MT_Watt = UiFactory.Numeric("MT_Watt", 8, 110);
-    private readonly Button B_MaxWatt = UiFactory.Button("B_MaxWatt", "Max");
+    private readonly NumericTextBox MT_Money = UiFactory.Numeric("MT_Money", 7, 110);
+    private readonly Button B_MaxCash = UiFactory.Button("B_MaxCash", "+");
+    private readonly NumericTextBox MT_Watt = UiFactory.Numeric("MT_Watt", 7, 110);
+    private readonly Button B_MaxWatt = UiFactory.Button("B_MaxWatt", "+");
     private readonly NumericUpDown NUD_BP = UiFactory.NumericUpDown("NUD_BP", 0, 9999, 110);
     private readonly NumericTextBox MT_Hours = UiFactory.Numeric("MT_Hours", 5, 60);
     private readonly NumericTextBox MT_Minutes = UiFactory.Numeric("MT_Minutes", 2, 44);
@@ -46,35 +46,35 @@ public sealed class Trainer8Window : SaveEditorWindow
 
     private readonly DatePicker CAL_AdventureStartDate = new() { Name = "CAL_AdventureStartDate" };
     private readonly DatePicker CAL_LastSavedDate = new() { Name = "CAL_LastSavedDate" };
-    private readonly TimePicker CAL_LastSavedTime = new() { Name = "CAL_LastSavedTime" };
+    private readonly TimePicker CAL_LastSavedTime = new() { Name = "CAL_LastSavedTime", ClockIdentifier = "24HourClock" };
     private readonly TextBlock L_LastSaved = UiFactory.Label("L_LastSaved", "Last Saved:");
 
-    private readonly NumericUpDown NUD_M = UiFactory.NumericUpDown("NUD_M", 0, uint.MaxValue, 110);
-    private readonly NumericUpDown NUD_X = UiFactory.NumericUpDown("NUD_X", -100000, 100000, 100);
-    private readonly NumericUpDown NUD_Z = UiFactory.NumericUpDown("NUD_Z", -100000, 100000, 100);
-    private readonly NumericUpDown NUD_Y = UiFactory.NumericUpDown("NUD_Y", -100000, 100000, 100);
-    private readonly NumericUpDown NUD_SX = UiFactory.NumericUpDown("NUD_SX", -100000, 100000, 100);
-    private readonly NumericUpDown NUD_SZ = UiFactory.NumericUpDown("NUD_SZ", -100000, 100000, 100);
-    private readonly NumericUpDown NUD_SY = UiFactory.NumericUpDown("NUD_SY", -100000, 100000, 100);
-    private readonly NumericUpDown NUD_R = UiFactory.NumericUpDown("NUD_R", -360, 360, 100);
+    private readonly NumericUpDown NUD_M = UiFactory.NumericUpDown("NUD_M", 0, ulong.MaxValue, 140);
+    private readonly NumericUpDown NUD_X = Coordinate("NUD_X");
+    private readonly NumericUpDown NUD_Z = Coordinate("NUD_Z");
+    private readonly NumericUpDown NUD_Y = Coordinate("NUD_Y");
+    private readonly NumericUpDown NUD_SX = Coordinate("NUD_SX");
+    private readonly NumericUpDown NUD_SZ = Coordinate("NUD_SZ");
+    private readonly NumericUpDown NUD_SY = Coordinate("NUD_SY");
+    private readonly NumericUpDown NUD_R = Coordinate("NUD_R");
     private GroupBoxView GB_Map = null!;
 
     private readonly NumericTextBox MT_BattleTowerSinglesWin = UiFactory.Numeric("MT_BattleTowerSinglesWin", 7, 100);
     private readonly NumericTextBox MT_BattleTowerDoublesWin = UiFactory.Numeric("MT_BattleTowerDoublesWin", 7, 100);
-    private readonly NumericTextBox MT_BattleTowerSinglesStreak = UiFactory.Numeric("MT_BattleTowerSinglesStreak", 4, 80);
-    private readonly NumericTextBox MT_BattleTowerDoublesStreak = UiFactory.Numeric("MT_BattleTowerDoublesStreak", 4, 80);
+    private readonly NumericTextBox MT_BattleTowerSinglesStreak = UiFactory.Numeric("MT_BattleTowerSinglesStreak", 3, 80);
+    private readonly NumericTextBox MT_BattleTowerDoublesStreak = UiFactory.Numeric("MT_BattleTowerDoublesStreak", 3, 80);
 
     private readonly NumericUpDown NUD_ShowTrainerCard = UiFactory.NumericUpDown("NUD_ShowTrainerCard", 1, 6, 90);
     private readonly NumericUpDown NUD_ShowTitleScreen = UiFactory.NumericUpDown("NUD_ShowTitleScreen", 1, 6, 90);
     private readonly PropertyGridView PG_ShowTrainerCard = new() { Name = "PG_ShowTrainerCard", Width = 380, Height = 200 };
     private readonly PropertyGridView PG_ShowTitleScreen = new() { Name = "PG_ShowTitleScreen", Width = 380, Height = 200 };
-    private readonly Button B_CopyFromPartyToTrainerCard = UiFactory.Button("B_CopyFromPartyToTrainerCard", "Copy Party");
-    private readonly Button B_CopyFromPartyToTitleScreen = UiFactory.Button("B_CopyFromPartyToTitleScreen", "Copy Party");
+    private readonly Button B_CopyFromPartyToTrainerCard = UiFactory.Button("B_CopyFromPartyToTrainerCard", "Copy From Party");
+    private readonly Button B_CopyFromPartyToTitleScreen = UiFactory.Button("B_CopyFromPartyToTitleScreen", "Copy From Party");
 
     private readonly ComboBox CB_Fashion = UiFactory.StringCombo("CB_Fashion", 160);
-    private readonly Button B_Fashion = UiFactory.Button("B_Fashion", "Apply Fashion");
+    private readonly Button B_Fashion = UiFactory.Button("B_Fashion", "Give all Fashion Items");
     private readonly Button B_ResetAppearance = UiFactory.Button("B_ResetAppearance", "Reset Appearance");
-    private readonly Button B_CollectDiglett = UiFactory.Button("B_CollectDiglett", "Collect all Diglett");
+    private readonly Button B_CollectDiglett = UiFactory.Button("B_CollectDiglett", "Collect All Diglett");
 
     private readonly TrainerStatView TrainerStats = new();
 
@@ -82,11 +82,14 @@ public sealed class Trainer8Window : SaveEditorWindow
     {
         SAV = (SAV8SWSH)(Origin = sav).Clone();
 
-        foreach (var s in GameInfo.GenderSymbolUnicode.Take(2))
+        if (!MainWindow.Unicode)
+            TB_OTName.DisableInGameFont = TB_TrainerCardName.DisableInGameFont = true;
+
+        foreach (var s in MainWindow.GenderSymbols.Take(2)) // m/f depending on unicode selection
             CB_Gender.Items.Add(s);
-        foreach (var v in new[] { GameVersion.SW, GameVersion.SH })
-            CB_Game.Items.Add(v.ToString());
-        foreach (var s in new[] { "Base Fashion", "Full Legal", "Everything" })
+        foreach (var s in new[] { "Sword", "Shield" })
+            CB_Game.Items.Add(s);
+        foreach (var s in new[] { "New Game", "All Legal", "Everything" })
             CB_Fashion.Items.Add(s);
 
         BuildLayout();
@@ -109,55 +112,93 @@ public sealed class Trainer8Window : SaveEditorWindow
 
     private void BuildLayout()
     {
-        var main = UiFactory.FormGrid(11);
-        UiFactory.AddFormRow(main, 0, UiFactory.Label("L_TrainerName", "Trainer Name:"), UiFactory.Row(TB_OTName, CB_Gender));
-        UiFactory.AddFormRow(main, 1, UiFactory.Label("L_Game", "Game:"), CB_Game);
-        UiFactory.AddFormRow(main, 2, UiFactory.Label("L_TrainerID", "Trainer ID:"), trainerID1);
-        UiFactory.AddFormRow(main, 3, UiFactory.Label("L_Money", "Money:"), UiFactory.Row(MT_Money, B_MaxCash));
-        UiFactory.AddFormRow(main, 4, UiFactory.Label("L_Watt", "Watts:"), UiFactory.Row(MT_Watt, B_MaxWatt));
-        UiFactory.AddFormRow(main, 5, UiFactory.Label("L_BP", "Battle Points:"), NUD_BP);
-        UiFactory.AddFormRow(main, 6, UiFactory.Label("L_Language", "Language:"), CB_Language);
-        UiFactory.AddFormRow(main, 7, UiFactory.Label("L_SkinColor", "Skin Color:"), CB_SkinColor);
-        UiFactory.AddFormRow(main, 8, UiFactory.Label("L_PlayTime", "Play Time:"), UiFactory.Row(MT_Hours, MT_Minutes, MT_Seconds));
-        UiFactory.AddFormRow(main, 9, UiFactory.Label("L_AdventureStart", "Adventure Started:"), CAL_AdventureStartDate);
-        UiFactory.AddFormRow(main, 10, L_LastSaved, UiFactory.Row(CAL_LastSavedDate, CAL_LastSavedTime));
+        // Overview: WinForms splits the page in two halves -- trainer details and the Adventure group on the left,
+        // the League Card fields and the Stats group on the right (SAV_Trainer8.Designer.cs:714-736).
+        var main = UiFactory.FormGrid(4);
+        UiFactory.AddFormRow(main, 0, UiFactory.Label("L_TrainerName", "Trainer Name:"), TB_OTName);
+        UiFactory.AddFormRow(main, 1, trainerID1, UiFactory.Column(
+            UiFactory.Row(UiFactory.Label("L_Money", "$:"), MT_Money, B_MaxCash),
+            UiFactory.Row(UiFactory.Label("L_Watt", "W:"), MT_Watt, B_MaxWatt)));
+        UiFactory.AddFormRow(main, 2, null, UiFactory.Row(CB_Gender, CB_Game));
+        UiFactory.AddFormRow(main, 3, UiFactory.Label("L_Language", "Language:"), CB_Language);
+
+        var adventure = UiFactory.FormGrid(3);
+        var playTime = UiFactory.Row(
+            UiFactory.Label("L_Hours", "Hrs:"), MT_Hours,
+            UiFactory.Label("L_Minutes", "Min:"), MT_Minutes,
+            UiFactory.Label("L_Seconds", "Sec:"), MT_Seconds);
+        UiFactory.SetRowCol(playTime, 0, 0, 2); // flush left, as in WinForms
+        adventure.Children.Add(playTime);
+        UiFactory.AddFormRow(adventure, 1, UiFactory.Label("L_Started", "Game Started:"), CAL_AdventureStartDate);
+        UiFactory.AddFormRow(adventure, 2, L_LastSaved, UiFactory.Row(CAL_LastSavedDate, CAL_LastSavedTime));
 
         var card = UiFactory.FormGrid(4);
-        UiFactory.AddFormRow(card, 0, UiFactory.Label("L_TrainerCardName", "Card Name:"), TB_TrainerCardName);
-        UiFactory.AddFormRow(card, 1, UiFactory.Label("L_TrainerCardNumber", "Card Number:"), TB_TrainerCardNumber);
-        UiFactory.AddFormRow(card, 2, UiFactory.Label("L_TrainerCardID", "Card ID:"), MT_TrainerCardID);
-        UiFactory.AddFormRow(card, 3, UiFactory.Label("L_RotoRally", "Roto Rally:"), MT_RotoRally);
+        UiFactory.AddFormRow(card, 0, UiFactory.Label("L_TRCardName", "League Card Name:"), TB_TrainerCardName);
+        UiFactory.AddFormRow(card, 1, UiFactory.Label("L_TRCardNumber", "League Uniform ID:"), TB_TrainerCardNumber);
+        UiFactory.AddFormRow(card, 2, UiFactory.Label("L_TRCardID", "League TrainerID:"), MT_TrainerCardID);
+        UiFactory.AddFormRow(card, 3, UiFactory.Label("L_RotoRally", "Roto Rally Score:"), MT_RotoRally);
 
-        GB_Map = new GroupBoxView("GB_Map", "Map Position", UiFactory.Column(
-            UiFactory.Row(UiFactory.Label("L_M", "M:"), NUD_M, UiFactory.Label("L_R", "R:"), NUD_R),
-            UiFactory.Row(UiFactory.Label("L_X", "X:"), NUD_X, UiFactory.Label("L_Z", "Z:"), NUD_Z, UiFactory.Label("L_Y", "Y:"), NUD_Y),
-            UiFactory.Row(UiFactory.Label("L_SX", "SX:"), NUD_SX, UiFactory.Label("L_SZ", "SZ:"), NUD_SZ, UiFactory.Label("L_SY", "SY:"), NUD_SY)));
+        var stats = UiFactory.Column(UiFactory.Row(UiFactory.Label("L_BP", "BP:"), NUD_BP), TrainerStats);
+
+        var left = UiFactory.Column(main, new GroupBoxView("GB_Adventure", "Adventure Info", adventure));
+        var right = UiFactory.Column(card, new GroupBoxView("GB_Stats", "Stats", stats));
+        left.VerticalAlignment = right.VerticalAlignment = VerticalAlignment.Top;
+        var overview = UiFactory.Row(left, right);
+        overview.Spacing = 10;
+
+        // Map tab: eight rows, in the WinForms order (M, X, Z, Y, then the scales, then the rotation).
+        var map = UiFactory.FormGrid(8);
+        UiFactory.AddFormRow(map, 0, UiFactory.Label("L_CurrentMap", "Current Map:"), NUD_M);
+        UiFactory.AddFormRow(map, 1, UiFactory.Label("L_X", "X Coordinate:"), NUD_X);
+        UiFactory.AddFormRow(map, 2, UiFactory.Label("L_Z", "Z Coordinate:"), NUD_Z);
+        UiFactory.AddFormRow(map, 3, UiFactory.Label("L_Y", "Y Coordinate:"), NUD_Y);
+        UiFactory.AddFormRow(map, 4, UiFactory.Label("L_SX", "X Scale:"), NUD_SX);
+        UiFactory.AddFormRow(map, 5, UiFactory.Label("L_SZ", "Z Scale:"), NUD_SZ);
+        UiFactory.AddFormRow(map, 6, UiFactory.Label("L_SY", "Y Scale:"), NUD_SY);
+        UiFactory.AddFormRow(map, 7, UiFactory.Label("L_R", "Rotation:"), NUD_R);
+        GB_Map = new GroupBoxView("GB_Map", "Map Position", map);
+        GB_Map.HorizontalAlignment = HorizontalAlignment.Left;
+        GB_Map.VerticalAlignment = VerticalAlignment.Top;
+
+        // Misc tab: the Battle Tower grid plus the appearance buttons.
+        var tower = new Grid { ColumnSpacing = 6, RowSpacing = 3 };
+        for (int i = 0; i < 3; i++)
+        {
+            tower.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Auto));
+            tower.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        }
+        Place(tower, UiFactory.Label("L_BattleTowerWins", "Wins"), 0, 1);
+        Place(tower, UiFactory.Label("L_BattleTowerStreak", "Streak"), 0, 2);
+        Place(tower, UiFactory.Label("L_Singles", "Singles:"), 1, 0);
+        Place(tower, MT_BattleTowerSinglesWin, 1, 1);
+        Place(tower, MT_BattleTowerSinglesStreak, 1, 2);
+        Place(tower, UiFactory.Label("L_Doubles", "Doubles:"), 2, 0);
+        Place(tower, MT_BattleTowerDoublesWin, 2, 1);
+        Place(tower, MT_BattleTowerDoublesStreak, 2, 2);
 
         var appearance = UiFactory.Column(
             UiFactory.Row(CB_Fashion, B_Fashion),
+            UiFactory.Row(UiFactory.Label("L_SkinColor", "Skin Color:"), CB_SkinColor),
             UiFactory.Row(B_ResetAppearance, B_CollectDiglett));
+        var misc = UiFactory.Column(new GroupBoxView("GB_BattleTower", "Battle Tower", tower), appearance);
+        misc.HorizontalAlignment = HorizontalAlignment.Left;
 
-        var overview = UiFactory.Column(main, new GroupBoxView("GB_TrainerCard", "Trainer Card", card), GB_Map, appearance);
-
-        var tower = UiFactory.FormGrid(4);
-        UiFactory.AddFormRow(tower, 0, UiFactory.Label("L_BTSinglesWin", "Singles Wins:"), MT_BattleTowerSinglesWin);
-        UiFactory.AddFormRow(tower, 1, UiFactory.Label("L_BTDoublesWin", "Doubles Wins:"), MT_BattleTowerDoublesWin);
-        UiFactory.AddFormRow(tower, 2, UiFactory.Label("L_BTSinglesStreak", "Singles Streak:"), MT_BattleTowerSinglesStreak);
-        UiFactory.AddFormRow(tower, 3, UiFactory.Label("L_BTDoublesStreak", "Doubles Streak:"), MT_BattleTowerDoublesStreak);
-
+        // Team tab: the copy button sits under each grid, as in WinForms.
         var showcase = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10 };
         showcase.Children.Add(UiFactory.Column(
-            UiFactory.Row(UiFactory.Label("L_ShowTrainerCard", "Trainer Card Slot:"), NUD_ShowTrainerCard, B_CopyFromPartyToTrainerCard),
-            PG_ShowTrainerCard));
+            UiFactory.Row(UiFactory.Label("L_ShowTrainerCard", "Shown on Trainer Card:"), NUD_ShowTrainerCard),
+            PG_ShowTrainerCard,
+            B_CopyFromPartyToTrainerCard));
         showcase.Children.Add(UiFactory.Column(
-            UiFactory.Row(UiFactory.Label("L_ShowTitleScreen", "Title Screen Slot:"), NUD_ShowTitleScreen, B_CopyFromPartyToTitleScreen),
-            PG_ShowTitleScreen));
+            UiFactory.Row(UiFactory.Label("L_ShowTitleScreen", "Shown on Title Screen:"), NUD_ShowTitleScreen),
+            PG_ShowTitleScreen,
+            B_CopyFromPartyToTitleScreen));
 
         var tabs = new TabControl();
         tabs.Items.Add(new TabItem { Name = "Tab_Overview", Header = "Overview", Content = new ScrollViewer { Content = overview, MaxHeight = 540 } });
-        tabs.Items.Add(new TabItem { Name = "Tab_Records", Header = "Records", Content = TrainerStats });
-        tabs.Items.Add(new TabItem { Name = "Tab_Tower", Header = "Battle Tower", Content = tower });
-        tabs.Items.Add(new TabItem { Name = "Tab_Showcase", Header = "Showcase", Content = new ScrollViewer { Content = showcase, MaxHeight = 540 } });
+        tabs.Items.Add(new TabItem { Name = "Tab_BadgeMap", Header = "Map", Content = new ScrollViewer { Content = GB_Map, MaxHeight = 540 } });
+        tabs.Items.Add(new TabItem { Name = "Tab_MiscValues", Header = "Misc", Content = misc });
+        tabs.Items.Add(new TabItem { Name = "Tab_Team", Header = "Team", Content = new ScrollViewer { Content = showcase, MaxHeight = 540 } });
         SetBody(tabs);
 
         B_MaxCash.Click += (_, _) => MT_Money.Text = SAV.MaxMoney.ToString();
@@ -179,14 +220,32 @@ public sealed class Trainer8Window : SaveEditorWindow
             nud.ValueChanged += (_, _) => MapUpdated = true;
         TB_OTName.AttachClick(async mods =>
         {
-            if (mods == KeyModifiers.Control)
-                await TrashEditorWindow.ShowAsync(this, TB_OTName, SAV, SAV.MyStatus.OriginalTrainerTrash.ToArray());
+            if (mods != KeyModifiers.Control)
+                return;
+            var trash = await TrashEditorWindow.ShowAsync(this, TB_OTName, SAV, SAV.MyStatus.OriginalTrainerTrash.ToArray());
+            trash?.CopyTo(SAV.MyStatus.OriginalTrainerTrash); // WinForms writes the edited bytes back into the save
         });
         TB_TrainerCardName.AttachClick(async mods =>
         {
-            if (mods == KeyModifiers.Control)
-                await TrashEditorWindow.ShowAsync(this, TB_TrainerCardName, SAV, SAV.Blocks.TrainerCard.OriginalTrainerTrash.ToArray());
+            if (mods != KeyModifiers.Control)
+                return;
+            var trash = await TrashEditorWindow.ShowAsync(this, TB_TrainerCardName, SAV, SAV.Blocks.TrainerCard.OriginalTrainerTrash.ToArray());
+            trash?.CopyTo(SAV.Blocks.TrainerCard.OriginalTrainerTrash);
         });
+    }
+
+    /// <summary>Map coordinate box: WinForms shows six decimals over the full float range.</summary>
+    private static NumericUpDown Coordinate(string name)
+    {
+        var nud = UiFactory.NumericUpDown(name, -99_999_999m, 99_999_999m, 130);
+        nud.FormatString = "0.000000";
+        return nud;
+    }
+
+    private static void Place(Grid g, Control c, int row, int col)
+    {
+        UiFactory.SetRowCol(c, row, col);
+        g.Children.Add(c);
     }
 
     #endregion

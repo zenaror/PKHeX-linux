@@ -215,7 +215,11 @@ public sealed class Misc3Window : SaveEditorWindow
         if (SAV is SAV3FRLG frlg)
         {
             TB_RivalName.Text = frlg.RivalName;
-            TB_RivalName.AttachClick(async _ => await TrashEditorWindow.ShowAsync(this, TB_RivalName, frlg, frlg.LargeBlock.RivalNameTrash.ToArray()));
+            TB_RivalName.AttachClick(async _ =>
+            {
+                var trash = await TrashEditorWindow.ShowAsync(this, TB_RivalName, frlg, frlg.LargeBlock.RivalNameTrash.ToArray());
+                trash?.CopyTo(frlg.LargeBlock.RivalNameTrash); // WinForms writes the edited bytes back into the save
+            });
 
             var legal = GameInfo.FilteredSources.Species.ToList();
             for (int i = 0; i < CB_TCM.Length; i++)

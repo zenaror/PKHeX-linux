@@ -15,7 +15,7 @@ public sealed class MoveChoiceView : StackPanel
     private EntityContext Context;
 
     public readonly Image PB_Type = UiFactory.Picture("PB_Type", 16);
-    public readonly ComboBox CB_Move = UiFactory.Combo("CB_Move", 150);
+    public readonly AutoCompleteComboBox CB_Move = UiFactory.AutoCombo("CB_Move", 150);
     public readonly NumericTextBox TB_PP = UiFactory.Numeric("TB_PP", 3, 40);
     public readonly ComboBox CB_PPUps = UiFactory.StringCombo("CB_PPUps", 52, "0", "1", "2", "3");
     public readonly Image PB_Triangle = UiFactory.Picture("PB_Triangle", 16);

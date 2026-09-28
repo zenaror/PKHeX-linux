@@ -283,7 +283,8 @@ public sealed class SecretBase3Window : SaveEditorWindow
             Load = (data, result) => StringConverter3.LoadString(data, result, language),
             Set = (data, value, maxLength, option) => StringConverter3.SetString(data, value, maxLength, language, option),
         };
-        await TrashEditorWindow.ShowAsync(this, TB_Name, converter, secret.OriginalTrainerTrash.ToArray());
+        var trash = await TrashEditorWindow.ShowAsync(this, TB_Name, converter, secret.OriginalTrainerTrash.ToArray());
+        trash?.CopyTo(secret.OriginalTrainerTrash); // WinForms writes the edited bytes back into the save
     }
 
     protected override void OnSave()

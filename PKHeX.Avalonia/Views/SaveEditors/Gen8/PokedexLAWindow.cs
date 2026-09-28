@@ -69,6 +69,7 @@ public sealed class PokedexLAWindow : SaveEditorWindow
     private readonly TextBlock L_TheoryWeight = UiFactory.Label("L_TheoryWeight", string.Empty);
 
     private readonly Button B_Report = UiFactory.Button("B_Report", "Report Research");
+    private readonly Button B_AdvancedResearch = UiFactory.Button("B_AdvancedResearch", "Edit All Tasks...");
     private readonly StackPanel TaskPanel = new() { Orientation = Orientation.Vertical, Spacing = 3 };
 
     public PokedexLAWindow(SAV8LA sav) : base("SAV_PokedexLA", "Pokédex Editor")
@@ -160,7 +161,7 @@ public sealed class PokedexLAWindow : SaveEditorWindow
         var research = UiFactory.FormGrid(3);
         UiFactory.AddFormRow(research, 0, UiFactory.Label("L_UpdateIndex", "Update Index:"), MTB_UpdateIndex);
         UiFactory.AddFormRow(research, 1, UiFactory.Label("L_ResearchReported", "Research (Reported):"), MTB_ResearchLevelReported);
-        UiFactory.AddFormRow(research, 2, UiFactory.Label("L_ResearchUnreported", "Research (Pending):"), UiFactory.Row(MTB_ResearchLevelUnreported, B_Report));
+        UiFactory.AddFormRow(research, 2, UiFactory.Label("L_ResearchUnreported", "Research (Pending):"), UiFactory.Row(MTB_ResearchLevelUnreported, B_Report, B_AdvancedResearch));
 
         var sizes = UiFactory.FormGrid(5);
         UiFactory.AddFormRow(sizes, 0, null, CHK_MinAndMax);
@@ -189,6 +190,7 @@ public sealed class PokedexLAWindow : SaveEditorWindow
         foreach (var chk in CHK_Obtained)
             chk.IsCheckedChanged += (_, _) => ObtainFlagChanged();
         B_Report.Click += (_, _) => ClickReport();
+        B_AdvancedResearch.Click += async (_, _) => await ClickAdvancedResearch();
     }
 
     #endregion
@@ -467,6 +469,23 @@ public sealed class PokedexLAWindow : SaveEditorWindow
             if (TaskControls[i].CurrentValue != formCount)
                 TaskControls[i].CurrentValue = formCount;
         }
+    }
+
+    /// <summary>Opens the full research task editor for the selected species (WinForms <c>B_AdvancedResearch_Click</c>).</summary>
+    private async System.Threading.Tasks.Task ClickAdvancedResearch()
+    {
+        // Set the entry
+        SetEntry(lastIndex, lastForm);
+
+        var form = new PokedexResearchEditorLAWindow(SAV, DexToSpecies[lastIndex + 1], lastIndex, TaskDescriptions, TimeTaskDescriptions);
+        await form.ShowDialog(this);
+
+        Editing = true;
+
+        // Refresh all tasks and values
+        FillResearchTasks(lastIndex);
+        GetEntry(lastIndex, lastForm);
+        Editing = false;
     }
 
     private void ClickReport()

@@ -1,11 +1,14 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using PKHeX.Avalonia.Localization;
@@ -18,9 +21,11 @@ namespace PKHeX.Avalonia.Controls;
 /// Reflection driven property editor; replacement for the WinForms <c>PropertyGrid</c> used by the settings editor.
 /// </summary>
 /// <remarks>
-/// Property names are translated with the <c>PropertyGrid.&lt;name&gt;</c> keys and enum values with
-/// <c>&lt;EnumType&gt;.&lt;Value&gt;</c>, matching <c>PropertyGridLocalization</c>.
-/// Values are written back to the object as soon as they are edited (WinForms behavior).
+/// Property names are translated with the <c>PropertyGrid.&lt;name&gt;</c> keys, categories with
+/// <c>PropertyGrid.Category.&lt;name&gt;</c> and enum values with <c>&lt;EnumType&gt;.&lt;Value&gt;</c>, matching
+/// <c>PropertyGridLocalization</c>. Rows are grouped by category and sorted alphabetically inside it, like the WinForms
+/// grid's default <c>CategorizedAlphabetical</c> sort. Values are written back to the object as soon as they are edited
+/// (WinForms behavior).
 /// </remarks>
 public sealed class PropertyGridView : ScrollViewer
 {
@@ -42,12 +47,22 @@ public sealed class PropertyGridView : ScrollViewer
     public event Action? PropertyValueChanged;
 
     /// <summary>
+    /// Raised when the row under the pointer (or holding the focus) changes; the payload feeds a description pane like
+    /// the one the WinForms <c>PropertyGrid</c> draws at its bottom.
+    /// </summary>
+    public event Action<PropertyHelp?>? HelpChanged;
+
+    /// <summary>Name and description of the property a description pane should show.</summary>
+    public sealed record PropertyHelp(string Name, string Description);
+
+    /// <summary>
     /// Displays the editable properties of <paramref name="obj"/>.
     /// </summary>
     public void SetObject(object? obj)
     {
         SelectedObject = obj;
         Root.Children.Clear();
+        HelpChanged?.Invoke(null);
         if (obj is null)
             return;
         AddProperties(Root, obj, 0, null);
@@ -56,12 +71,13 @@ public sealed class PropertyGridView : ScrollViewer
     /// <param name="onChanged">Invoked after a child value is written; used to store an edited boxed struct back into its owner.</param>
     private void AddProperties(Panel panel, object obj, int depth, Action? onChanged)
     {
+        var rows = new List<(string Category, string Label, Control Editor, string Description)>();
         var type = obj.GetType();
         foreach (var pi in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
         {
             if (!pi.CanRead || pi.GetIndexParameters().Length != 0)
                 continue;
-            if (pi.GetCustomAttribute<System.ComponentModel.BrowsableAttribute>() is { Browsable: false })
+            if (pi.GetCustomAttribute<BrowsableAttribute>() is { Browsable: false })
                 continue; // hidden from the WinForms property grid too
             object? value;
             try
@@ -75,17 +91,35 @@ public sealed class PropertyGridView : ScrollViewer
             if (value is null)
                 continue;
 
-            var label = Translate($"PropertyGrid.{pi.Name}", pi.Name);
             var editor = CreateEditor(obj, pi, value, depth, onChanged);
             if (editor is null)
                 continue;
-            panel.Children.Add(CreateRow(label, editor, depth));
+            var label = Translate($"PropertyGrid.{pi.Name}", pi.Name);
+            var category = pi.GetCustomAttribute<CategoryAttribute>()?.Category ?? CategoryAttribute.Default.Category ?? "Misc";
+            var description = pi.GetCustomAttribute<DescriptionAttribute>()?.Description ?? string.Empty;
+            rows.Add((Translate($"PropertyGrid.Category.{category}", category), label, editor, description));
+        }
+
+        foreach (var group in rows.GroupBy(z => z.Category).OrderBy(z => z.Key, StringComparer.CurrentCulture))
+        {
+            var body = new StackPanel { Orientation = Orientation.Vertical, Spacing = 2 };
+            foreach (var row in group.OrderBy(z => z.Label, StringComparer.CurrentCulture))
+                body.Children.Add(CreateRow(row.Label, row.Editor, row.Description, depth));
+            panel.Children.Add(new Expander
+            {
+                Header = group.Key,
+                Content = body,
+                IsExpanded = true,
+                Padding = new Thickness(4, 2),
+                Margin = new Thickness(0, 2, 0, 2),
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            });
         }
     }
 
     private static string Translate(string key, string fallback) => Translator.TranslateText(key, fallback, MainWindow.CurrentLanguage);
 
-    private static Control CreateRow(string label, Control editor, int depth)
+    private Control CreateRow(string label, Control editor, string description, int depth)
     {
         var grid = new Grid { ColumnSpacing = 8, Margin = new Thickness(depth * 12, 1, 0, 1) };
         grid.ColumnDefinitions.Add(new ColumnDefinition(new GridLength(2, GridUnitType.Star)));
@@ -94,6 +128,13 @@ public sealed class PropertyGridView : ScrollViewer
         grid.Children.Add(text);
         Grid.SetColumn(editor, 1);
         grid.Children.Add(editor);
+        if (description.Length == 0)
+            return grid;
+
+        var help = new PropertyHelp(label, description);
+        grid.PointerEntered += (_, _) => HelpChanged?.Invoke(help);
+        grid.AddHandler(GotFocusEvent, (_, _) => HelpChanged?.Invoke(help), RoutingStrategies.Bubble);
+        ToolTip.SetTip(text, description);
         return grid;
     }
 
@@ -134,15 +175,19 @@ public sealed class PropertyGridView : ScrollViewer
             row.Children.Add(tb);
             return row;
         }
+        if (type == typeof(System.Drawing.Point))
+            return CreatePointEditor(owner, pi, (System.Drawing.Point)value, writable, onChanged);
         if (IsNumeric(type))
         {
+            bool fractional = IsFractional(type);
             var nud = new NumericUpDown
             {
                 Value = Convert.ToDecimal(value, CultureInfo.InvariantCulture),
                 Minimum = GetMin(type),
                 Maximum = GetMax(type),
-                Increment = 1,
-                FormatString = "0",
+                // The float settings (sprite filter opacity/greyscale) are fractions; an integer step would round them away.
+                Increment = fractional ? 0.05m : 1m,
+                FormatString = fractional ? "0.####" : "0",
                 MinHeight = 0,
                 IsEnabled = writable,
                 Padding = new Thickness(4, 0),
@@ -155,8 +200,8 @@ public sealed class PropertyGridView : ScrollViewer
             };
             return nud;
         }
-        if (value is ICollection)
-            return new TextBlock { Text = Translate("PropertyGrid.Value.Collection", "(Collection)"), VerticalAlignment = VerticalAlignment.Center, Foreground = Brushes.Gray };
+        if (value is ICollection collection)
+            return CreateCollectionEditor(owner, pi, collection, writable, onChanged);
 
         // Nested settings object: expand inline (the WinForms grid expands all items).
         if (type.Namespace?.StartsWith("PKHeX.", StringComparison.Ordinal) == true && (type.IsClass || type.IsValueType))
@@ -168,9 +213,118 @@ public sealed class PropertyGridView : ScrollViewer
             AddProperties(inner, box, depth + 1, notify);
             if (inner.Children.Count == 0)
                 return null;
-            return new Expander { Header = string.Empty, Content = inner, IsExpanded = true, Padding = new Thickness(4, 2) };
+            return inner;
         }
         return null;
+    }
+
+    /// <summary>
+    /// Editor for <see cref="System.Drawing.Point"/> settings (<c>Hover.PreviewCursorShift</c>), shown as "X, Y" like
+    /// the WinForms grid.
+    /// </summary>
+    private Control CreatePointEditor(object owner, PropertyInfo pi, System.Drawing.Point value, bool writable, Action? onChanged)
+    {
+        var tb = new TextBox
+        {
+            Text = $"{value.X}, {value.Y}",
+            MinHeight = 0,
+            IsEnabled = writable,
+            Padding = new Thickness(4, 2),
+        };
+        tb.OnTextChanged(_ =>
+        {
+            var parts = (tb.Text ?? string.Empty).Split(',');
+            if (parts.Length != 2)
+                return;
+            if (!int.TryParse(parts[0].Trim(), NumberStyles.Integer, CultureInfo.CurrentCulture, out var x))
+                return;
+            if (!int.TryParse(parts[1].Trim(), NumberStyles.Integer, CultureInfo.CurrentCulture, out var y))
+                return;
+            Set(owner, pi, new System.Drawing.Point(x, y), onChanged);
+        });
+        return tb;
+    }
+
+    /// <summary>
+    /// Editor for the list settings (recent files, backup paths, report properties, battle template token order).
+    /// The WinForms grid opens a modal collection editor; here the entries are edited in place, one per line.
+    /// </summary>
+    private Control CreateCollectionEditor(object owner, PropertyInfo pi, ICollection value, bool writable, Action? onChanged)
+    {
+        var element = GetElementType(pi.PropertyType);
+        if (element is null || !(element == typeof(string) || element.IsEnum) || !writable)
+            return new TextBlock { Text = Translate("PropertyGrid.Value.Collection", "(Collection)"), VerticalAlignment = VerticalAlignment.Center, Foreground = Brushes.Gray };
+
+        var entries = value.Cast<object?>().Select(z => z?.ToString() ?? string.Empty).ToArray();
+        var tb = new TextBox
+        {
+            Text = string.Join(Environment.NewLine, entries),
+            AcceptsReturn = true,
+            MinHeight = 56,
+            MaxHeight = 140,
+            Padding = new Thickness(4, 2),
+            TextWrapping = TextWrapping.NoWrap,
+        };
+        ToolTip.SetTip(tb, Translate("PropertyGrid.Value.CollectionHint", "One entry per line."));
+        tb.OnTextChanged(_ =>
+        {
+            if (!TryBuildCollection(pi.PropertyType, element, tb.Text, out var result))
+                return;
+            Set(owner, pi, result, onChanged);
+        });
+        return tb;
+    }
+
+    private static Type? GetElementType(Type type)
+    {
+        if (type.IsArray)
+            return type.GetElementType();
+        foreach (var i in type.GetInterfaces())
+        {
+            if (i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IList<>))
+                return i.GetGenericArguments()[0];
+        }
+        return null;
+    }
+
+    private static bool TryBuildCollection(Type type, Type element, string? text, out object result)
+    {
+        result = null!;
+        var lines = (text ?? string.Empty).Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var values = new List<object>(lines.Length);
+        foreach (var line in lines)
+        {
+            if (element == typeof(string))
+            {
+                values.Add(line);
+            }
+            else if (Enum.TryParse(element, line, true, out var parsed) && parsed is not null)
+            {
+                values.Add(parsed);
+            }
+            else
+            {
+                return false; // unfinished input: keep the previous value
+            }
+        }
+
+        if (type.IsArray)
+        {
+            var array = Array.CreateInstance(element, values.Count);
+            for (int i = 0; i < values.Count; i++)
+                array.SetValue(values[i], i);
+            result = array;
+            return true;
+        }
+
+        var listType = typeof(List<>).MakeGenericType(element);
+        if (!type.IsAssignableFrom(listType))
+            return false;
+        var list = (IList)Activator.CreateInstance(listType)!;
+        foreach (var value in values)
+            list.Add(value);
+        result = list;
+        return true;
     }
 
     private Control CreateEnumEditor(object owner, PropertyInfo pi, Type type, object value, bool writable, Action? onChanged)
@@ -241,11 +395,14 @@ public sealed class PropertyGridView : ScrollViewer
     private static bool IsNumeric(Type t) => Type.GetTypeCode(t) is TypeCode.Byte or TypeCode.SByte or TypeCode.Int16 or TypeCode.UInt16
         or TypeCode.Int32 or TypeCode.UInt32 or TypeCode.Int64 or TypeCode.UInt64 or TypeCode.Single or TypeCode.Double or TypeCode.Decimal;
 
+    private static bool IsFractional(Type t) => Type.GetTypeCode(t) is TypeCode.Single or TypeCode.Double or TypeCode.Decimal;
+
     private static decimal GetMin(Type t) => Type.GetTypeCode(t) switch
     {
         TypeCode.Byte or TypeCode.UInt16 or TypeCode.UInt32 or TypeCode.UInt64 => 0,
         TypeCode.SByte => sbyte.MinValue,
         TypeCode.Int16 => short.MinValue,
+        TypeCode.Single or TypeCode.Double or TypeCode.Decimal => decimal.MinValue,
         _ => int.MinValue,
     };
 
@@ -255,6 +412,7 @@ public sealed class PropertyGridView : ScrollViewer
         TypeCode.SByte => sbyte.MaxValue,
         TypeCode.Int16 => short.MaxValue,
         TypeCode.UInt16 => ushort.MaxValue,
+        TypeCode.Single or TypeCode.Double or TypeCode.Decimal => decimal.MaxValue,
         _ => int.MaxValue,
     };
 }
