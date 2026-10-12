@@ -717,8 +717,10 @@ Cinnamon can be set to it with
 the slot context menu, which needs no modifier at all. Screen-verified 2026-09-28: Ctrl+Shift+click on an occupied box
 slot deletes it, on a save copy that was then closed without saving and stayed byte-identical.
 
-**A blank Generation 4 save is a full image, so it can be written (a `PKHeX.Core` change).** This is the only
-behavioural change this port makes to Core, and it fixes a defect rather than adapting anything to Linux: `SAV4`'s
+**A blank Generation 4 save is a full image, so it can be written (a `PKHeX.Core` change).** This is one of the
+behavioural fixes this port makes to Core: `BattlePass.cs` also limits entity reads/writes to the stored entity,
+preserving the trailing box/slot metadata, and `BattleVideo4.cs` copies Species and Held Item during deflation.
+The blank-save change fixes a defect rather than adapting anything to Linux: `SAV4`'s
 blank constructor left `Data` empty, so writing one threw and, but for the throw, would have produced nothing.
 `SAV4`, `SAV4Sinnoh`, `SAV4DP`, `SAV4Pt` and `SAV4HGSS` now pass the storage start through that constructor, allocate
 a full `SaveUtil.SIZE_G4RAW` buffer and write each block's size and SDK magic footer. The diff is small and the loaded

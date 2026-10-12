@@ -27,6 +27,8 @@ As regras completas deste port estão na OMM, nas anotações "Regras do port PK
 - **Git:** nunca descarte mudanças do usuário nem use comandos destrutivos. Commit e push só quando
   pedirem. Mensagens de commit em inglês, como no resto do repositório.
 - **Plugins internos** nunca entram neste repositório, que é público.
+- Não acrescente automaticamente trailers `Co-authored-by` do Claude/Anthropic aos commits.
+  Preserve os créditos humanos e as atribuições legítimas do upstream.
 
 ## Compilar, testar e relatar
 
