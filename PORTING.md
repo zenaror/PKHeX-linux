@@ -183,6 +183,28 @@ undoes it. Nothing needs root and nothing is copied out of the folder, so the pr
 extracted. An ELF binary cannot carry an icon of its own — this is the only way to get one on Linux; the Windows
 executable does embed `icon.ico` through `ApplicationIcon` (verified: the published PE has `RT_ICON`/`RT_GROUP_ICON`).
 
+### Cleanup and artifact retention
+
+At task completion, checkpoints and pauses, first preserve the minimum durable record needed to reproduce and
+check the result: commands, revision, environment, relevant logs, hashes, failures and any unique input/output.
+`/tmp` is cleared on reboot on the development machine; it must never hold the only reference copy.
+
+| Category | Producer and reproduction | Retention and cleanup scope |
+| --- | --- | --- |
+| Project `bin/` and `obj/` | .NET build/restore using the commands above | Reproducible output, eligible only when created by the current task, no running app/build/test needs it, and the checkpoint has been preserved. Shared checkout outputs need an ownership check; do not remove them automatically. |
+| Disposable publish folders and packaging intermediates | The publish/AppImage scripts with recorded arguments and revision | Remove only the exact task-owned output path after checking that it is not an accepted release or an input used elsewhere. Retain accepted packages and their checksums until explicitly retired. |
+| Temporary probes and test results | Task-specific tools and test commands | Keep relevant cases, failures, logs, input/output hashes and reproduction instructions durably before removing named disposable copies. Unexplained failures remain retained. |
+| Saves, original inputs, fixtures, console/hardware recordings and user data | User input or unique evidence | Preserve originals and durable reference copies; never include them in routine cleanup. A generated fixture is not disposable merely because it was generated. |
+| Git recovery bundles, commit maps and publication evidence | History maintenance | Retain privately until old clones have migrated and recovery retirement has been explicitly approved. Prepared repositories and failed attempts need separate review before disposal. |
+
+Inspect each proposed path, its resolved destination and symlinks before removal. Ignored or untracked files are
+not automatically disposable. Do not clean active processes, another session's files or paths of uncertain origin;
+retain and list uncertain items in the handoff. Do not use broad deletion, age-only deletion or `git clean -xfd`.
+No automatic clean command is approved here: `dotnet clean` can traverse project references, so its scope must be
+checked before use. Any future destructive helper must offer an inspection mode and an explicit path list.
+The handoff records removed paths, preserved artifacts and their location, and remaining cleanup decisions;
+include sizes when cheaply available. Cleanup alone does not require a new build/test run.
+
 ### Handing a build to someone else
 
 The self-contained folder is the whole product: it needs no .NET runtime on the target machine.

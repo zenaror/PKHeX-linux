@@ -28,19 +28,47 @@ PKHeX expects save files that are not encrypted with console-specific keys. Use 
 
 **We do not support or condone cheating at the expense of others. Do not use significantly hacked Pokémon in battle or in trades with those who are unaware hacked Pokémon are in use.**
 
+## Native Linux port
+
+This fork adds a native Avalonia frontend for Linux, without Wine. Development uses `feature/linuxport`.
+The upstream Windows Forms frontend remains the behavior reference. See [PORTING.md](PORTING.md) for the
+component status, known limitations, prerequisites, packaging and runtime evidence.
+
+With the .NET 10 SDK and a Linux desktop session, build and run from the repository root:
+
+```bash
+dotnet build PKHeX.Avalonia/PKHeX.Avalonia.csproj
+dotnet run --project PKHeX.Avalonia/PKHeX.Avalonia.csproj
+```
+
+| Responsibility | Existing location |
+| --- | --- |
+| Agent entry point and local constraints | [AGENTS.md](AGENTS.md) |
+| Architecture, technical decisions, status and remaining work | [PORTING.md](PORTING.md) |
+| Domain code / native frontend / behavior reference | `PKHeX.Core/` / `PKHeX.Avalonia/` / `PKHeX.WinForms/` |
+| Drawing code shared across frontend targets | `PKHeX.Drawing/`, `PKHeX.Drawing.Misc/`, `PKHeX.Drawing.PokeSprite/` |
+| Regression tests | `Tests/PKHeX.Core.Tests/` (`dotnet test Tests/PKHeX.Core.Tests/PKHeX.Core.Tests.csproj`) |
+| Reproducible packaging and CI | `PKHeX.Avalonia/Packaging/`, `.github/workflows/linux.yml` |
+
+These existing .NET trees serve the code, documentation and tools roles; no separate `src/` or `docs/` tree is
+required. Contributor continuation notes belong in the project-scoped OMM handoff; repository technical details
+and validation limits stay in `PORTING.md`. Follow its cleanup and artifact-retention policy at checkpoints.
+
 ## Screenshots
 
 ![Main Window](https://i.imgur.com/pIHdoTp.png)
 
 ## Building
 
-PKHeX is a Windows Forms application which requires [.NET 10](https://dotnet.microsoft.com/download/dotnet/10.0).
+The upstream Windows Forms frontend requires [.NET 10](https://dotnet.microsoft.com/download/dotnet/10.0).
+For this fork's native Linux frontend, use the commands above and [PORTING.md](PORTING.md).
 
 The executable can be built with any compiler that supports C# 14.
 
 ### Build Configurations
 
-Use the Debug or Release build configurations when building. There isn't any platform specific code to worry about!
+Use the Debug or Release build configurations when building. The drawing projects select the implementation
+appropriate to the target framework; see [PORTING.md](PORTING.md) for frontend-specific build instructions.
 
 ## Dependencies
 

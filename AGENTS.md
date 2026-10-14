@@ -9,6 +9,7 @@ nova em Avalonia (`PKHeX.Avalonia/`). O `PKHeX.Core` continua sendo a camada de 
 1. Consulte primeiro a sua memória interna sobre este projeto e, depois, a OMM pelo MCP, no escopo
    `pkhex-linux` (inclua o global quando ajudar). Essa é a ordem de consulta, não de autoridade: confirme
    qualquer fato no código, no `PORTING.md`, no histórico do git ou numa medição antes de usar.
+   Na OMM, leia `get_role(name="project-base")` uma vez na retomada; abra somente skills pertinentes.
 2. Confira `git status --short --branch`. Trabalhe só na branch `feature/linuxport`.
 3. Leia a implementação existente (WinForms e Avalonia) antes de mudar algo.
 
@@ -43,6 +44,11 @@ As regras completas deste port estão na OMM, nas anotações "Regras do port PK
   comportamento importante foi exercitado.
 
 ## Ao terminar
+
+Siga a política de cleanup e retenção em `PORTING.md` ("Cleanup and artifact retention") ao fechar tarefas,
+checkpoints e pausas. Preserve evidências em armazenamento durável antes de remover somente temporários
+identificados da própria tarefa; registre retenção, remoções e dúvidas no handoff. Não rode novos testes só
+para aplicar cleanup.
 
 Registre na OMM o conhecimento durável novo: fatos confirmados (com a origem), decisões e motivos,
 pendências e o que ainda não foi provado. Ao passar um trabalho adiante, deixe um handoff. Mantenha a
