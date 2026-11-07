@@ -6,15 +6,9 @@ nova em Avalonia (`PKHeX.Avalonia/`). O `PKHeX.Core` continua sendo a camada de 
 
 ## Antes de começar
 
-1. Consulte primeiro a sua memória interna sobre este projeto e, depois, a OMM pelo MCP, no escopo
-   `pkhex-linux` (inclua o global quando ajudar). Essa é a ordem de consulta, não de autoridade: confirme
-   qualquer fato no código, no `PORTING.md`, no histórico do git ou numa medição antes de usar.
-   Na OMM, leia `get_role(name="project-base")` uma vez na retomada; abra somente skills pertinentes.
-2. Confira `git status --short --branch`. Trabalhe só na branch `feature/linuxport`.
+1. Confira `git status --short --branch`. Trabalhe só na branch `feature/linuxport`.
+2. Consulte `README.md` e `PORTING.md` para arquitetura, build, uso e limitações.
 3. Leia a implementação existente (WinForms e Avalonia) antes de mudar algo.
-
-As regras completas deste port estão na OMM, nas anotações "Regras do port PKHeX Linux (1/2)" e
-"(2/2)", e no texto original do antigo `CLAUDE.md`, que segue no histórico do git (commit `eabab02a3`).
 
 ## Regras que não podem ser esquecidas
 
@@ -45,12 +39,6 @@ As regras completas deste port estão na OMM, nas anotações "Regras do port PK
 
 ## Ao terminar
 
-Siga a política de cleanup e retenção em `PORTING.md` ("Cleanup and artifact retention") ao fechar tarefas,
-checkpoints e pausas. Preserve evidências em armazenamento durável antes de remover somente temporários
-identificados da própria tarefa; registre retenção, remoções e dúvidas no handoff. Não rode novos testes só
-para aplicar cleanup.
-
-Registre na OMM o conhecimento durável novo: fatos confirmados (com a origem), decisões e motivos,
-pendências e o que ainda não foi provado. Ao passar um trabalho adiante, deixe um handoff. Mantenha a
-memória interna e a OMM atualizadas; a memória interna pode ser mais curta, mas não pode ter algo
-importante que falte na OMM. Não grave senhas, tokens ou dados pessoais em nenhuma das duas.
+Siga a política de cleanup e retenção em `PORTING.md` ao fechar tarefas. Preserve evidências antes de
+remover somente temporários identificados da própria tarefa. Não rode novos testes só para aplicar cleanup.
+Relate alterações, validações executadas e limitações; nunca grave credenciais ou dados pessoais.

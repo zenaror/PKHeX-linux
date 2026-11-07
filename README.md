@@ -51,8 +51,8 @@ dotnet run --project PKHeX.Avalonia/PKHeX.Avalonia.csproj
 | Reproducible packaging and CI | `PKHeX.Avalonia/Packaging/`, `.github/workflows/linux.yml` |
 
 These existing .NET trees serve the code, documentation and tools roles; no separate `src/` or `docs/` tree is
-required. Contributor continuation notes belong in the project-scoped OMM handoff; repository technical details
-and validation limits stay in `PORTING.md`. Follow its cleanup and artifact-retention policy at checkpoints.
+required. Technical details and validation limits stay in `PORTING.md`. Follow its cleanup and
+artifact-retention policy when finishing work.
 
 ## Screenshots
 
